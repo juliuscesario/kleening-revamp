@@ -4,46 +4,59 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Customer;
+use App\Http\Resources\CustomerResource; // <-- Tambahkan Http di sini
+use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
 
 class CustomerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Di app/Http/Controllers/Api/CustomerController.php
+    // Pastikan semua 'use' statement yang dibutuhkan sudah ada
+    // (Customer, CustomerResource, Request, Rule)
+
     public function index()
     {
-        //
+        // Eager load relasi addresses untuk efisiensi
+        return CustomerResource::collection(Customer::with('addresses')->get());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone_number' => 'required|string|unique:customers,phone_number|max:255',
+        ]);
+
+        $customer = Customer::create($validated);
+        return new CustomerResource($customer);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(Customer $customer)
     {
-        //
+        // Memuat relasi alamat untuk satu customer
+        return new CustomerResource($customer->load('addresses'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Customer $customer)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'phone_number' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('customers')->ignore($customer->id),
+            ],
+        ]);
+
+        $customer->update($validated);
+        return new CustomerResource($customer);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(Customer $customer)
     {
-        //
+        $customer->delete();
+        return response()->noContent();
     }
 }
