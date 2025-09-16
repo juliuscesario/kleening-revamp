@@ -2,9 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Staff extends Model
 {
-    //
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'area_id',
+        'name',
+        'phone_number',
+        'is_active',
+    ];
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ServiceCategoryController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\StaffController;
 
 //SET ROUTES
 Route::apiResource('areas', AreaController::class);
@@ -19,4 +20,8 @@ Route::post('/customers/{customer}/addresses', [AddressController::class, 'store
 
 // Route untuk Show, Update, Delete Address secara individual
 Route::apiResource('addresses', AddressController::class)->only(['show', 'update', 'destroy']);
+
+//Route Staff
+Route::apiResource('staff', StaffController::class);
+
 
