@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\ServiceOrderController;
 
 //SET ROUTES
 Route::apiResource('areas', AreaController::class);
@@ -23,5 +24,8 @@ Route::apiResource('addresses', AddressController::class)->only(['show', 'update
 
 //Route Staff
 Route::apiResource('staff', StaffController::class);
+
+//Route Service Order
+Route::apiResource('service-orders', ServiceOrderController::class);
 
 
