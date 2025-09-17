@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\ServiceOrderController;
+use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\WorkPhotoController;
 
 //SET ROUTES
 Route::apiResource('areas', AreaController::class);
@@ -28,4 +30,13 @@ Route::apiResource('staff', StaffController::class);
 //Route Service Order
 Route::apiResource('service-orders', ServiceOrderController::class);
 
+// Route khusus untuk membuat Invoice dari Service Order
+Route::post('/service-orders/{serviceOrder}/invoice', [InvoiceController::class, 'storeFromServiceOrder']);
 
+// Route standar untuk mengelola Invoice (melihat, update status, hapus)
+Route::apiResource('invoices', InvoiceController::class);
+
+// Route untuk mengelola foto di bawah Service Order
+Route::post('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'store']);
+Route::get('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'index']);
+Route::delete('/photos/{workPhoto}', [WorkPhotoController::class, 'destroy']); // Untuk hapus foto individual

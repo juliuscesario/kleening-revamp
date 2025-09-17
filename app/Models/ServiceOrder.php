@@ -37,12 +37,20 @@ class ServiceOrder extends Model
 
     public function staff()
     {
-        // Relasi Many-to-Many melalui tabel pivot service_order_staff
         return $this->belongsToMany(Staff::class, 'service_order_staff');
     }
 
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Mendefinisikan relasi "hasOne" ke Invoice.
+     * Satu ServiceOrder hanya memiliki satu Invoice.
+     */
+    public function invoice() // <-- TAMBAHKAN METHOD INI
+    {
+        return $this->hasOne(Invoice::class);
     }
 }
