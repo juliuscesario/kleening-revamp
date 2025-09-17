@@ -7,17 +7,25 @@ use Illuminate\Http\Request;
 use App\Models\Staff;
 use App\Http\Resources\StaffResource; // <-- Tambahkan Http di sini
 use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests; // <-- 1. TAMBAHKAN INI
 
 class StaffController extends Controller
 {
+    use AuthorizesRequests; // <-- 2. TAMBAHKAN INI
     public function index()
     {
+        // Cek izin: apakah user boleh melihat daftar Area?
+        $this->authorize('viewAny', Staff::class);
+
         // Eager load relasi area dan user
         return StaffResource::collection(Staff::with(['area', 'user'])->get());
     }
 
     public function store(Request $request)
     {
+        // Cek izin: apakah user boleh membuat Staff baru?
+        $this->authorize('create', Staff::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:255',
@@ -32,11 +40,16 @@ class StaffController extends Controller
 
     public function show(Staff $staff)
     {
+        // Cek izin: apakah user boleh melihat Area ini?
+        $this->authorize('view', $staff);
         return new StaffResource($staff->load(['area', 'user']));
     }
 
     public function update(Request $request, Staff $staff)
     {
+        // Cek izin: apakah user boleh mengupdate Staff ini?
+        $this->authorize('update', $staff);
+
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'phone_number' => 'sometimes|required|string|max:255',
@@ -56,6 +69,9 @@ class StaffController extends Controller
 
     public function destroy(Staff $staff)
     {
+        // Cek izin: apakah user boleh menghapus Area ini?
+        $this->authorize('delete', $staff);
+
         $staff->delete();
         return response()->noContent();
     }
