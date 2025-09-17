@@ -4,23 +4,45 @@ namespace App\Policies;
 
 use App\Models\Invoice;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class InvoicePolicy
 {
-    // Di dalam class CustomerPolicy
-    public function viewAny(User $user): bool { return true; }
-    public function view(User $user, Invoice $invoice): bool { return true; }
+    // Method ini otomatis memberi akses penuh ke owner
+    public function before(User $user, string $ability): bool|null
+    {
+        if (strtolower($user->role) === 'owner') {
+            return true;
+        }
+        return null;
+    }
+
+    // Siapa yang boleh melihat daftar invoice?
+    public function viewAny(User $user): bool
+    {
+        return in_array($user->role, ['co_owner', 'admin']);
+    }
+
+    // Siapa yang boleh melihat detail satu invoice?
+    public function view(User $user, Invoice $invoice): bool
+    {
+        return in_array($user->role, ['co_owner', 'admin']);
+    }
+
+    // Siapa yang boleh membuat invoice?
     public function create(User $user): bool
     {
-        return in_array($user->role, ['owner', 'co_owner', 'admin']);
+        return in_array($user->role, ['co_owner', 'admin']);
     }
+
+    // Siapa yang boleh update invoice?
     public function update(User $user, Invoice $invoice): bool
     {
-        return in_array($user->role, ['owner', 'co_owner', 'admin']);
+        return in_array($user->role, ['co_owner', 'admin']);
     }
+
+    // Siapa yang boleh hapus invoice?
     public function delete(User $user, Invoice $invoice): bool
     {
-        return in_array($user->role, ['owner', 'co_owner', 'admin']);
+        return in_array($user->role, ['co_owner', 'admin']);
     }
 }

@@ -2,71 +2,46 @@
 
 namespace App\Policies;
 
+use App\Models\ServiceOrder;
 use App\Models\User;
 use App\Models\WorkPhoto;
-use Illuminate\Auth\Access\Response;
 
 class WorkPhotoPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
+    // Owner bisa melakukan apa saja
+    public function before(User $user, string $ability): bool|null
     {
-        return false;
+        if (strtolower($user->role) === 'owner') {
+            return true;
+        }
+        return null;
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, WorkPhoto $workPhoto): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can create models.
-     */
+    // Siapa yang boleh upload foto ke sebuah SO?
     public function create(User $user, ServiceOrder $serviceOrder): bool
     {
-        if (in_array($user->role, ['owner', 'co_owner', 'admin'])) {
+        // Admin & Co-Owner boleh
+        if (in_array($user->role, ['co_owner', 'admin'])) {
             return true;
         }
-        // Staff hanya boleh upload jika ditugaskan ke SO tersebut
+        // Staff boleh jika ditugaskan ke SO ini
         if ($user->role == 'staff' && $user->staff) {
             return $serviceOrder->staff()->where('staff_id', $user->staff->id)->exists();
         }
         return false;
     }
 
-   /**
-     * Determine whether the user can update models.
-     */
-    public function update(User $user, ServiceOrder $serviceOrder): bool
+    // Siapa yang boleh hapus foto?
+    public function delete(User $user, WorkPhoto $workPhoto): bool
     {
-        if (in_array($user->role, ['owner', 'co_owner', 'admin'])) {
+        // Admin & Co-Owner boleh
+        if (in_array($user->role, ['co_owner', 'admin'])) {
             return true;
         }
-        // Staff hanya boleh upload jika ditugaskan ke SO tersebut
-        if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff_id', $user->staff->id)->exists();
+        // Staff boleh jika dia yang mengupload
+        if ($user->role == 'staff') {
+            return $workPhoto->uploaded_by === $user->id;
         }
         return false;
     }
-
-    /**
-     * Determine whether the user can update models.
-     */
-    public function delete(User $user, ServiceOrder $serviceOrder): bool
-    {
-        if (in_array($user->role, ['owner', 'co_owner', 'admin'])) {
-            return true;
-        }
-        // Staff hanya boleh upload jika ditugaskan ke SO tersebut
-        if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff_id', $user->staff->id)->exists();
-        }
-        return false;
-    }
-    
 }

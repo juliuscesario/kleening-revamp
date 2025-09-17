@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
 
 class ServiceOrder extends Model
 {

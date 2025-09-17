@@ -8,9 +8,11 @@ use App\Models\Address;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule; // Penting untuk validasi update
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class AddressController extends Controller
 {
+    use AuthorizesRequests; // <-- Pastikan ini ada
     /**
      * Menampilkan semua alamat yang dimiliki oleh customer tertentu.
      * Dipanggil melalui: GET /api/customers/{customer}/addresses
@@ -26,6 +28,7 @@ class AddressController extends Controller
      */
     public function storeForCustomer(Request $request, Customer $customer)
     {
+        $this->authorize('create', Address::class); // <-- Cek Izin
         $validated = $request->validate([
             'label' => 'required|string|max:255',
             'contact_name' => 'required|string|max:255',
@@ -48,6 +51,7 @@ class AddressController extends Controller
      */
     public function show(Address $address)
     {
+        $this->authorize('view', $address); // <-- Cek Izin
         return new AddressResource($address);
     }
 
@@ -57,6 +61,7 @@ class AddressController extends Controller
      */
     public function update(Request $request, Address $address)
     {
+        $this->authorize('update', $address); // <-- Cek Izin
         $validated = $request->validate([
             'label' => 'sometimes|required|string|max:255',
             'contact_name' => 'sometimes|required|string|max:255',
@@ -76,6 +81,7 @@ class AddressController extends Controller
      */
     public function destroy(Address $address)
     {
+        $this->authorize('delete', $address); // <-- Cek Izin
         $address->delete();
 
         // Mengembalikan response "204 No Content" yang merupakan standar

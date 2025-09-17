@@ -8,11 +8,13 @@ use App\Models\ServiceOrder; // <-- INI KUNCINYA
 use App\Models\WorkPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class WorkPhotoController extends Controller
 {
     public function store(Request $request, ServiceOrder $serviceOrder)
     {
+        $this->authorize('create', [WorkPhoto::class, $serviceOrder]);
         $validated = $request->validate([
             'type' => 'required|string|in:arrival,before,after',
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Maks 2MB
@@ -32,6 +34,7 @@ class WorkPhotoController extends Controller
 
     public function index(ServiceOrder $serviceOrder)
     {
+        $this->authorize('delete', $workPhoto);
         return WorkPhotoResource::collection($serviceOrder->workPhotos);
     }
 

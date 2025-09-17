@@ -10,14 +10,20 @@ use App\Models\ServiceOrder;
 use App\Models\Invoice;
 use App\Http\Resources\ServiceOrderResource; // <-- Tambahkan Http di sini
 use App\Http\Resources\InvoiceResource; // <-- Tambahkan Http di sini
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests; // <-- 1. Tambahkan ini
 
 class InvoiceController extends Controller
 {
+    use AuthorizesRequests; // <-- 2. Tambahkan ini
     /**
      * Membuat Invoice baru dari ServiceOrder yang ada.
      */
     public function storeFromServiceOrder(Request $request, ServiceOrder $serviceOrder)
     {
+        
+        // Cek izin: apakah user boleh melihat daftar Invoice?
+        $this->authorize('create', Invoice::class);
+        
         // 1. Cek apakah SO ini sudah punya invoice
         if ($serviceOrder->invoice()->exists()) {
             return response()->json(['message' => 'Service Order already has an invoice.'], 409); // 409 Conflict
@@ -58,16 +64,25 @@ class InvoiceController extends Controller
 
     public function index()
     {
+        // Cek izin: apakah user boleh melihat daftar Invoice?
+        $this->authorize('viewAny', Invoice::class);
+
         return InvoiceResource::collection(Invoice::with('serviceOrder.customer')->get());
     }
 
     public function show(Invoice $invoice)
     {
+        // Cek izin: apakah user boleh melihat daftar Invoice?
+        $this->authorize('view', $invoice);
+
         return new InvoiceResource($invoice->load('serviceOrder'));
     }
 
     public function update(Request $request, Invoice $invoice)
     {
+        // Cek izin: apakah user boleh melihat daftar Invoice?
+        $this->authorize('update', $invoice);
+
         // Method ini biasanya untuk update status pembayaran atau tanda tangan
         $validated = $request->validate([
             'status' => 'sometimes|string|in:unpaid,paid,overdue',
@@ -80,6 +95,8 @@ class InvoiceController extends Controller
 
     public function destroy(Invoice $invoice)
     {
+        // Cek izin: apakah user boleh melihat daftar Invoice?
+        $this->authorize('delete', $invoice);
         // Hati-hati dengan logic ini, mungkin perlu revert status SO
         DB::transaction(function () use ($invoice) {
             $invoice->serviceOrder()->update(['status' => 'confirmed']);

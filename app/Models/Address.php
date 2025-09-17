@@ -4,11 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
 
 class Address extends Model
 {
     use HasFactory;
-
+    
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AreaScope);
+    }
+    
     protected $fillable = [
         'customer_id',
         'label',
@@ -18,13 +27,6 @@ class Address extends Model
         'google_maps_link',
     ];
     
-    /**
-     * The "booted" method of the model.
-     */
-    protected static function booted(): void
-    {
-        static::addGlobalScope(new AreaScope);
-    }
 
     public function customer()
     {

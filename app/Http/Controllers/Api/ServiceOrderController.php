@@ -9,10 +9,11 @@ use App\Models\ServiceOrder;
 use App\Models\Service;
 use App\Http\Resources\ServiceOrderResource; // <-- Tambahkan Http di sini
 use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
-
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ServiceOrderController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request) 
     {
         $user = $request->user(); 
@@ -30,6 +31,7 @@ class ServiceOrderController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', ServiceOrder::class);
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'address_id' => 'required|exists:addresses,id',
@@ -84,6 +86,7 @@ class ServiceOrderController extends Controller
      */
     public function show(ServiceOrder $serviceOrder)
     {
+        $this->authorize('view', $serviceOrder);
         // Muat semua relasi yang dibutuhkan untuk ditampilkan
         return new ServiceOrderResource($serviceOrder->load(['customer', 'address', 'items.service', 'staff', 'creator']));
     }
@@ -93,6 +96,7 @@ class ServiceOrderController extends Controller
      */
     public function update(Request $request, ServiceOrder $serviceOrder)
     {
+        $this->authorize('update', $serviceOrder);
         $validated = $request->validate([
             'customer_id' => 'sometimes|required|exists:customers,id',
             'address_id' => 'sometimes|required|exists:addresses,id',
@@ -161,6 +165,7 @@ class ServiceOrderController extends Controller
      */
     public function destroy(ServiceOrder $serviceOrder)
     {
+        $this->authorize('delete', $serviceOrder);
         $serviceOrder->delete();
 
         return response()->noContent();
