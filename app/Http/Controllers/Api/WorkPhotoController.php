@@ -24,7 +24,7 @@ class WorkPhotoController extends Controller
         $photo = $serviceOrder->workPhotos()->create([
             'type' => $validated['type'],
             'file_path' => $path,
-            'uploaded_by' => $request->user()->id ?? 1, // Pakai user ID 1 untuk sementara
+            'uploaded_by' => $request->user()->id, // Menggunakan ID user yang sedang login
         ]);
 
         return new WorkPhotoResource($photo);

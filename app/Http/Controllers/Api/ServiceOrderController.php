@@ -47,7 +47,7 @@ class ServiceOrderController extends Controller
                 'staff_notes' => $validated['staff_notes'] ?? null,
                 'so_number' => 'SO-' . time(), // Nanti bisa dibuat lebih canggih
                 'status' => 'confirmed', // Status awal
-                'created_by' => $request->user()->id ?? 2, // User yang sedang login
+                'created_by' => $request->user()->id, // User yang sedang login
             ]);
 
             // 2. Loop dan simpan item-item layanannya
