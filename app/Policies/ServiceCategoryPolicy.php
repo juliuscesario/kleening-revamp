@@ -13,7 +13,7 @@ class ServiceCategoryPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +21,7 @@ class ServiceCategoryPolicy
      */
     public function view(User $user, ServiceCategory $serviceCategory): bool
     {
-        return false;
+        return true;
     }
 
     /**

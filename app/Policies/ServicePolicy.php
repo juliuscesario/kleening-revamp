@@ -13,7 +13,7 @@ class ServicePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +21,7 @@ class ServicePolicy
      */
     public function view(User $user, Service $service): bool
     {
-        return false;
+        return true;
     }
 
     /**

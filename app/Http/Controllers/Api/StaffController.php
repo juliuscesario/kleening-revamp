@@ -14,7 +14,7 @@ class StaffController extends Controller
     use AuthorizesRequests; // <-- 2. TAMBAHKAN INI
     public function index()
     {
-        // Cek izin: apakah user boleh melihat daftar Area?
+        // Cek izin: apakah user boleh melihat daftar Staff?
         $this->authorize('viewAny', Staff::class);
 
         // Eager load relasi area dan user
@@ -40,7 +40,7 @@ class StaffController extends Controller
 
     public function show(Staff $staff)
     {
-        // Cek izin: apakah user boleh melihat Area ini?
+        // Cek izin: apakah user boleh melihat Staff ini?
         $this->authorize('view', $staff);
         return new StaffResource($staff->load(['area', 'user']));
     }
@@ -69,7 +69,7 @@ class StaffController extends Controller
 
     public function destroy(Staff $staff)
     {
-        // Cek izin: apakah user boleh menghapus Area ini?
+        // Cek izin: apakah user boleh menghapus Staff ini?
         $this->authorize('delete', $staff);
 
         $staff->delete();
