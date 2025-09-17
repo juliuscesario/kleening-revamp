@@ -9,7 +9,14 @@ use Illuminate\Database\Eloquent\Casts\Attribute; // <-- TAMBAHKAN INI
 class Customer extends Model
 {
     use HasFactory;
-
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AreaScope);
+    }
+    
     protected $fillable = ['name', 'phone_number'];
 
     /**
@@ -37,4 +44,5 @@ class Customer extends Model
             get: fn () => $this->serviceOrders()->latest('work_date')->first()?->work_date,
         );
     }
+    
 }

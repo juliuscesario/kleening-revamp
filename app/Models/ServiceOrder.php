@@ -8,7 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class ServiceOrder extends Model
 {
     use HasFactory;
-
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AreaScope);
+    }
+    
     protected $fillable = [
         'so_number',
         'customer_id',
@@ -62,4 +69,6 @@ class ServiceOrder extends Model
     {
         return $this->hasMany(WorkPhoto::class);
     }
+
+    
 }

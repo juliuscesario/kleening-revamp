@@ -9,6 +9,14 @@ use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
 class Staff extends Model
 {
     use HasFactory;
+    
+    /**
+     * The "booted" method of the model.
+    */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AreaScope);
+    }
 
     protected $fillable = [
         'user_id',
@@ -26,13 +34,5 @@ class Staff extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-    
-    /**
-     * The "booted" method of the model.
-    */
-    protected static function booted(): void
-    {
-        static::addGlobalScope(new AreaScope);
     }
 }

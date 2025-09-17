@@ -13,10 +13,18 @@ use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
 
 class ServiceOrderController extends Controller
 {
-    public function index()
+    public function index(Request $request) 
     {
-        // Eager load semua relasi yang dibutuhkan
-        $serviceOrders = ServiceOrder::with(['customer', 'address', 'items.service', 'staff'])->get();
+        $user = $request->user(); 
+        $query = ServiceOrder::query();
+
+        if ($user->role == 'staff' && $user->staff) {
+            $query->whereHas('staff', function ($q) use ($user) {
+                $q->where('staff.id', $user->staff->id);
+            });
+        }
+        
+        $serviceOrders = $query->with(['customer', 'address', 'items.service', 'staff'])->get();
         return ServiceOrderResource::collection($serviceOrders);
     }
 
@@ -128,6 +136,24 @@ class ServiceOrderController extends Controller
         });
 
         return new ServiceOrderResource($updatedServiceOrder->load(['customer', 'address', 'items.service', 'staff']));
+    }
+    
+    /**
+     * Method khusus untuk staff mengubah status pekerjaan.
+     */
+    public function updateStatus(Request $request, ServiceOrder $serviceOrder)
+    {
+        // Pertama, cek izin menggunakan policy method yang baru kita buat
+        $this->authorize('updateStatus', $serviceOrder);
+
+        // Validasi input, staff hanya boleh mengirim 'status'
+        $validated = $request->validate([
+            'status' => 'required|string|in:in_progress,done,needs_review', // Contoh status
+        ]);
+
+        $serviceOrder->update($validated);
+
+        return new ServiceOrderResource($serviceOrder);
     }
 
     /**

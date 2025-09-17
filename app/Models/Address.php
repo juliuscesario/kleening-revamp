@@ -17,9 +17,18 @@ class Address extends Model
         'full_address',
         'google_maps_link',
     ];
+    
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AreaScope);
+    }
 
     public function customer()
     {
         return $this->belongsTo(Customer::class);
     }
+    
 }
