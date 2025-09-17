@@ -7,11 +7,18 @@ use Illuminate\Http\Request;
 use App\Models\Area;
 use App\Http\Resources\AreaResource; // <-- Tambahkan Http di sini
 use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests; // <-- 1. TAMBAHKAN INI
+
 
 class AreaController extends Controller
 {
+    use AuthorizesRequests; // <-- 2. TAMBAHKAN INI
+
     public function index()
     {
+        // Cek izin: apakah user boleh melihat daftar Area?
+        $this->authorize('viewAny', Area::class);
+
         // Gunakan Resource untuk konsistensi output
         return AreaResource::collection(Area::all());
     }
@@ -21,6 +28,9 @@ class AreaController extends Controller
      */
     public function store(Request $request)
     {
+        // Cek izin: apakah user boleh membuat Area baru?
+        $this->authorize('create', Area::class);
+
         // 1. Validasi input
         $validated = $request->validate([
             'name' => 'required|string|unique:areas|max:255',
@@ -36,11 +46,11 @@ class AreaController extends Controller
     /**
      * Display the specified resource.
      */
-    /**
-     * Display the specified resource.
-     */
     public function show(Area $area)
     {
+        // Cek izin: apakah user boleh melihat Area ini?
+        $this->authorize('view', $area);
+
         // Laravel otomatis mencari Area berdasarkan ID dari URL.
         // Jika tidak ketemu, otomatis akan menampilkan error 404.
         return new AreaResource($area);
@@ -51,6 +61,9 @@ class AreaController extends Controller
      */
     public function update(Request $request, Area $area)
     {
+        // Cek izin: apakah user boleh mengupdate Area ini?
+        $this->authorize('update', $area);
+
         // Validasi, dengan aturan 'unique' yang mengabaikan ID area saat ini
         $validated = $request->validate([
             'name' => [
@@ -73,6 +86,9 @@ class AreaController extends Controller
      */
     public function destroy(Area $area)
     {
+        // Cek izin: apakah user boleh menghapus Area ini?
+        $this->authorize('delete', $area);
+        
         $area->delete();
 
         // Kembalikan response "204 No Content", standar untuk delete yang sukses
