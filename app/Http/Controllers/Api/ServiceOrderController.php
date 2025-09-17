@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // <-- PENTING untuk transaksi
 use App\Models\ServiceOrder;
+use App\Models\Service;
 use App\Http\Resources\ServiceOrderResource; // <-- Tambahkan Http di sini
 use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
 
@@ -73,24 +74,69 @@ class ServiceOrderController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(ServiceOrder $serviceOrder)
     {
-        //
+        // Muat semua relasi yang dibutuhkan untuk ditampilkan
+        return new ServiceOrderResource($serviceOrder->load(['customer', 'address', 'items.service', 'staff', 'creator']));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, ServiceOrder $serviceOrder)
     {
-        //
+        $validated = $request->validate([
+            'customer_id' => 'sometimes|required|exists:customers,id',
+            'address_id' => 'sometimes|required|exists:addresses,id',
+            'work_date' => 'sometimes|required|date',
+            'status' => 'sometimes|required|string', // Untuk mengubah status
+            'work_notes' => 'nullable|string',
+            'staff_notes' => 'nullable|string',
+            'items' => 'sometimes|required|array|min:1',
+            'items.*.service_id' => 'required|exists:services,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'staff_ids' => 'sometimes|required|array|min:1',
+            'staff_ids.*' => 'required|exists:staff,id',
+        ]);
+
+        $updatedServiceOrder = DB::transaction(function () use ($validated, $serviceOrder) {
+            // 1. Update data utama Service Order
+            $serviceOrder->update($validated);
+
+            // 2. Jika ada data 'items' yang dikirim, sinkronisasi item-itemnya
+            if (isset($validated['items'])) {
+                // Hapus item lama
+                $serviceOrder->items()->delete();
+                // Buat item baru
+                foreach ($validated['items'] as $item) {
+                    $service = Service::find($item['service_id']);
+                    $serviceOrder->items()->create([
+                        'service_id' => $item['service_id'],
+                        'quantity' => $item['quantity'],
+                        'price' => $service->price,
+                        'total' => $item['quantity'] * $service->price,
+                    ]);
+                }
+            }
+
+            // 3. Jika ada data 'staff_ids' yang dikirim, sinkronisasi staffnya
+            if (isset($validated['staff_ids'])) {
+                $serviceOrder->staff()->sync($validated['staff_ids']);
+            }
+
+            return $serviceOrder;
+        });
+
+        return new ServiceOrderResource($updatedServiceOrder->load(['customer', 'address', 'items.service', 'staff']));
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(ServiceOrder $serviceOrder)
     {
-        //
+        $serviceOrder->delete();
+
+        return response()->noContent();
     }
 }
