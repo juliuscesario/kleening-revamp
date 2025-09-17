@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
 
 class Staff extends Model
 {
@@ -25,5 +26,13 @@ class Staff extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    
+    /**
+     * The "booted" method of the model.
+    */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AreaScope);
     }
 }
