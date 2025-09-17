@@ -17,10 +17,10 @@ class WorkPhotoController extends Controller
             'type' => 'required|string|in:arrival,before,after',
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Maks 2MB
         ]);
-
+        
         // Simpan file dan dapatkan path-nya
         $path = $request->file('photo')->store('work_photos', 'public');
-
+        
         $photo = $serviceOrder->workPhotos()->create([
             'type' => $validated['type'],
             'file_path' => $path,
