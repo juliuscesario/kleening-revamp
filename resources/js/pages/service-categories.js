@@ -64,14 +64,18 @@ $(function() {
                 });
             },
             error: function(jqXHR) {
-                if (jqXHR.status === 422) {
+                if (jqXHR.status === 403) {
+                    modalInstance.hide();
+                    Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak memiliki izin untuk menyimpan data ini.', 'error');
+                } else if (jqXHR.status === 422) {
                     const errors = jqXHR.responseJSON.errors;
                     if (errors.category_name) {
                         $('#service-category-name').addClass('is-invalid');
                         $('#name-error').text(errors.category_name[0]);
                     }
                 } else {
-                    Swal.fire('Oops...', 'Terjadi kesalahan di server!', 'error');
+                    modalInstance.hide();
+                    Swal.fire('Error!', jqXHR.responseJSON.message || 'Terjadi kesalahan di server!', 'error');
                 }
             }
         });

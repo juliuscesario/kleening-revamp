@@ -64,14 +64,18 @@ $(function() {
                 });
             },
             error: function(jqXHR) {
-                if (jqXHR.status === 422) {
+                if (jqXHR.status === 403) {
+                    modalInstance.hide();
+                    Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak memiliki izin untuk menyimpan data ini.', 'error');
+                } else if (jqXHR.status === 422) {
                     const errors = jqXHR.responseJSON.errors;
                     if (errors.name) {
                         $('#area-name').addClass('is-invalid');
                         $('#name-error').text(errors.name[0]);
                     }
                 } else {
-                    Swal.fire('Oops...', 'Terjadi kesalahan di server!', 'error');
+                    modalInstance.hide();
+                    Swal.fire('Error!', jqXHR.responseJSON.message || 'Terjadi kesalahan di server!', 'error');
                 }
             }
         });
@@ -97,8 +101,12 @@ $(function() {
                         table.ajax.reload();
                         Swal.fire('Dihapus!', 'Data area berhasil dihapus.', 'success');
                     },
-                    error: function() {
-                        Swal.fire('Gagal!', 'Terjadi kesalahan saat menghapus data.', 'error');
+                    error: function(jqXHR) {
+                        if (jqXHR.status === 403) {
+                            Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak memiliki izin untuk menghapus data ini.', 'error');
+                        } else {
+                            Swal.fire('Gagal!', jqXHR.responseJSON.message || 'Terjadi kesalahan saat menghapus data.', 'error');
+                        }
                     }
                 });
             }

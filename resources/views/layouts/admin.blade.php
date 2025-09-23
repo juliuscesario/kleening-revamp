@@ -40,7 +40,7 @@
               </li>
 
               {{-- NEW "MASTER" DROPDOWN MENU --}}
-              @if(Auth::user()->role === 'owner' || Auth::user()->role === 'admin')
+              @if(Auth::user()->role === 'owner' || Auth::user()->role === 'admin' || Auth::user()->role === 'co_owner')
               <li class="nav-item dropdown {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-master" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false" >
                   <span class="nav-link-icon d-md-none d-lg-inline-block">

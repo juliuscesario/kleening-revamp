@@ -71,18 +71,23 @@ $(function () {
                 staffTable.ajax.reload();
             },
             error: function (jqXHR) {
-                const errors = jqXHR.responseJSON.errors;
-                // Clear previous errors
-                $('#staff-form .is-invalid').removeClass('is-invalid');
-                $('#staff-form .invalid-feedback').text('');
-
-                if (errors) {
-                    Object.keys(errors).forEach(function (key) {
-                        $(`#staff-${key}`).addClass('is-invalid');
-                        $(`#${key}-error`).text(errors[key][0]);
-                    });
+                if (jqXHR.status === 403) {
+                    staffModal.hide();
+                    Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak memiliki izin untuk menyimpan data ini.', 'error');
+                } else if (jqXHR.status === 422) {
+                    const errors = jqXHR.responseJSON.errors;
+                    $('#staff-form .is-invalid').removeClass('is-invalid');
+                    $('#staff-form .invalid-feedback').text('');
+                    if (errors) {
+                        Object.keys(errors).forEach(function (key) {
+                            let field = key.replace('.', '_');
+                            $(`#staff-${field}`).addClass('is-invalid');
+                            $(`#${field}-error`).text(errors[key][0]);
+                        });
+                    }
                 } else {
-                    Swal.fire('Error!', 'Terjadi kesalahan.', 'error');
+                    staffModal.hide();
+                    Swal.fire('Error!', jqXHR.responseJSON.message || 'Terjadi kesalahan saat menyimpan data.', 'error');
                 }
             }
         });
@@ -128,8 +133,12 @@ $(function () {
                         Swal.fire('Berhasil!', response.message, 'success');
                         staffTable.ajax.reload();
                     },
-                    error: function () {
-                        Swal.fire('Error!', 'Gagal memproses permintaan.', 'error');
+                    error: function (jqXHR) {
+                        if (jqXHR.status === 403) {
+                            Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak memiliki izin untuk melakukan aksi ini.', 'error');
+                        } else {
+                            Swal.fire('Error!', jqXHR.responseJSON.message || 'Gagal memproses permintaan.', 'error');
+                        }
                     }
                 });
             }
