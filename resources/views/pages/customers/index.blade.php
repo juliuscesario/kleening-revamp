@@ -34,7 +34,6 @@
                                 <th>ID</th>
                                 <th>Nama</th>
                                 <th>No. Telepon</th>
-                                <th>Area</th>
                                 <th>Jumlah Alamat</th>
                                 <th>Tgl. Daftar</th>
                                 <th>Order Terakhir</th>
@@ -87,6 +86,17 @@
                         <h5>Detail Alamat</h5>
                         <div class="row">
                             <div class="col-md-6">
+                                @if(in_array(Auth::user()->role, ['owner', 'admin']))
+                                <div class="mb-3">
+                                    <label class="form-label">Area</label>
+                                    <select class="form-select" name="area_id" id="address-area_id">
+                                        @foreach($areas as $area)
+                                            <option value="{{ $area->id }}">{{ $area->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="invalid-feedback" id="area_id-error"></div>
+                                </div>
+                                @endif
                                 <div class="mb-3">
                                     <label class="form-label">Label Alamat</label>
                                     <input type="text" class="form-control" name="label" id="address-label" placeholder="Contoh: Rumah, Kantor">

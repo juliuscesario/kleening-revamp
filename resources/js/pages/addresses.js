@@ -13,6 +13,7 @@ $(function() {
             { data: 'id', name: 'id' },
             { data: 'label', name: 'label' },
             { data: 'customer_name', name: 'customer.name' },
+            { data: 'area_name', name: 'area.name' },
             { data: 'full_address', name: 'full_address' },
             { data: 'contact_phone', name: 'contact_phone' },
             { data: 'action', name: 'action', orderable: false, searchable: false }

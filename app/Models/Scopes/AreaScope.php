@@ -9,18 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class AreaScope implements Scope
 {
-    /**
-     * The tables that are restricted by area for co-owners.
-     *
-     * @var array
-     */
-    protected $areaRestrictedTables = [
-        'staff',
-        'service_orders',
-        'customers',
-        'addresses',
-    ];
-
     public function apply(Builder $builder, Model $model)
     {
         $user = Auth::user();
@@ -33,37 +21,41 @@ class AreaScope implements Scope
         $areaId = $user->area_id;
         $tableName = $model->getTable();
 
-        // If the table is not area-restricted, do nothing.
-        // This allows co-owners to see master data like areas, service_categories, etc.
-        if (!in_array($tableName, $this->areaRestrictedTables)) {
-            return;
-        }
-
         // If a co-owner has no area, they should not see any area-restricted data.
         if (!$areaId) {
             $builder->whereRaw('1 = 0'); // Force query to return no results
             return;
         }
 
-        // Apply area restrictions for specific tables
-        if ($tableName == 'staff') {
-            $builder->where($model->getTable() . '.area_id', $areaId);
+        // --- New Simplified Logic ---
+
+        // If the model is Address, filter directly
+        if ($tableName === 'addresses') {
+            $builder->where('area_id', $areaId);
         }
 
-        if ($tableName == 'service_orders') {
-            $builder->whereHas('staff', function($query) use ($areaId) {
+        // If the model is Customer, filter via their addresses
+        if ($tableName === 'customers') {
+            $builder->whereHas('addresses', function ($query) use ($areaId) {
                 $query->where('area_id', $areaId);
             });
         }
 
-        if ($tableName == 'customers') {
-            $builder->whereHas('serviceOrders.staff', function($query) use ($areaId) {
+        // If the model is ServiceOrder, filter via its address
+        if ($tableName === 'service_orders') {
+            $builder->whereHas('address', function ($query) use ($areaId) {
                 $query->where('area_id', $areaId);
             });
         }
 
-        if ($tableName == 'addresses') {
-            $builder->whereHas('customer.serviceOrders.staff', function($query) use ($areaId) {
+        // If the model is Staff, filter directly by their own area_id
+        if ($tableName === 'staff') {
+            $builder->where('area_id', $areaId);
+        }
+
+        // If the model is Invoice, filter via the ServiceOrder's address
+        if ($tableName === 'invoices') {
+            $builder->whereHas('serviceOrder.address', function ($query) use ($areaId) {
                 $query->where('area_id', $areaId);
             });
         }

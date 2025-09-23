@@ -98,16 +98,17 @@
                 @forelse($customer->addresses as $address)
                     <div class="list-group-item">
                         <div class="row">
-                            <div class="col">
-                                <p class="mb-1"><strong>{{ $address->label }}:</strong> {{ $address->contact_name }} ({{ $address->contact_phone }})</p>
-                                <p class="text-muted mb-0">{{ $address->full_address }}</p>
-                            </div>
                             <div class="col-auto align-self-center">
                                 @if($address->google_maps_link)
                                     <a href="{{ $address->google_maps_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-ghost-secondary">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-map-pin" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" /></svg>
                                     </a>
                                 @endif
+                            </div>
+                            <div class="col">
+                                <p class="mb-1"><strong>{{ $address->label }}:</strong> <span class="badge bg-secondary text-bg-secondary">{{ $address->area ? $address->area->name : 'N/A' }}</span></p>
+                                <p class="text-muted mb-1">{{ $address->contact_name }} ({{ $address->contact_phone }})</p>
+                                <p class="text-muted mb-0">{{ $address->full_address }}</p>
                             </div>
                             <div class="col-auto">
                                 <a href="#" class="btn btn-sm btn-primary">Buat SO</a>

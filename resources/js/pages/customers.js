@@ -18,7 +18,6 @@ $(function() {
             { data: 'id', name: 'id' },
             { data: 'name', name: 'name' },
             { data: 'phone_number', name: 'phone_number' },
-            { data: 'area', name: 'area', orderable: false, searchable: false },
             { data: 'addresses_count', name: 'addresses_count', searchable: false },
             { data: 'created_at', name: 'created_at' },
             { data: 'latest_order_date', name: 'latest_order_date', searchable: false },

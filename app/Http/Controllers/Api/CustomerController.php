@@ -50,13 +50,23 @@ class CustomerController extends Controller
             ]);
 
             if (!empty($validated['add_address'])) {
-                $customer->addresses()->create([
+                $addressData = [
                     'label' => $validated['label'],
                     'contact_name' => $validated['contact_name'],
                     'contact_phone' => $validated['contact_phone'],
                     'full_address' => $validated['full_address'],
                     'google_maps_link' => $validated['google_maps_link'] ?? null,
-                ]);
+                ];
+
+                // Assign area_id based on role
+                $user = auth()->user();
+                if (in_array($user->role, ['owner', 'admin'])) {
+                    $addressData['area_id'] = $request->area_id;
+                } elseif ($user->role === 'co_owner') {
+                    $addressData['area_id'] = $user->area_id;
+                }
+
+                $customer->addresses()->create($addressData);
             }
 
             return $customer;

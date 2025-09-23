@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+use App\Models\Area;
 use App\Models\Customer;
 
 class CustomerController extends Controller
@@ -16,7 +17,8 @@ class CustomerController extends Controller
      */
     public function index()
     {
-        return view('pages.customers.index');
+        $areas = Area::all();
+        return view('pages.customers.index', compact('areas'));
     }
 
     /**
@@ -27,7 +29,7 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
-        $customer->load('addresses');
+        $customer->load('addresses.area');
 
         // Widget Data
         $totalOrders = $customer->serviceOrders()->count();

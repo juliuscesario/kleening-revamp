@@ -24,6 +24,7 @@
                                 <th>ID</th>
                                 <th>Label</th>
                                 <th>Customer</th>
+                                <th>Area</th>
                                 <th>Alamat Lengkap</th>
                                 <th>Kontak</th>
                                 <th>Aksi</th>

@@ -127,19 +127,9 @@ class DataTablesController extends Controller
     {
         $this->authorize('viewAny', \App\Models\Customer::class);
 
-        $query = \App\Models\Customer::withCount('addresses')->with(['serviceOrders.staff.area']);
+        $query = \App\Models\Customer::withCount('addresses');
 
         return DataTables::of($query)
-            ->addColumn('area', function ($customer) {
-                $latestOrder = $customer->serviceOrders()->latest('work_date')->first();
-                if ($latestOrder && $latestOrder->staff->isNotEmpty()) {
-                    $firstStaff = $latestOrder->staff->first();
-                    if ($firstStaff && $firstStaff->area) {
-                        return $firstStaff->area->name;
-                    }
-                }
-                return 'N/A';
-            })
             ->addColumn('latest_order_date', function ($customer) {
                 return $customer->last_order_date ? \Carbon\Carbon::parse($customer->last_order_date)->format('d M Y') : 'N/A';
             })
@@ -166,11 +156,14 @@ class DataTablesController extends Controller
     {
         $this->authorize('viewAny', \App\Models\Address::class);
 
-        $query = \App\Models\Address::with('customer');
+        $query = \App\Models\Address::with(['customer', 'area']);
 
         return DataTables::of($query)
             ->addColumn('customer_name', function ($address) {
                 return $address->customer ? $address->customer->name : 'N/A';
+            })
+            ->addColumn('area_name', function ($address) {
+                return $address->area ? $address->area->name : 'N/A';
             })
             ->addColumn('action', function ($address) {
                 $actions = '';
