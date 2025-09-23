@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Area;
+use App\Models\ServiceCategory;
 use App\Models\Customer; // <-- Tambahkan model lain jika perlu
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
@@ -31,6 +32,28 @@ class DataTablesController extends Controller
                     <button class="btn btn-sm btn-warning editArea" data-id="' . $area->id . '" data-name="' . e($area->name) . '">Edit</button>
                     <button class="btn btn-sm btn-danger deleteArea" data-id="' . $area->id . '">Hapus</button>
                 ';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    // --- ADD THIS NEW SERVICE CATEGORY METHOD ---
+    public function serviceCategories()
+    {
+        // 1. Cek hak akses (Policy) secara manual
+        $this->authorize('viewAny', ServiceCategory::class);
+
+        $query = ServiceCategory::query();
+
+        return DataTables::of($query)
+            ->editColumn('created_at', function ($category) {
+                return Carbon::parse($category->created_at)->format('d M Y H:i');
+            })
+            ->addColumn('action', function ($category) {
+                $name = htmlspecialchars($category->name, ENT_QUOTES, 'UTF-8');
+                $editBtn = '<button class="btn btn-sm btn-success editServiceCategory" data-id="' . $category->id . '" data-name="' . $name . '">Edit</button>';
+                // $deleteBtn = '<button class="btn btn-sm btn-danger deleteServiceCategory" data-id="' . $category->id . '">Hapus</button>';
+                return $editBtn;
             })
             ->rawColumns(['action'])
             ->make(true);

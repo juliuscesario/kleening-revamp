@@ -4,25 +4,23 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+
+// --- ADD THIS LINE ---
+use Illuminate\Http\RedirectResponse;
+// --------------------
 
 class AuthenticatedSessionController extends Controller
 {
     /**
      * Display the login view.
      */
-    public function create(): \Illuminate\View\View 
+    public function create(): \Illuminate\View\View
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     /**
      * Handle an incoming authentication request.
      */
@@ -32,7 +30,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // --- TAMBAHAN BARU ---
         // Buat API Token setelah user login
         $user = $request->user();
         $user->tokens()->delete(); // Hapus token lama
@@ -40,7 +37,6 @@ class AuthenticatedSessionController extends Controller
 
         // Kirim token ke session agar bisa diambil di Blade
         $request->session()->put('api_token', $token);
-        // --- AKHIR TAMBAHAN ---
 
         return redirect()->intended('/dashboard');
     }
