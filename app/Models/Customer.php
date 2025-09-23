@@ -36,6 +36,11 @@ class Customer extends Model
         return $this->hasMany(ServiceOrder::class);
     }
 
+    public function invoices()
+    {
+        return $this->hasManyThrough(Invoice::class, ServiceOrder::class);
+    }
+
     /**
      * Accessor untuk mendapatkan tanggal order terakhir secara dinamis.
      */

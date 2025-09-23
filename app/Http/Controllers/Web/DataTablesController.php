@@ -123,6 +123,67 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
+    public function customers()
+    {
+        $this->authorize('viewAny', \App\Models\Customer::class);
+
+        $query = \App\Models\Customer::withCount('addresses')->with(['serviceOrders.staff.area']);
+
+        return DataTables::of($query)
+            ->addColumn('area', function ($customer) {
+                $latestOrder = $customer->serviceOrders()->latest('work_date')->first();
+                if ($latestOrder && $latestOrder->staff->isNotEmpty()) {
+                    $firstStaff = $latestOrder->staff->first();
+                    if ($firstStaff && $firstStaff->area) {
+                        return $firstStaff->area->name;
+                    }
+                }
+                return 'N/A';
+            })
+            ->addColumn('latest_order_date', function ($customer) {
+                return $customer->last_order_date ? \Carbon\Carbon::parse($customer->last_order_date)->format('d M Y') : 'N/A';
+            })
+            ->editColumn('created_at', function ($customer) {
+                return \Carbon\Carbon::parse($customer->created_at)->format('d M Y');
+            })
+            ->addColumn('action', function ($customer) {
+                $detailUrl = route('web.customers.show', $customer->id);
+                $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
+                $actions .= ' <button class="btn btn-sm btn-info show-addresses" data-id="' . $customer->id . '">Alamat</button>';
+                if (auth()->user()->can('update', $customer)) {
+                    $actions .= ' <button class="btn btn-sm btn-warning edit-customer" data-id="' . $customer->id . '">Edit</button>';
+                }
+                if (auth()->user()->can('delete', $customer)) {
+                    $actions .= ' <button class="btn btn-sm btn-danger delete-customer" data-id="' . $customer->id . '">Hapus</button>';
+                }
+                return $actions;
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    public function addresses()
+    {
+        $this->authorize('viewAny', \App\Models\Address::class);
+
+        $query = \App\Models\Address::with('customer');
+
+        return DataTables::of($query)
+            ->addColumn('customer_name', function ($address) {
+                return $address->customer ? $address->customer->name : 'N/A';
+            })
+            ->addColumn('action', function ($address) {
+                $actions = '';
+                // Per user request, edit is done from customer side. We only allow delete here.
+                if (auth()->user()->can('delete', $address)) {
+                    $actions .= '<button class="btn btn-sm btn-danger delete-address" data-id="' . $address->id . '">Hapus</button>';
+                }
+                return $actions;
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
     // --- CONTOH UNTUK CUSTOMER ---
     // Nanti, saat Anda membuat halaman customer, Anda tinggal tambahkan method ini
     /*

@@ -29,6 +29,11 @@ Route::middleware(['auth'])->group(function () {
     // ROUTE UNTUK SERVICES FUNCTION
     Route::resource('services', \App\Http\Controllers\Web\ServiceController::class)->names('web.services');
     Route::get('data/services', [DataTablesController::class, 'services'])->name('data.services');
+    // ROUTE UNTUK CUSTOMER & ADDRESS FUNCTION
+    Route::resource('customers', \App\Http\Controllers\Web\CustomerController::class)->names('web.customers');
+    Route::get('data/customers', [DataTablesController::class, 'customers'])->name('data.customers');
+    Route::resource('addresses', \App\Http\Controllers\Web\AddressController::class)->names('web.addresses');
+    Route::get('data/addresses', [DataTablesController::class, 'addresses'])->name('data.addresses');
     // ROUTE for logout
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });

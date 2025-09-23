@@ -59,4 +59,10 @@ $(function() {
     if (document.getElementById('services-table')) {
         import('./pages/services.js');
     }
+    if (document.getElementById('customers-table')) {
+        import('./pages/customers.js');
+    }
+    if (document.getElementById('addresses-table')) {
+        import('./pages/addresses.js');
+    }
 });
