@@ -1,4 +1,8 @@
 @import '@tabler/core/dist/css/tabler.min.css';
+
+/* Import CSS untuk DataTables Bootstrap 5 */
+@import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

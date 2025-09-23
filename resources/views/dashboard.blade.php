@@ -1,17 +1,20 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
+@extends('layouts.admin')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    {{ __("You're logged in!") }}
+@section('title', 'Dashboard Utama')
+
+@section('content')
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards">
+                {{-- Di sinilah Anda akan meletakkan semua widget dashboard nanti --}}
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            Selamat Datang! Halaman dashboard Anda sudah menggunakan layout Tabler.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</x-app-layout>
+@endsection
