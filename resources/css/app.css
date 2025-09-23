@@ -1,5 +1,7 @@
 /* Impor stylesheet inti dari Tabler UI dari node_modules */
 @import '@tabler/core/dist/css/tabler.min.css';
+@import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
+@import 'datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css';
 
 /* Impor CSS untuk DataTables Bootstrap 5 */
 @import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';

@@ -12,6 +12,7 @@ $(function() {
     const table = $('#customers-table').DataTable({
         processing: true,
         serverSide: true,
+        responsive: true,
         ajax: ajaxUrl,
         columns: [
             { data: 'id', name: 'id' },

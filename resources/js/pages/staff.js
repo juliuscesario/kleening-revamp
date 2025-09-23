@@ -18,6 +18,7 @@ $(function () {
     staffTable = $('#staff-table').DataTable({
         processing: true,
         serverSide: true,
+        responsive: true,
         ajax: $('#staff-table').data('url'),
         columns: [
             { data: 'id', name: 'id' },

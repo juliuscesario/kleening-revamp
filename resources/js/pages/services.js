@@ -11,6 +11,7 @@ $(function() {
         destroy: true,
         processing: true,
         serverSide: true,
+        responsive: true,
         ajax: ajaxUrl,
         columns: [
             { data: 'id', name: 'id' },

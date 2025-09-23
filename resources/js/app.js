@@ -14,6 +14,7 @@ window.bootstrap = bootstrap;
 
 // 3. Import other plugins like DataTables.
 import 'datatables.net-bs5';
+import 'datatables.net-responsive-bs5';
 
 // 4. Import and set up SweetAlert2.
 import Swal from 'sweetalert2';
