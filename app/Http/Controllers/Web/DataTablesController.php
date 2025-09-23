@@ -93,6 +93,36 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
+    public function services()
+    {
+        $this->authorize('viewAny', \App\Models\Service::class);
+
+        $query = \App\Models\Service::with('category');
+
+        return DataTables::of($query)
+            ->editColumn('price', function ($service) {
+                return 'Rp ' . number_format($service->price, 0, ',', '.');
+            })
+            ->addColumn('category_name', function ($service) {
+                return $service->category->name;
+            })
+            ->editColumn('created_at', function ($service) {
+                return \Carbon\Carbon::parse($service->created_at)->format('d M Y H:i');
+            })
+            ->addColumn('action', function ($service) {
+                $actions = '';
+                if (auth()->user()->can('update', $service)) {
+                    $actions .= '<button class="btn btn-sm btn-warning edit-service" data-id="' . $service->id . '">Edit</button>';
+                }
+                if (auth()->user()->can('delete', $service)) {
+                    $actions .= ' <button class="btn btn-sm btn-danger delete-service" data-id="' . $service->id . '">Hapus</button>';
+                }
+                return $actions;
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
     // --- CONTOH UNTUK CUSTOMER ---
     // Nanti, saat Anda membuat halaman customer, Anda tinggal tambahkan method ini
     /*

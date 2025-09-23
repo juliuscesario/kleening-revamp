@@ -77,6 +77,12 @@ class ServiceController extends Controller
     {
         // Cek izin: apakah user boleh menghapus Service ini?
         $this->authorize('delete', $service);
+
+        // Cek apakah service ini sudah pernah digunakan di service order
+        if ($service->serviceOrderItems()->exists()) {
+            return response()->json(['message' => 'This service cannot be deleted because it is associated with existing service orders.'], 409); // 409 Conflict
+        }
+
         $service->delete();
         return response()->noContent();
     }

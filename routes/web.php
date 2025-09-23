@@ -26,6 +26,9 @@ Route::middleware(['auth'])->group(function () {
     // ROUTE UNTUK STAFF FUNCTION
     Route::resource('staff', WebStaffController::class)->names('web.staff');
     Route::get('data/staff', [DataTablesController::class, 'staff'])->name('data.staff');
+    // ROUTE UNTUK SERVICES FUNCTION
+    Route::resource('services', \App\Http\Controllers\Web\ServiceController::class)->names('web.services');
+    Route::get('data/services', [DataTablesController::class, 'services'])->name('data.services');
     // ROUTE for logout
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });

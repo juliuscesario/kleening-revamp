@@ -41,14 +41,14 @@
 
               {{-- NEW "MASTER" DROPDOWN MENU --}}
               @if(Auth::user()->role === 'owner' || Auth::user()->role === 'admin' || Auth::user()->role === 'co_owner')
-              <li class="nav-item dropdown {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') ? 'active' : '' }}">
+              <li class="nav-item dropdown {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') || request()->is('services*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-master" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false" >
                   <span class="nav-link-icon d-md-none d-lg-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-database" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0" /><path d="M4 6v6a8 3 0 0 0 16 0v-6" /><path d="M4 12v6a8 3 0 0 0 16 0v-6" /></svg>
                   </span>
                   <span class="nav-link-title">Master Data</span>
                 </a>
-                <div class="dropdown-menu {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') ? 'show' : '' }}">
+                <div class="dropdown-menu {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') || request()->is('services*') ? 'show' : '' }}">
                   <div class="dropdown-menu-columns">
                     <div class="dropdown-menu-column">
                       <a class="dropdown-item {{ request()->is('areas*') ? 'active' : '' }}" href="{{ route('web.areas.index') }}">
@@ -59,6 +59,9 @@
                       </a>
                       <a class="dropdown-item {{ request()->is('staff*') ? 'active' : '' }}" href="{{ route('web.staff.index') }}">
                         Manajemen Staff
+                      </a>
+                      <a class="dropdown-item {{ request()->is('services*') ? 'active' : '' }}" href="{{ route('web.services.index') }}">
+                        Manajemen Layanan
                       </a>
                     </div>
                   </div>

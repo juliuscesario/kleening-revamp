@@ -56,4 +56,7 @@ $(function() {
     if (document.getElementById('staff-table')) {
         import('./pages/staff.js');
     }
+    if (document.getElementById('services-table')) {
+        import('./pages/services.js');
+    }
 });
