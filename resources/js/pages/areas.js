@@ -1,8 +1,12 @@
 // resources/js/pages/areas.js
 
-$(function() { // Using the modern $(function(){}) syntax
+$(function() {
     const ajaxUrl = $('#areas-table').data('url');
     const apiUrl = $('#areas-table').data('api-url');
+    
+    // Get modal instance using Bootstrap 5 API
+    const modalElement = document.getElementById('modal-area');
+    const modalInstance = new bootstrap.Modal(modalElement);
 
     const table = $('#areas-table').DataTable({
         destroy: true,
@@ -22,7 +26,7 @@ $(function() { // Using the modern $(function(){}) syntax
         $('#area-id').val('');
         $('#modal-title').html("Tambah Area Baru");
         $('.form-control').removeClass('is-invalid');
-        $('#modal-area').modal('show');
+        modalInstance.show(); // Use Bootstrap 5 API
     });
 
     $('body').on('click', '.editArea', function() {
@@ -32,7 +36,7 @@ $(function() { // Using the modern $(function(){}) syntax
             $('#area-id').val(data.data.id);
             $('#area-name').val(data.data.name);
             $('.form-control').removeClass('is-invalid');
-            $('#modal-area').modal('show');
+            modalInstance.show(); // Use Bootstrap 5 API
         });
     });
 
@@ -45,11 +49,19 @@ $(function() { // Using the modern $(function(){}) syntax
         const url = area_id ? `${apiUrl}/${area_id}` : apiUrl;
         const method = area_id ? 'PUT' : 'POST';
         $.ajax({
-            url: url, type: method, data: formData,
+            url: url, 
+            type: method, 
+            data: formData,
             success: function() {
-                $('#modal-area').modal('hide');
+                modalInstance.hide(); // Use Bootstrap 5 API
                 table.ajax.reload();
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Data area berhasil disimpan.', showConfirmButton: false, timer: 1500 });
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Berhasil!', 
+                    text: 'Data area berhasil disimpan.', 
+                    showConfirmButton: false, 
+                    timer: 1500 
+                });
             },
             error: function(jqXHR) {
                 if (jqXHR.status === 422) {
@@ -68,13 +80,19 @@ $(function() { // Using the modern $(function(){}) syntax
     $('body').on('click', '.deleteArea', function() {
         const area_id = $(this).data("id");
         Swal.fire({
-            title: 'Apakah Anda Yakin?', text: "Data ini tidak dapat dikembalikan!", icon: 'warning',
-            showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, hapus!', cancelButtonText: 'Batal'
+            title: 'Apakah Anda Yakin?', 
+            text: "Data ini tidak dapat dikembalikan!", 
+            icon: 'warning',
+            showCancelButton: true, 
+            confirmButtonColor: '#d33', 
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, hapus!', 
+            cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    type: "DELETE", url: `${apiUrl}/${area_id}`,
+                    type: "DELETE", 
+                    url: `${apiUrl}/${area_id}`,
                     success: function() {
                         table.ajax.reload();
                         Swal.fire('Dihapus!', 'Data area berhasil dihapus.', 'success');

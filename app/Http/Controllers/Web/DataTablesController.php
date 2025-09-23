@@ -28,8 +28,8 @@ class DataTablesController extends Controller
             })
             ->addColumn('action', function ($area) {
                 return '
-                    <button class="btn btn-sm btn-warning edit-button" data-id="' . $area->id . '" data-name="' . e($area->name) . '">Edit</button>
-                    <button class="btn btn-sm btn-danger delete-button" data-id="' . $area->id . '">Hapus</button>
+                    <button class="btn btn-sm btn-warning editArea" data-id="' . $area->id . '" data-name="' . e($area->name) . '">Edit</button>
+                    <button class="btn btn-sm btn-danger deleteArea" data-id="' . $area->id . '">Hapus</button>
                 ';
             })
             ->rawColumns(['action'])

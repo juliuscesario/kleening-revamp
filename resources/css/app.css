@@ -4,4 +4,7 @@
 /* Impor CSS untuk DataTables Bootstrap 5 */
 @import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
 
+/* --- ADD THIS LINE --- */
+@import 'sweetalert2/dist/sweetalert2.min.css';
+
 /* CSS kustom Anda bisa ditambahkan di bawah sini */
