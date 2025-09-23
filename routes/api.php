@@ -32,7 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('addresses', AddressController::class)->only(['show', 'update', 'destroy']);
 
     //Route Staff
-    Route::apiResource('staff', StaffController::class);
+    Route::apiResource('staff', StaffController::class)->except(['destroy']);
+    Route::post('staff/{staff}/resign', [StaffController::class, 'resign'])->name('staff.resign');
 
     //Route Service Order
     Route::apiResource('service-orders', ServiceOrderController::class);

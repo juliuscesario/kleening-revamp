@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\ServiceCategory;
 use App\Models\Customer; // <-- Tambahkan model lain jika perlu
+use App\Models\Staff;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -56,6 +57,39 @@ class DataTablesController extends Controller
                 return $editBtn;
             })
             ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    public function staff()
+    {
+        $this->authorize('viewAny', \App\Models\Staff::class);
+
+        $query = \App\Models\Staff::with(['area', 'user'])->select('staff.*');
+
+        return DataTables::of($query)
+            ->addColumn('phone_number', function ($staff) {
+                return $staff->phone_number;
+            })
+            ->addColumn('area', function ($staff) {
+                return $staff->area->name;
+            })
+            ->addColumn('role', function ($staff) {
+                if ($staff->user) {
+                    return $staff->user->role;
+                }
+                return '<span class="badge bg-warning">No Login</span>';
+            })
+            ->editColumn('created_at', function ($staff) {
+                return \Carbon\Carbon::parse($staff->created_at)->format('d M Y');
+            })
+            ->addColumn('action', function ($staff) {
+                $actions = '<button class="btn btn-sm btn-info edit-button" data-id="' . $staff->id . '">Edit</button>';
+                if ($staff->user) {
+                    $actions .= ' <button class="btn btn-sm btn-danger resign-button" data-id="' . $staff->id . '">Resign</button>';
+                }
+                return $actions;
+            })
+            ->rawColumns(['action', 'role'])
             ->make(true);
     }
 

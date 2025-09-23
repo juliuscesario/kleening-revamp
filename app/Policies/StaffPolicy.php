@@ -46,4 +46,10 @@ class StaffPolicy
     {
         return false;
     }
+
+    // Siapa yang boleh resign staff? HANYA OWNER
+    public function resign(User $user, Staff $staff): bool
+    {
+        return false;
+    }
 }

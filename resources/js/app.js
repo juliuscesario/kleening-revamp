@@ -53,4 +53,7 @@ $(function() {
     if (document.getElementById('service-categories-table')) {
         import('./pages/service-categories.js');
     }
+    if (document.getElementById('staff-table')) {
+        import('./pages/staff.js');
+    }
 });

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\DataTablesController;
 use App\Http\Controllers\Web\AreaController as WebAreaController;
+use App\Http\Controllers\Web\StaffController as WebStaffController;
 use App\Http\Controllers\Web\ServiceCategoriesController as WebServiceCategoriesController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Http\Request;
@@ -22,6 +23,9 @@ Route::middleware(['auth'])->group(function () {
     // ROUTE UNTUK SERVICE CATEGORIES FUNCTION
     Route::resource('service-categories', WebServiceCategoriesController::class)->names('web.service-categories');
     Route::get('data/service-categories', [DataTablesController::class, 'serviceCategories'])->name('data.service-categories');
+    // ROUTE UNTUK STAFF FUNCTION
+    Route::resource('staff', WebStaffController::class)->names('web.staff');
+    Route::get('data/staff', [DataTablesController::class, 'staff'])->name('data.staff');
     // ROUTE for logout
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
