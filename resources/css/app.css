@@ -1,8 +1,7 @@
+/* Impor stylesheet inti dari Tabler UI dari node_modules */
 @import '@tabler/core/dist/css/tabler.min.css';
 
-/* Import CSS untuk DataTables Bootstrap 5 */
+/* Impor CSS untuk DataTables Bootstrap 5 */
 @import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* CSS kustom Anda bisa ditambahkan di bawah sini */

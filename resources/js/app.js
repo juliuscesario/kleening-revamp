@@ -1,17 +1,18 @@
+// resources/js/app.js
+
 import './bootstrap';
-// Import JS utama dari Tabler
+
+// 1. Import jQuery first and make it globally available.
+import jQuery from 'jquery';
+window.$ = window.jQuery = jQuery;
+
+// 2. Import Tabler's main JavaScript AFTER jQuery.
 import '@tabler/core/dist/js/tabler.min.js';
 
-// Import jQuery dan jadikan global
-import $ from 'jquery';
-window.$ = $;
-window.jQuery = $;
+// 3. Import any other plugins that depend on jQuery, like DataTables.
+import 'datatables.net-bs5';
 
-// Import DataTables SETELAH jQuery
-import 'datatables.net-bs5'; // <-- PASTIKAN BARIS INI ADA
-
-import Alpine from 'alpinejs';
-
-window.Alpine = Alpine;
-
-Alpine.start();
+// 4. Conditionally load the page-specific script.
+if (document.getElementById('areas-table')) {
+    import('./pages/areas.js');
+}
