@@ -30,8 +30,6 @@ Route::get('/dashboard', function () {
         ->get();
 
         $today = Carbon::today();
-        $tomorrow = Carbon::tomorrow();
-
         foreach ($allServiceOrders as $so) {
             $workDate = Carbon::parse($so->work_date);
 
@@ -46,7 +44,7 @@ Route::get('/dashboard', function () {
 
                 if ($workDate->isSameDay($today)) {
                     $todayServiceOrders->push($so);
-                } elseif ($workDate->isSameDay($tomorrow)) {
+                } elseif ($workDate->gt($today)) {
                     $tomorrowServiceOrders->push($so);
                 } elseif ($workDate->lt($today)) { // Past dates
                     $pastServiceOrders->push($so);
@@ -57,6 +55,8 @@ Route::get('/dashboard', function () {
 
     return view('dashboard', compact('todayServiceOrders', 'tomorrowServiceOrders', 'pastServiceOrders', 'cancelledServiceOrders', 'allBookedServiceOrders', 'allProsesServiceOrders'));
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+use App\Http\Controllers\Web\JsonDataController;
 
 Route::middleware(['auth'])->group(function () {
     // ROUTE UNTUK AREAS FUNCTION
@@ -70,10 +70,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/staff', [DataTablesController::class, 'staff'])->name('data.staff');
     // ROUTE UNTUK SERVICES FUNCTION
     Route::resource('services', \App\Http\Controllers\Web\ServiceController::class)->names('web.services');
-    Route::get('data/services', [DataTablesController::class, 'services'])->name('data.services');
+    Route::get('data/services', [JsonDataController::class, 'services'])->name('data.services');
     // ROUTE UNTUK CUSTOMER & ADDRESS FUNCTION
     Route::resource('customers', \App\Http\Controllers\Web\CustomerController::class)->names('web.customers');
-    Route::get('data/customers', [DataTablesController::class, 'customers'])->name('data.customers');
+    Route::get('data/customers', [JsonDataController::class, 'customers'])->name('data.customers');
+    Route::get('data/customers/{customer}/addresses', [JsonDataController::class, 'customerAddresses'])->name('data.customers.addresses');
+    Route::get('data/staff/by-area/{area}', [JsonDataController::class, 'staffByArea'])->name('data.staff.by-area');
     Route::resource('addresses', \App\Http\Controllers\Web\AddressController::class)->names('web.addresses');
     Route::get('data/addresses', [DataTablesController::class, 'addresses'])->name('data.addresses');
     Route::resource('service-orders', \App\Http\Controllers\Web\ServiceOrderController::class)->names('web.service-orders');

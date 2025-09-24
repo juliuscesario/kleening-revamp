@@ -72,4 +72,7 @@ $(function() {
     if (document.getElementById('service-orders-table')) {
         import('./pages/service-orders.js');
     }
+    if (document.getElementById('create-so-form')) {
+        import('./pages/service-orders-create.js');
+    }
 });

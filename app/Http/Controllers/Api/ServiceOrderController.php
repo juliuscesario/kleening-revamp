@@ -7,7 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // <-- PENTING untuk transaksi
 use App\Models\ServiceOrder;
 use App\Models\Service;
-use App\Http\Resources\ServiceOrderResource; // <-- Tambahkan Http di sini\nuse App\Http\Resources\StaffServiceOrderResource;\nuse App\Http\Resources\UserResource;
+use App\Http\Resources\ServiceOrderResource; // <-- Tambahkan Http di sini
+use App\Http\Resources\StaffServiceOrderResource;
+use App\Http\Resources\UserResource;
+use App\Models\Staff; // Import Staff model
 use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -198,7 +201,7 @@ class ServiceOrderController extends Controller
 
         $serviceOrder->update($validated);
 
-        return new ServiceOrderResource($serviceOrder);
+        return response()->json(['success' => true, 'message' => 'Service Order status updated successfully.', 'service_order' => new ServiceOrderResource($serviceOrder)]);
     }
 
     /**
@@ -273,6 +276,38 @@ class ServiceOrderController extends Controller
         });
 
         return response()->json(['success' => true, 'message' => 'Work proof photo uploaded successfully.']);
+    }
+
+    /**
+     * Uploads a signature for a Service Order.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\ServiceOrder  $serviceOrder
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function uploadSignature(Request $request, ServiceOrder $serviceOrder)
+    {
+        // Authorize the action (e.g., only staff or owner can upload signatures)
+        $this->authorize('uploadSignature', $serviceOrder);
+
+        $validated = $request->validate([
+            'signature_image' => 'required|string', // Base64 encoded image
+            'signer_type' => ['required', 'string', Rule::in(['customer', 'staff'])],
+            'staff_id' => 'required_if:signer_type,staff|exists:staff,id',
+        ]);
+
+        DB::transaction(function () use ($serviceOrder, $validated) {
+            if ($validated['signer_type'] === 'customer') {
+                $serviceOrder->customer_signature_image = $validated['signature_image'];
+                $serviceOrder->save();
+            } elseif ($validated['signer_type'] === 'staff') {
+                $serviceOrder->staff()->updateExistingPivot($validated['staff_id'], [
+                    'signature_image' => $validated['signature_image'],
+                ]);
+            }
+        });
+
+        return response()->json(['success' => true, 'message' => 'Signature uploaded successfully.']);
     }
 
     /**

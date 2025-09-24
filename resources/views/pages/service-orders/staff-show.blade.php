@@ -2,6 +2,16 @@
 @section('title', 'Detail Service Order')
 
 @section('content')
+<style>
+    .signature-pad-canvas {
+        width: 100%;
+        max-width: 500px; /* Limit max width for smaller saved images */
+        height: 200px; /* Or any desired height */
+        background-color: #f8f9fa; /* Light background for visibility */
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+    }
+</style>
 <div class="container-xl">
     <div class="page-header d-print-none">
         <div class="row align-items-center">
@@ -19,7 +29,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
                         Lengkapi Bukti Kerja
                     </button>
-                @elseif($serviceOrder->status == 'proses' && $serviceOrder->work_proof_completed_at)
+                @elseif($serviceOrder->status == 'proses' && $serviceOrder->work_proof_completed_at && (!$serviceOrder->customer_signature_image || $serviceOrder->staff->whereNull('pivot.signature_image')->isNotEmpty()))
                     <button class="btn btn-success me-2" id="requestSignatureBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M17 17c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M7 13v4a3 3 0 0 0 3 3h1" /><path d="M17 13v4a3 3 0 0 0 3 3h1" /><path d="M17 10h-1a2 2 0 0 0 -2 2v2a2 2 0 0 0 2 2h1" /><path d="M7 10h1a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-1" /></svg>
                         Minta Tanda Tangan
@@ -209,10 +219,47 @@
         </div>
     </div>
 </div>
+
+<!-- Signature Modal -->
+<div class="modal modal-blur fade" id="signatureModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="signatureModalTitle">Tanda Tangan untuk Service Order {{ $serviceOrder->so_number }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="customerSignatureSection">
+                    <h4 class="mb-3">Tanda Tangan Pelanggan</h4>
+                    <div class="mb-3">
+                        <canvas id="customerSignaturePad" class="border signature-pad-canvas"></canvas>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-warning me-2" id="clearCustomerSignature">Clear</button>
+                        <button type="button" class="btn btn-primary" id="saveCustomerSignature">Simpan Tanda Tangan Pelanggan</button>
+                    </div>
+                </div>
+
+                <div id="staffSignatureSection" style="display: none;">
+                    <h4 class="mb-3">Tanda Tangan Staff</h4>
+                    <div id="staffSignaturePads"></div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-primary" id="saveStaffSignature" style="display: none;">Simpan Tanda Tangan Staff</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const serviceOrderId = {{ $serviceOrder->id }};
         const startWorkForm = document.getElementById('startWorkForm');
         const photoInput = document.getElementById('photo');
         const photoPreview = document.getElementById('photoPreview');
@@ -410,6 +457,247 @@
                 alert('An error occurred while uploading photo.');
             });
         }
+
+        // --- Signature Pad Logic ---
+        const signatureModal = new bootstrap.Modal(document.getElementById('signatureModal'));
+        const requestSignatureBtn = document.getElementById('requestSignatureBtn');
+
+        const customerSignatureCanvas = document.getElementById('customerSignaturePad');
+        const customerSignaturePad = new SignaturePad(customerSignatureCanvas);
+        const clearCustomerSignatureBtn = document.getElementById('clearCustomerSignature');
+        const saveCustomerSignatureBtn = document.getElementById('saveCustomerSignature');
+        const customerSignatureSection = document.getElementById('customerSignatureSection');
+
+        const staffSignatureSection = document.getElementById('staffSignatureSection');
+        const staffSignaturePadsContainer = document.getElementById('staffSignaturePads');
+        const saveStaffSignatureBtn = document.getElementById('saveStaffSignature');
+
+        let staffMembers = @json($serviceOrder->staff);
+        let staffSignaturePads = {}; // To store SignaturePad instances for each staff
+        let customerSigned = {{ $serviceOrder->customer_signature_image ? 'true' : 'false' }}; // Track customer signature status
+
+        // Function to initialize a signature pad for a given canvas ID
+        function initializeSignaturePad(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const signaturePad = new SignaturePad(canvas);
+            // Adjust canvas size for responsiveness
+            function resizeCanvas() {
+                const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                canvas.width = canvas.offsetWidth * ratio;
+                canvas.height = canvas.offsetHeight * ratio;
+                canvas.getContext('2d').scale(ratio, ratio);
+                signaturePad.clear(); // important for canvas if re-sizing
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            return signaturePad;
+        }
+
+        // Event listener for "Minta Tanda Tangan" button
+        requestSignatureBtn.addEventListener('click', function () {
+            console.log('Minta Tanda Tangan button clicked.');
+            // Reset state
+            customerSignaturePad.clear();
+            staffSignaturePadsContainer.innerHTML = ''; // Clear previous staff pads
+            currentStaffIndex = 0;
+            staffSignaturePads = {};
+            saveStaffSignatureBtn.style.display = 'none';
+
+            // Check if customer has already signed
+            if (customerSigned) {
+                console.log('Customer already signed. Proceeding to staff signatures.');
+                customerSignatureSection.style.display = 'none';
+                staffSignatureSection.style.display = 'block';
+                renderStaffSignaturePad(); // Start with staff signatures
+            } else {
+                console.log('Customer has not signed. Displaying customer signature pad.');
+                customerSignatureSection.style.display = 'block';
+                staffSignatureSection.style.display = 'none';
+            }
+
+            signatureModal.show();
+        });
+
+        // Customer Signature Actions
+        clearCustomerSignatureBtn.addEventListener('click', function () {
+            console.log('Clear Customer Signature button clicked.');
+            customerSignaturePad.clear();
+        });
+
+        saveCustomerSignatureBtn.addEventListener('click', function () {
+            console.log('Save Customer Signature button clicked.');
+            if (customerSignaturePad.isEmpty()) {
+                alert('Mohon berikan tanda tangan pelanggan.');
+                return;
+            }
+            const signatureData = customerSignaturePad.toDataURL();
+            uploadSignature(serviceOrderId, signatureData, 'customer', null, function () {
+                alert('Tanda tangan pelanggan berhasil disimpan.');
+                customerSigned = true; // Update status after successful signature
+                customerSignatureSection.style.display = 'none';
+                staffSignatureSection.style.display = 'block';
+                renderStaffSignaturePad(); // Start with staff signatures
+            });
+        });
+
+        // Staff Signature Actions
+        function renderStaffSignaturePad() {
+            console.log('renderStaffSignaturePad called.');
+            console.log('Current staffMembers state:', staffMembers);
+
+            // Find the first staff member who hasn't signed yet
+            const nextUnsignedStaff = staffMembers.find(staff => !staff.pivot.signature_image || staff.pivot.signature_image === '');
+            console.log('Next unsigned staff:', nextUnsignedStaff);
+
+            if (nextUnsignedStaff) {
+                const staff = nextUnsignedStaff;
+                console.log('Rendering signature pad for staff:', staff.name, '(ID:', staff.id, ')');
+                staffSignaturePadsContainer.innerHTML = `
+                    <h5 class="mb-2">${staff.name}</h5>
+                    <canvas id="staffSignaturePad_${staff.id}" class="border signature-pad-canvas"></canvas>
+                    <div class="d-flex justify-content-end mt-2">
+                        <button type="button" class="btn btn-warning me-2" data-staff-id="${staff.id}" data-action="clear">Clear</button>
+                        <button type="button" class="btn btn-primary" data-staff-id="${staff.id}" data-action="save">Simpan Tanda Tangan Staff</button>
+                    </div>
+                `;
+                staffSignaturePads[staff.id] = initializeSignaturePad(`staffSignaturePad_${staff.id}`);
+
+                // Add event listeners for the dynamically created buttons
+                document.querySelector(`#staffSignaturePads button[data-staff-id="${staff.id}"][data-action="clear"]`).addEventListener('click', function() {
+                    console.log('Clear button clicked for staff:', staff.name);
+                    staffSignaturePads[staff.id].clear();
+                });
+                document.querySelector(`#staffSignaturePads button[data-staff-id="${staff.id}"][data-action="save"]`).addEventListener('click', function() {
+                    console.log('Save button clicked for staff:', staff.name);
+                    saveCurrentStaffSignature(staff.id);
+                });
+
+            } else {
+                console.log('All staff have signed.');
+                alert('Semua tanda tangan staff berhasil disimpan.');
+                signatureModal.hide();
+                // Hide the "Minta Tanda Tangan" button if all signatures are now present
+                if (customerSigned && staffMembers.every(staff => staff.pivot.signature_image && staff.pivot.signature_image !== '')) {
+                    console.log('All signatures complete. Hiding Minta Tanda Tangan button.');
+                    requestSignatureBtn.style.display = 'none';
+                    // Call function to update service order status to 'done'
+                    updateServiceOrderStatus(serviceOrderId, 'done');
+                }
+            }
+        }
+
+        function saveCurrentStaffSignature(staffId) {
+            console.log('saveCurrentStaffSignature called for staff ID:', staffId);
+            const signaturePad = staffSignaturePads[staffId];
+            if (signaturePad.isEmpty()) {
+                alert('Mohon berikan tanda tangan untuk staff ini.');
+                return;
+            }
+            const signatureData = signaturePad.toDataURL();
+            uploadSignature(serviceOrderId, signatureData, 'staff', staffId, function () {
+                alert('Tanda tangan staff berhasil disimpan.');
+                // Update the specific staff member's signature_image in the local staffMembers array
+                const signedStaffIndex = staffMembers.findIndex(staff => staff.id == staffId);
+                if (signedStaffIndex !== -1) {
+                    staffMembers[signedStaffIndex].pivot.signature_image = signatureData; // Store the actual signature or a placeholder
+                    console.log('Updated staffMembers after staff signature:', staffMembers[signedStaffIndex]);
+                }
+                // After saving, re-render to find the next unsigned staff
+                renderStaffSignaturePad();
+            });
+        }
+
+        // Generic upload signature function
+        function uploadSignature(serviceOrderId, signatureData, signerType, staffId, callback) {
+            const payload = {
+                signature_image: signatureData,
+                signer_type: signerType,
+            };
+            if (signerType === 'staff') {
+                payload.staff_id = staffId;
+            }
+
+            fetch(`/api/service-orders/${serviceOrderId}/signature`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
+                },
+                body: JSON.stringify(payload),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    callback();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while uploading signature.');
+            });
+        }
+
+        // Function to update service order status
+        function updateServiceOrderStatus(serviceOrderId, newStatus) {
+            fetch(`/api/service-orders/${serviceOrderId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
+                },
+                body: JSON.stringify({ status: newStatus }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Service Order status updated to ' + newStatus + ' successfully!');
+                    // Optionally, update the status badge on the page without a full reload
+                    const statusBadge = document.querySelector('.badge');
+                    if (statusBadge) {
+                        statusBadge.classList.remove('bg-warning', 'bg-primary', 'bg-danger', 'bg-secondary'); // Remove old status classes
+                        statusBadge.classList.add('bg-success'); // Add new status class
+                        statusBadge.textContent = 'Done'; // Update text
+                    }
+                } else {
+                    alert('Error updating Service Order status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the Service Order status.');
+            });
+        }
+
+        // Adjust canvas size for responsiveness
+        function resizeCanvas(canvas, signaturePadInstance) {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.clientWidth * ratio;
+            canvas.height = canvas.clientHeight * ratio;
+            canvas.getContext('2d').scale(ratio, ratio);
+            if (signaturePadInstance) {
+                signaturePadInstance.clear();
+            }
+        }
+
+        // Modify initializeSignaturePad to attach resize listener to the canvas itself
+        function initializeSignaturePad(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const signaturePad = new SignaturePad(canvas);
+            // Store signaturePad instance on canvas element for resize function
+            canvas.signaturePad = signaturePad;
+            // Initial resize
+            resizeCanvas(canvas, signaturePad);
+            // Attach resize listener
+            window.addEventListener('resize', () => resizeCanvas(canvas, signaturePad));
+            return signaturePad;
+        }
+
     });
 </script>
 @endpush

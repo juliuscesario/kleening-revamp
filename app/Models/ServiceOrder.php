@@ -37,6 +37,7 @@ class ServiceOrder extends Model
         'staff_notes',
         'created_by',
         'work_proof_completed_at',
+        'customer_signature_image',
     ];
 
     protected $casts = [
@@ -123,7 +124,7 @@ class ServiceOrder extends Model
 
     public function staff()
     {
-        return $this->belongsToMany(Staff::class, 'service_order_staff');
+        return $this->belongsToMany(Staff::class, 'service_order_staff')->withPivot('signature_image');
     }
 
     public function creator()

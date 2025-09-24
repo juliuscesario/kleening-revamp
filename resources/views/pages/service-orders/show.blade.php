@@ -138,6 +138,43 @@
                         @endif
                     </div>
                 </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="card-title">Tanda Tangan</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row row-cards">
+                            @if($serviceOrder->customer_signature_image)
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card card-sm">
+                                        <div class="card-body text-center">
+                                            <p class="text-muted">Tanda Tangan Pelanggan</p>
+                                            <img src="{{ $serviceOrder->customer_signature_image }}" alt="Customer Signature" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @foreach($serviceOrder->staff as $staff)
+                                @if($staff->pivot->signature_image)
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card card-sm">
+                                            <div class="card-body text-center">
+                                                <p class="text-muted">Tanda Tangan Staff: {{ $staff->name }}</p>
+                                                <img src="{{ $staff->pivot->signature_image }}" alt="Staff Signature" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+
+                            @if(!$serviceOrder->customer_signature_image && $serviceOrder->staff->every(fn($staff) => !$staff->pivot->signature_image))
+                                <p class="text-muted">Belum ada tanda tangan.</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="col-lg-4">
                 <div class="card">

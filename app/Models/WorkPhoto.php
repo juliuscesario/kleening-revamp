@@ -39,7 +39,7 @@ class WorkPhoto extends Model
     protected function photoUrl(): Attribute
     {
         return Attribute::make(
-            get: fn () => Storage::url($this->file_path),
+            get: fn () => url(Storage::url($this->file_path)),
         );
     }
     

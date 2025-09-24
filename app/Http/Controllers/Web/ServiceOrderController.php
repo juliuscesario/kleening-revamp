@@ -24,18 +24,7 @@ class ServiceOrderController extends Controller
 
     public function create(Request $request)
     {
-        $address = Address::with('customer')->findOrFail($request->address_id);
-        $user = Auth::user();
-
-        // Authorization
-        if ($user->role === 'co_owner' && $user->area_id !== $address->area_id) {
-            abort(403, 'Anda tidak diizinkan membuat pesanan untuk area ini.');
-        }
-
-        $services = Service::all();
-        $staff = Staff::where('area_id', $address->area_id)->get();
-
-        return view('pages.service-orders.create', compact('address', 'services', 'staff'));
+        return view('pages.service-orders.create');
     }
 
     public function show(ServiceOrder $serviceOrder)
@@ -112,6 +101,7 @@ class ServiceOrderController extends Controller
                 'staff_notes' => $request->staff_notes,
                 'status' => 'booked',
                 'created_by' => $user->id,
+                // This SO number generation can have race conditions. Consider a more robust method.
                 'so_number' => 'SO-' . date('Ymd') . '-' . str_pad(ServiceOrder::count() + 1, 4, '0', STR_PAD_LEFT),
             ]);
 
@@ -133,17 +123,25 @@ class ServiceOrderController extends Controller
             return $so;
         });
 
-        // For now, redirect to the customer detail page
-        return redirect()->route('web.customers.show', $request->customer_id)->with('success', 'Service Order berhasil dibuat.');
+        return redirect()->route('web.service-orders.show', $serviceOrder)->with('success', 'Service Order berhasil dibuat.');
     }
 
     public function printPdf(ServiceOrder $serviceOrder)
     {
-        $serviceOrder->load(['customer' => function ($query) {
-            $query->withTrashed();
-        }, 'address' => function ($query) {
-            $query->withTrashed();
-        }, 'address.area', 'items.service', 'staff']);
+        $serviceOrder->load([
+            'customer' => function ($query) {
+                $query->withTrashed();
+            },
+            'address' => function ($query) {
+                $query->withTrashed();
+            },
+            'address.area',
+            'items.service',
+            'staff' => function ($query) {
+                $query->withPivot('signature_image'); // Load staff signatures
+            },
+            'workPhotos.uploader' // Load work photos and their uploaders
+        ]);
 
         $pdf = Pdf::loadView('pdf.service-order', compact('serviceOrder'));
         return $pdf->download('service-order-' . $serviceOrder->so_number . '.pdf');

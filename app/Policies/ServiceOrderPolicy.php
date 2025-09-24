@@ -83,4 +83,16 @@ class ServiceOrderPolicy
     {
         return in_array($user->role, ['owner', 'co_owner', 'admin']);
     }
+
+    /**
+     * Determine whether the user can upload a signature for the service order.
+     */
+    public function uploadSignature(User $user, ServiceOrder $serviceOrder): bool
+    {
+        // Only staff assigned to the service order can upload signatures
+        if ($user->role == 'staff' && $user->staff) {
+            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+        }
+        return false;
+    }
 }

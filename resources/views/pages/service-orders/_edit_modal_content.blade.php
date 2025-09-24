@@ -37,7 +37,7 @@
                     <div class="input-group mb-2 service-item" data-item-id="{{ $item->id }}">
                         <select name="services[{{ $item->id }}][service_id]" class="form-select service-select">
                             @foreach($allServices as $service)
-                                <option value="{{ $service->id }}">{{ $service->name }}</option>
+                                <option value="{{ $service->id }}" {{ $item->service_id == $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
                             @endforeach
                         </select>
                         <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="1" min="1">
@@ -55,7 +55,7 @@
                     <div class="input-group mb-2 staff-member" data-staff-id="{{ $staffMember->id }}">
                         <select name="staff[]" class="form-select staff-select">
                             @foreach($allStaff as $staff)
-                                <option value="{{ $staff->id }}">{{ $staff->name }}</option>
+                                <option value="{{ $staff->id }}" {{ $staffMember->id == $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
                             @endforeach
                         </select>
                         <button type="button" class="btn btn-danger remove-staff-member">Remove</button>
@@ -118,7 +118,7 @@
         });
 
         document.getElementById('staff-container').addEventListener('click', function (e) {
-            if (e.target.classList.contains('remove-staff-item')) {
+            if (e.target.classList.contains('remove-staff-member')) {
                 e.target.closest('.staff-member').remove();
             }
         });

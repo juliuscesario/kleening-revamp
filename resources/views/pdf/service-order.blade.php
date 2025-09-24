@@ -46,6 +46,32 @@
             vertical-align: baseline;
             border-radius: .25rem;
         }
+        .signature-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            margin-top: 20px;
+            min-height: 100px; /* Ensure some height even if no signature */
+        }
+        .signature-box img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .work-photo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .work-photo-container img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #eee;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -87,10 +113,11 @@
             @php
                 $statusBadgeClass = '';
                 switch ($serviceOrder->status) {
-                    case 'baru': $statusBadgeClass = 'badge-info'; break;
+                    case 'booked': $statusBadgeClass = 'badge-primary'; break;
                     case 'proses': $statusBadgeClass = 'badge-warning'; break;
-                    case 'batal': $statusBadgeClass = 'badge-danger'; break;
-                    case 'selesai': $statusBadgeClass = 'badge-success'; break;
+                    case 'cancelled': $statusBadgeClass = 'badge-danger'; break;
+                    case 'done': $statusBadgeClass = 'badge-success'; break;
+                    case 'invoiced': $statusBadgeClass = 'badge-secondary'; break;
                     default: $statusBadgeClass = 'badge-secondary'; break;
                 }
             @endphp
@@ -140,18 +167,31 @@
     <h3>Notes</h3>
     <p><strong>Work Notes:</strong> {{ $serviceOrder->work_notes ?? 'N/A' }}</p>
 
-    <div style="margin-top: 50px; width: 100%;">
-        <div style="width: 48%; float: left; text-align: center;">
-            <p>Customer Signature,</p>
-            <br><br><br>
-            <p>(_________________________)</p>
+    <div style="margin-top: 20px;">
+        <h4>Signatures</h4>
+        <div style="width: 100%;">
+            @if($serviceOrder->customer_signature_image)
+                <div style="width: 30%; float: left; text-align: center; margin-bottom: 20px;">
+                    <p>Customer Signature: <br/>
+                    {{ $serviceOrder->customer->name }}</p>
+                    <div class="signature-box">
+                        <img src="{{ $serviceOrder->customer_signature_image }}" alt="Customer Signature" style="max-height: 80px;">
+                    </div>
+                </div>
+            @endif
+
+            @foreach($serviceOrder->staff as $staff)
+                @if($staff->pivot->signature_image)
+                    <div style="width: 30%; float: left; text-align: center; margin-bottom: 20px;">
+                        <p>Staff Signature: <br/>{{ $staff->name }}</p>
+                        <div class="signature-box">
+                            <img src="{{ $staff->pivot->signature_image }}" alt="Staff Signature" style="max-height: 80px;">
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+            <div style="clear: both;"></div> <!-- Clear floats -->
         </div>
-        <div style="width: 48%; float: right; text-align: center;">
-            <p>Staff Signature,</p>
-            <br><br><br>
-            <p>(_________________________)</p>
-        </div>
-        <div style="clear: both;"></div>
     </div>
 </body>
 </html>
