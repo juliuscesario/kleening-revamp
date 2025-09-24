@@ -5,12 +5,19 @@
 
         <div class="mb-3">
             <label class="form-label">Status</label>
-            <select name="status" class="form-select">
-                <option value="baru" {{ $serviceOrder->status == 'baru' ? 'selected' : '' }}>Baru</option>
+            <input type="hidden" name="original_status" value="{{ $serviceOrder->status }}">
+            <select name="status" class="form-select" id="service-order-status">
+                <option value="dijadwalkan" {{ $serviceOrder->status == 'dijadwalkan' ? 'selected' : '' }}>Dijadwalkan</option>
                 <option value="proses" {{ $serviceOrder->status == 'proses' ? 'selected' : '' }}>Proses</option>
                 <option value="selesai" {{ $serviceOrder->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
                 <option value="batal" {{ $serviceOrder->status == 'batal' ? 'selected' : '' }}>Batal</option>
+                <option value="invoiced" {{ $serviceOrder->status == 'invoiced' ? 'selected' : '' }}>Invoiced</option>
             </select>
+        </div>
+
+        <div class="mb-3" id="owner-password-field" style="display: none;">
+            <label class="form-label">Owner Password (for Batal)</label>
+            <input type="password" name="owner_password" class="form-control">
         </div>
 
         <div class="mb-3">
@@ -30,7 +37,7 @@
                     <div class="input-group mb-2 service-item" data-item-id="{{ $item->id }}">
                         <select name="services[{{ $item->id }}][service_id]" class="form-select service-select">
                             @foreach($allServices as $service)
-                                <option value="{{ $service->id }}" {{ $item->service_id == $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
+                                <option value="{{ $service->id }}">{{ $service->name }}</option>
                             @endforeach
                         </select>
                         <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="{{ $item->quantity }}" min="1">
@@ -48,7 +55,7 @@
                     <div class="input-group mb-2 staff-member" data-staff-id="{{ $staffMember->id }}">
                         <select name="staff[]" class="form-select staff-select">
                             @foreach($allStaff as $staff)
-                                <option value="{{ $staff->id }}" {{ $staffMember->id == $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
+                                <option value="{{ $staff->id }}">{{ $staff->name }}</option>
                             @endforeach
                         </select>
                         <button type="button" class="btn btn-danger remove-staff-member">Remove</button>
@@ -111,7 +118,7 @@
         });
 
         document.getElementById('staff-container').addEventListener('click', function (e) {
-            if (e.target.classList.contains('remove-staff-member')) {
+            if (e.target.classList.contains('remove-staff-item')) {
                 e.target.closest('.staff-member').remove();
             }
         });
@@ -142,5 +149,55 @@
                 alert('An error occurred while updating the Service Order.');
             });
         });
+
+        // Status transition logic
+        const statusSelect = document.getElementById('service-order-status');
+        const originalStatus = document.querySelector('input[name="original_status"]').value;
+        const ownerPasswordField = document.getElementById('owner-password-field');
+
+        function applyStatusLogic() {
+            const currentSelectedStatus = statusSelect.value;
+
+            // Reset all options to enabled first
+            Array.from(statusSelect.options).forEach(option => {
+                option.disabled = false;
+            });
+
+            if (originalStatus === 'dijadwalkan') {
+                // Can go to 'proses' or 'batal'
+                Array.from(statusSelect.options).forEach(option => {
+                    if (option.value !== 'dijadwalkan' && option.value !== 'proses' && option.value !== 'batal') {
+                        option.disabled = true;
+                    }
+                });
+            } else if (originalStatus === 'proses') {
+                // Can go to 'batal' or 'selesai'
+                Array.from(statusSelect.options).forEach(option => {
+                    if (option.value !== 'proses' && option.value !== 'batal' && option.value !== 'selesai') {
+                        option.disabled = true;
+                    }
+                });
+            } else if (originalStatus === 'batal' || originalStatus === 'selesai') {
+                // Cannot change from 'batal' or 'selesai'
+                Array.from(statusSelect.options).forEach(option => {
+                    if (option.value !== originalStatus) {
+                        option.disabled = true;
+                    }
+                });
+            }
+
+            // Show/hide owner password field for 'proses' to 'batal' transition
+            if (originalStatus === 'proses' && currentSelectedStatus === 'batal') {
+                ownerPasswordField.style.display = 'block';
+            } else {
+                ownerPasswordField.style.display = 'none';
+            }
+        }
+
+        // Apply logic on load
+        applyStatusLogic();
+
+        // Apply logic on status change
+        statusSelect.addEventListener('change', applyStatusLogic);
     });
 </script>

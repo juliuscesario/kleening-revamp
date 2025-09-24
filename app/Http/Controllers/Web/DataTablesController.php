@@ -140,14 +140,22 @@ class DataTablesController extends Controller
     {
         $this->authorize('viewAny', \App\Models\Customer::class);
 
-        $query = \App\Models\Customer::withCount('addresses');
+        $query = \App\Models\Customer::query()
+            ->select('customers.*')
+            ->withCount('addresses')
+            ->leftJoin('service_orders', 'customers.id', '=', 'service_orders.customer_id')
+            ->groupBy('customers.id')
+            ->selectRaw('MAX(service_orders.work_date) as last_order_date_raw');
 
         return DataTables::of($query)
+            ->order(function ($query) {
+                $query->orderBy('last_order_date_raw', 'desc');
+            })
             ->addColumn('latest_order_date', function ($customer) {
-                return $customer->last_order_date ? \Carbon\Carbon::parse($customer->last_order_date)->format('d M Y') : 'N/A';
+                return $customer->last_order_date_raw ? \Carbon\Carbon::parse($customer->last_order_date_raw)->format('d M Y') : 'N/A';
             })
             ->orderColumn('latest_order_date', function ($query, $order) {
-                $query->orderBy('last_order_date', $order);
+                $query->orderBy('last_order_date_raw', $order);
             })
             ->editColumn('created_at', function ($customer) {
                 return \Carbon\Carbon::parse($customer->created_at)->format('d M Y');
@@ -210,6 +218,9 @@ class DataTablesController extends Controller
         }, 'address.area']);
 
         return DataTables::of($query)
+            ->order(function ($query) {
+                $query->orderBy('work_date', 'desc');
+            })
             ->addColumn('customer_name', function ($so) {
                 if ($so->customer) {
                     $customerName = $so->customer->name;
@@ -230,15 +241,33 @@ class DataTablesController extends Controller
                 $detailUrl = route('web.service-orders.show', $so->id);
                 $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a> ';
                 
+                // Conditional buttons for status transitions
+                switch ($so->status) {
+                    case \App\Models\ServiceOrder::STATUS_DIJADWALKAN:
+                        $actions .= '<button class="btn btn-sm btn-primary change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_PROSES . '">Proses</button> ';
+                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_BATAL . '">Batal</button> ';
+                        break;
+                    case \App\Models\ServiceOrder::STATUS_PROSES:
+                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_SELESAI . '">Selesai</button> ';
+                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_BATAL . '">Batal</button> ';
+                        break;
+                    case \App\Models\ServiceOrder::STATUS_INVOICED:
+                        if ($so->status !== \App\Models\ServiceOrder::STATUS_SELESAI) {
+                            $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_SELESAI . '">Selesai</button> ';
+                        }
+                        break;
+                    // For BATAL and SELESAI, no further status transitions are allowed from the UI
+                }
+
                 if ($so->invoice) {
                     $actions .= '<a href="#" class="btn btn-sm btn-success">Invoice</a> ';
-                } else {
+                } else if ($so->status === \App\Models\ServiceOrder::STATUS_SELESAI) {
                     $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Create Invoice</button> ';
                 }
 
                 return $actions;
             })
-            ->rawColumns(['action', 'customer_name'])
+            ->rawColumns(['action', 'customer_name', 'status'])
             ->make(true);
     }
 

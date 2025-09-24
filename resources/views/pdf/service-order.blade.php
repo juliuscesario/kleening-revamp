@@ -83,7 +83,19 @@
             @endif
         </p>
         <p><strong>Work Date:</strong> {{ \Carbon\Carbon::parse($serviceOrder->work_date)->format('d M Y') }}</p>
-        <p><strong>Status:</strong> {{ ucfirst($serviceOrder->status) }}</p>
+        <p><strong>Status:</strong>
+            @php
+                $statusBadgeClass = '';
+                switch ($serviceOrder->status) {
+                    case 'baru': $statusBadgeClass = 'badge-info'; break;
+                    case 'proses': $statusBadgeClass = 'badge-warning'; break;
+                    case 'batal': $statusBadgeClass = 'badge-danger'; break;
+                    case 'selesai': $statusBadgeClass = 'badge-success'; break;
+                    default: $statusBadgeClass = 'badge-secondary'; break;
+                }
+            @endphp
+            <span class="badge {{ $statusBadgeClass }}">{{ ucfirst($serviceOrder->status) }}</span>
+        </p>
     </div>
 
     <h3>Ordered Services</h3>

@@ -17,6 +17,12 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><rect x="7" y="13" width="10" height="8" rx="2" /></svg>
                     Print Service Order
                 </a>
+                @if ($serviceOrder->status === 'proses')
+                    <button class="btn btn-info" id="request-signature-button" data-id="{{ $serviceOrder->id }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 19l-2 2l-2 -2" /><path d="M14 19l2 2l2 -2" /><path d="M18 13l-2 -2l-2 2" /><path d="M6 13l2 -2l2 2" /><path d="M12 3c-1.333 0 -2.667 .667 -4 2c-1.333 1.333 -2 2.667 -2 4c0 1.333 .667 2.667 2 4l4 4l4 -4c1.333 -1.333 2 -2.667 2 -4c0 -1.333 -.667 -2.667 -2 -4c-1.333 -1.333 -2.667 -2 -4 -2z" /></svg>
+                        Request Signature
+                    </button>
+                @endif
                 <a href="{{ route('web.service-orders.index') }}" class="btn">Kembali</a>
             </div>
         </div>
@@ -58,7 +64,20 @@
                             @endif
                         </p>
                         <p><strong>Tanggal Pengerjaan:</strong> {{ \Carbon\Carbon::parse($serviceOrder->work_date)->format('d M Y') }}</p>
-                        <p><strong>Status:</strong> <span class="badge bg-secondary text-bg-secondary">{{ $serviceOrder->status }}</span></p>
+                        <p><strong>Status:</strong>
+                            @php
+                                $statusBadgeClass = '';
+                                switch ($serviceOrder->status) {
+                                    case 'dijadwalkan': $statusBadgeClass = 'bg-primary'; break;
+                                    case 'proses': $statusBadgeClass = 'bg-warning'; break;
+                                    case 'batal': $statusBadgeClass = 'bg-danger'; break;
+                                    case 'selesai': $statusBadgeClass = 'bg-success'; break;
+                                    case 'invoiced': $statusBadgeClass = 'bg-secondary'; break;
+                                    default: $statusBadgeClass = 'bg-secondary'; break;
+                                }
+                            @endphp
+                            <span class="badge {{ $statusBadgeClass }}">{{ ucfirst($serviceOrder->status) }}</span>
+                        </p>
                     </div>
                 </div>
 

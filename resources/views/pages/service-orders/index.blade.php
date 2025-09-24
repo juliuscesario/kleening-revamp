@@ -22,7 +22,8 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table id="service-orders-table" class="table card-table table-vcenter text-nowrap datatable"
-                        data-url="{{ route('data.service-orders') }}">
+                        data-url="{{ route('data.service-orders') }}"
+                        data-update-url-template="{{ route('web.service-orders.update', ['service_order' => '__SERVICE_ORDER_ID__']) }}">
                         <thead>
                             <tr>
                                 <th>SO Number</th>

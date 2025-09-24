@@ -10,6 +10,7 @@ use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ServiceOrderController extends Controller
@@ -90,7 +91,7 @@ class ServiceOrderController extends Controller
                 'work_date' => $request->work_date,
                 'work_notes' => $request->work_notes,
                 'staff_notes' => $request->staff_notes,
-                'status' => 'baru',
+                'status' => 'dijadwalkan',
                 'created_by' => $user->id,
                 'so_number' => 'SO-' . date('Ymd') . '-' . str_pad(ServiceOrder::count() + 1, 4, '0', STR_PAD_LEFT),
             ]);
@@ -131,67 +132,91 @@ class ServiceOrderController extends Controller
 
     public function update(Request $request, ServiceOrder $serviceOrder)
     {
-        $request->validate([
+        $originalStatus = $serviceOrder->status;
+        $newStatus = $request->status;
+        $user = Auth::user();
+
+        $rules = [
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
-            'status' => 'required|in:baru,proses,selesai,batal',
-            'services' => 'required|array|min:1',
-            'services.*.service_id' => 'required|exists:services,id',
-            'services.*.quantity' => 'required|integer|min:1',
+            'status' => 'required|in:dijadwalkan,proses,selesai,batal,invoiced',
+            'services' => 'sometimes|array|min:1',
+            'services.*.service_id' => 'sometimes|exists:services,id',
+            'services.*.quantity' => 'sometimes|integer|min:1',
             'staff' => 'nullable|array',
             'staff.*' => 'exists:staff,id',
-        ]);
+        ];
 
-        DB::transaction(function () use ($request, $serviceOrder) {
+        // Add owner password validation if changing from proses to batal
+        if ($originalStatus === \App\Models\ServiceOrder::STATUS_PROSES && $newStatus === \App\Models\ServiceOrder::STATUS_BATAL) {
+            $rules['owner_password'] = 'required|string';
+        }
+
+        $request->validate($rules);
+
+        // --- Status Transition Logic ---
+        if ($originalStatus !== $newStatus) {
+            $transition = $serviceOrder->canTransitionTo($newStatus, $user, $request->owner_password);
+
+            if (!$transition['allowed']) {
+                return response()->json(['success' => false, 'message' => $transition['message']], 400);
+            }
+        }
+
+        DB::transaction(function () use ($request, $serviceOrder, $newStatus) {
             // Update notes and status
             $serviceOrder->work_notes = $request->work_notes;
             $serviceOrder->staff_notes = $request->staff_notes;
-            $serviceOrder->status = $request->status;
+            $serviceOrder->status = $newStatus;
             $serviceOrder->save();
 
             // Sync services
-            $currentServiceItemIds = $serviceOrder->items->pluck('id')->toArray();
-            $newServiceItemIds = [];
+            if ($request->has('services')) {
+                $currentServiceItemIds = $serviceOrder->items->pluck('id')->toArray();
+                $newServiceItemIds = [];
 
-            foreach ($request->services as $serviceData) {
-                $service = Service::find($serviceData['service_id']);
-                $quantity = $serviceData['quantity'];
-                $price = $service->price;
-                $total = $price * $quantity;
+                foreach ($request->services as $serviceData) {
+                    $service = Service::find($serviceData['service_id']);
+                    $quantity = $serviceData['quantity'];
+                    $price = $service->price;
+                    $total = $price * $quantity;
 
-                // Check if it's an existing item or a new one
-                if (isset($serviceData['id']) && in_array($serviceData['id'], $currentServiceItemIds)) {
-                    // Update existing item
-                    $item = ServiceOrderItem::find($serviceData['id']);
-                    if ($item) {
-                        $item->service_id = $service->id;
-                        $item->quantity = $quantity;
-                        $item->price = $price;
-                        $item->total = $total;
-                        $item->save();
+                    // Check if it's an existing item or a new one
+                    if (isset($serviceData['id']) && in_array($serviceData['id'], $currentServiceItemIds)) {
+                        // Update existing item
+                        $item = ServiceOrderItem::find($serviceData['id']);
+                        if ($item) {
+                            $item->service_id = $service->id;
+                            $item->quantity = $quantity;
+                            $item->price = $price;
+                            $item->total = $total;
+                            $item->save();
+                        }
+                        $newServiceItemIds[] = $serviceData['id'];
+                    } else {
+                        // Create new item
+                        $newItem = ServiceOrderItem::create([
+                            'service_order_id' => $serviceOrder->id,
+                            'service_id' => $service->id,
+                            'quantity' => $quantity,
+                            'price' => $price,
+                            'total' => $total,
+                        ]);
+                        // Add the ID of the newly created item to prevent it from being deleted
+                        $newServiceItemIds[] = $newItem->id;
                     }
-                    $newServiceItemIds[] = $serviceData['id'];
-                } else {
-                    // Create new item
-                    $newItem = ServiceOrderItem::create([
-                        'service_order_id' => $serviceOrder->id,
-                        'service_id' => $service->id,
-                        'quantity' => $quantity,
-                        'price' => $price,
-                        'total' => $total,
-                    ]);
-                    // Add the ID of the newly created item to prevent it from being deleted
-                    $newServiceItemIds[] = $newItem->id;
                 }
+
+                // Delete removed service items
+                ServiceOrderItem::where('service_order_id', $serviceOrder->id)
+                                 ->whereNotIn('id', $newServiceItemIds)
+                                 ->delete();
             }
 
-            // Delete removed service items
-            ServiceOrderItem::where('service_order_id', $serviceOrder->id)
-                             ->whereNotIn('id', $newServiceItemIds)
-                             ->delete();
-
             // Sync staff
-            $serviceOrder->staff()->sync($request->staff);
+            if ($request->has('staff')) {
+                $serviceOrder->staff()->sync($request->staff);
+            }
         });
 
         return response()->json(['success' => true, 'message' => 'Service Order updated successfully.']);

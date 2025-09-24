@@ -38,9 +38,9 @@ class ServiceOrderController extends Controller
             'work_date' => 'required|date',
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.service_id' => 'required|exists:services,id',
-            'items.*.quantity' => 'required|integer|min:1',
+            'items' => 'sometimes|array|min:1',
+            'items.*.service_id' => 'sometimes|required|exists:services,id',
+            'items.*.quantity' => 'sometimes|required|integer|min:1',
             'staff_ids' => 'required|array|min:1',
             'staff_ids.*' => 'required|exists:staff,id',
         ]);
@@ -56,7 +56,7 @@ class ServiceOrderController extends Controller
                 'work_notes' => $validated['work_notes'] ?? null,
                 'staff_notes' => $validated['staff_notes'] ?? null,
                 'so_number' => 'SO-' . time(), // Nanti bisa dibuat lebih canggih
-                'status' => 'confirmed', // Status awal
+                'status' => ServiceOrder::STATUS_DIJADWALKAN, // Status awal
                 'created_by' => $request->user()->id, // User yang sedang login
             ]);
 
@@ -97,23 +97,46 @@ class ServiceOrderController extends Controller
     public function update(Request $request, ServiceOrder $serviceOrder)
     {
         $this->authorize('update', $serviceOrder);
-        $validated = $request->validate([
+        $rules = [
             'customer_id' => 'sometimes|required|exists:customers,id',
             'address_id' => 'sometimes|required|exists:addresses,id',
             'work_date' => 'sometimes|required|date',
-            'status' => 'sometimes|required|string', // Untuk mengubah status
+            'status' => ['sometimes', 'required', 'string', Rule::in([ServiceOrder::STATUS_DIJADWALKAN, ServiceOrder::STATUS_PROSES, ServiceOrder::STATUS_BATAL, ServiceOrder::STATUS_SELESAI, ServiceOrder::STATUS_INVOICED])],
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
-            'items' => 'sometimes|required|array|min:1',
-            'items.*.service_id' => 'required|exists:services,id',
-            'items.*.quantity' => 'required|integer|min:1',
+            'items' => 'sometimes|array|min:1',
+            'items.*.service_id' => 'sometimes|required|exists:services,id',
+            'items.*.quantity' => 'sometimes|required|integer|min:1',
             'staff_ids' => 'sometimes|required|array|min:1',
             'staff_ids.*' => 'required|exists:staff,id',
-        ]);
+            'owner_password' => 'nullable|string', // Default to nullable
+        ];
 
-        $updatedServiceOrder = DB::transaction(function () use ($validated, $serviceOrder) {
+        $originalStatus = $serviceOrder->status;
+        $newStatus = $request->status ?? $originalStatus;
+
+        // Conditionally make owner_password required
+        if ($originalStatus === ServiceOrder::STATUS_PROSES && $newStatus === ServiceOrder::STATUS_BATAL) {
+            $rules['owner_password'] = 'required|string';
+        }
+
+        $validated = $request->validate($rules);
+
+        $user = $request->user();
+
+        // --- Status Transition Logic ---
+        if ($originalStatus !== $newStatus) {
+            $transition = $serviceOrder->canTransitionTo($newStatus, $user, $validated['owner_password'] ?? null);
+
+            if (!$transition['allowed']) {
+                return response()->json(['success' => false, 'message' => $transition['message']], 400);
+            }
+        }
+        // --- End Status Transition Logic ---
+
+        $updatedServiceOrder = DB::transaction(function () use ($validated, $serviceOrder, $newStatus) {
             // 1. Update data utama Service Order
-            $serviceOrder->update($validated);
+            $serviceOrder->update(array_merge($validated, ['status' => $newStatus]));
 
             // 2. Jika ada data 'items' yang dikirim, sinkronisasi item-itemnya
             if (isset($validated['items'])) {
@@ -147,13 +170,34 @@ class ServiceOrderController extends Controller
      */
     public function updateStatus(Request $request, ServiceOrder $serviceOrder)
     {
-        // Pertama, cek izin menggunakan policy method yang baru kita buat
         $this->authorize('updateStatus', $serviceOrder);
 
-        // Validasi input, staff hanya boleh mengirim 'status'
         $validated = $request->validate([
-            'status' => 'required|string|in:in_progress,done,needs_review', // Contoh status
+            'status' => ['required', 'string', Rule::in([
+                ServiceOrder::STATUS_DIJADWALKAN,
+                ServiceOrder::STATUS_PROSES,
+                ServiceOrder::STATUS_SELESAI,
+                ServiceOrder::STATUS_BATAL,
+                ServiceOrder::STATUS_INVOICED,
+            ])],
         ]);
+
+        $originalStatus = $serviceOrder->status;
+        $newStatus = $validated['status'];
+        $user = $request->user();
+
+        // Add owner password validation if changing from proses to batal
+        if ($originalStatus === ServiceOrder::STATUS_PROSES && $newStatus === ServiceOrder::STATUS_BATAL) {
+            $request->validate([
+                'owner_password' => 'required|string',
+            ]);
+        }
+
+        $transition = $serviceOrder->canTransitionTo($newStatus, $user, $request->owner_password);
+
+        if (!$transition['allowed']) {
+            return response()->json(['success' => false, 'message' => $transition['message']], 400);
+        }
 
         $serviceOrder->update($validated);
 
