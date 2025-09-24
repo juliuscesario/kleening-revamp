@@ -131,7 +131,7 @@ class ServiceOrderController extends Controller
 
         $updatedServiceOrder = DB::transaction(function () use ($validated, $serviceOrder, $newStatus) {
             // 1. Update data utama Service Order
-            $serviceOrder->update(array_merge($validated, ['status' => $newStatus]));
+            $serviceOrder->update(array_merge($validated, ['status': $newStatus]));
 
             // 2. Jika ada data 'items' yang dikirim, sinkronisasi item-itemnya
             if (isset($validated['items'])) {

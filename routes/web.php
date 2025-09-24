@@ -13,7 +13,49 @@ use Carbon\Carbon;
 Route::redirect('/', '/login');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $user = Auth::user();
+    $todayServiceOrders = collect();
+    $tomorrowServiceOrders = collect();
+    $pastServiceOrders = collect();
+    $cancelledServiceOrders = collect();
+    $allBookedServiceOrders = collect();
+    $allProsesServiceOrders = collect();
+
+    if ($user->role === 'staff' && $user->staff) {
+        $allServiceOrders = App\Models\ServiceOrder::whereHas('staff', function ($q) use ($user) {
+            $q->where('staff.id', $user->staff->id);
+        })
+        ->with(['customer', 'address', 'items.service', 'staff'])
+        ->orderBy('work_date', 'asc')
+        ->get();
+
+        $today = Carbon::today();
+        $tomorrow = Carbon::tomorrow();
+
+        foreach ($allServiceOrders as $so) {
+            $workDate = Carbon::parse($so->work_date);
+
+            if ($so->status === 'cancelled') {
+                $cancelledServiceOrders->push($so);
+            } else {
+                if ($so->status === 'booked') {
+                    $allBookedServiceOrders->push($so);
+                } elseif ($so->status === 'proses') {
+                    $allProsesServiceOrders->push($so);
+                }
+
+                if ($workDate->isSameDay($today)) {
+                    $todayServiceOrders->push($so);
+                } elseif ($workDate->isSameDay($tomorrow)) {
+                    $tomorrowServiceOrders->push($so);
+                } elseif ($workDate->lt($today)) { // Past dates
+                    $pastServiceOrders->push($so);
+                }
+            }
+        }
+    }
+
+    return view('dashboard', compact('todayServiceOrders', 'tomorrowServiceOrders', 'pastServiceOrders', 'cancelledServiceOrders', 'allBookedServiceOrders', 'allProsesServiceOrders'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
