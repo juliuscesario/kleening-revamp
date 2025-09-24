@@ -115,11 +115,6 @@ class ServiceOrderController extends Controller
         $originalStatus = $serviceOrder->status;
         $newStatus = $request->status ?? $originalStatus;
 
-        // Conditionally make owner_password required
-        if ($originalStatus === ServiceOrder::STATUS_PROSES && $newStatus === ServiceOrder::STATUS_CANCELLED) {
-            $rules['owner_password'] = 'required|string';
-        }
-
         $validated = $request->validate($rules);
 
         $user = $request->user();
@@ -185,13 +180,6 @@ class ServiceOrderController extends Controller
         $originalStatus = $serviceOrder->status;
         $newStatus = $validated['status'];
         $user = $request->user();
-
-        // Add owner password validation if changing from proses to cancelled
-        if ($originalStatus === ServiceOrder::STATUS_PROSES && $newStatus === ServiceOrder::STATUS_CANCELLED) {
-            $request->validate([
-                'owner_password' => 'required|string',
-            ]);
-        }
 
         $transition = $serviceOrder->canTransitionTo($newStatus, $user, $request->owner_password);
 

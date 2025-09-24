@@ -19,6 +19,17 @@
 
     <div class="page-body">
         <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Filter Status</h3>
+                <div class="card-actions">
+                    <button class="btn btn-outline-primary filter-status-btn" data-status="all">All</button>
+                    <button class="btn btn-outline-info filter-status-btn" data-status="booked">Booked</button>
+                    <button class="btn btn-outline-warning filter-status-btn" data-status="proses">Proses</button>
+                    <button class="btn btn-outline-success filter-status-btn" data-status="done">Done</button>
+                    <button class="btn btn-outline-danger filter-status-btn" data-status="cancelled">Cancelled</button>
+                    <button class="btn btn-outline-secondary filter-status-btn" data-status="invoiced">Invoiced</button>
+                </div>
+            </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table id="service-orders-table" class="table card-table table-vcenter text-nowrap datatable"

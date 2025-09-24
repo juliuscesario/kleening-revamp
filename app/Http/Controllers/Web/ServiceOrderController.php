@@ -147,11 +147,6 @@ class ServiceOrderController extends Controller
             'staff.*' => 'exists:staff,id',
         ];
 
-        // Add owner password validation if changing from proses to cancelled
-        if ($originalStatus === \App\Models\ServiceOrder::STATUS_PROSES && $newStatus === \App\Models\ServiceOrder::STATUS_CANCELLED) {
-            $rules['owner_password'] = 'required|string';
-        }
-
         $request->validate($rules);
 
         // --- Status Transition Logic ---

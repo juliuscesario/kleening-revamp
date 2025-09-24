@@ -83,9 +83,6 @@ class ServiceOrder extends Model
                     if (!$user || $user->role !== 'owner') {
                         return ['allowed' => false, 'message' => 'Only owner can change status from "proses" to "cancelled".'];
                     }
-                    if (!Hash::check($ownerPassword, $user->password)) {
-                        return ['allowed' => false, 'message' => 'Owner password incorrect.'];
-                    }
                     return ['allowed' => true, 'message' => ''];
                 } elseif ($newStatus === self::STATUS_DONE) {
                     return ['allowed' => true, 'message' => ''];

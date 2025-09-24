@@ -1,13 +1,18 @@
 // resources/js/pages/service-orders.js
-$(function() {
-    const ajaxUrl = $('#service-orders-table').data('url');
-    const updateUrlTemplate = $('#service-orders-table').data('update-url-template');
+const ajaxUrl = $('#service-orders-table').data('url');
+const updateUrlTemplate = $('#service-orders-table').data('update-url-template');
 
-    $('#service-orders-table').DataTable({
+$(function() {
+    let serviceOrdersTable = $('#service-orders-table').DataTable({
         processing: true,
         serverSide: true,
         responsive: true,
-        ajax: ajaxUrl,
+        ajax: {
+            url: ajaxUrl, // Explicitly set the URL here
+            data: function (d) {
+                d.status = $('#service-orders-table').data('current-status-filter');
+            }
+        },
         columns: [
             { data: 'so_number', name: 'so_number' },
             { data: 'customer_name', name: 'customer.name' },
@@ -42,20 +47,20 @@ $(function() {
                 data: requestData,
                 success: function(response) {
                     if (response.success) {
-                        toastr.success(response.message || 'Status updated successfully!');
-                        $('#service-orders-table').DataTable().ajax.reload();
+                        alert(response.message || 'Status updated successfully!');
+                        serviceOrdersTable.ajax.reload(); // Use the variable here
                     } else {
-                        toastr.error(response.message || 'Failed to update status.');
+                        alert(response.message || 'Failed to update status.');
                     }
                 },
                 error: function(xhr) {
                     const errorMsg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'An error occurred.';
-                    toastr.error(errorMsg);
+                    alert(errorMsg);
                 }
             });
         };
 
-        if (currentStatus === 'proses' && newStatus === 'batal') {
+        if (currentStatus === 'proses' && newStatus === 'cancelled') {
             // Prompt for owner password
             Swal.fire({
                 title: 'Konfirmasi Pembatalan',
@@ -80,19 +85,23 @@ $(function() {
             });
         } else {
             // For other transitions, confirm directly
-            Swal.fire({
-                title: 'Konfirmasi Perubahan Status',
-                text: `Anda yakin ingin mengubah status menjadi ${newStatus}?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, ubah!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    performStatusUpdate();
-                }
-            });
+            if (confirm(`Anda yakin ingin mengubah status menjadi ${newStatus}?`)) {
+                performStatusUpdate();
+            }
         }
     });
+
+    // Handle status filter button clicks
+    $('.filter-status-btn').on('click', function() {
+        const statusFilter = $(this).data('status');
+        $('#service-orders-table').data('current-status-filter', statusFilter);
+        serviceOrdersTable.ajax.reload();
+
+        // Update active state of filter buttons
+        $('.filter-status-btn').removeClass('btn-primary').addClass('btn-outline-primary');
+        $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+    });
+
+    // Initialize active filter button
+    $('.filter-status-btn[data-status="all"]').addClass('btn-primary').removeClass('btn-outline-primary');
 });

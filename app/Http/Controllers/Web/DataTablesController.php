@@ -11,6 +11,7 @@ use App\Models\Scopes\AreaScope;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request; // <-- ADD THIS LINE
 
 class DataTablesController extends Controller
 {
@@ -179,7 +180,7 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
-    public function addresses()
+    public function addresses(Request $request)
     {
         $this->authorize('viewAny', \App\Models\Address::class);
 
@@ -200,7 +201,7 @@ class DataTablesController extends Controller
                 if ($address->google_maps_link) {
                     $actions .= '<a href="' . $address->google_maps_link . '" target="_blank" class="btn btn-sm btn-info">Peta</a> ';
                 }
-                if (auth()->user()->can('delete', 'App\\Models\\Address')) {
+                if (auth()->user()->can('delete', $address)) { // Pass the $address instance
                     $actions .= '<button class="btn btn-sm btn-danger delete-address" data-id="' . $address->id . '">Hapus</button>';
                 }
                 return $actions;
@@ -209,13 +210,18 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
-    public function serviceOrders()
+    public function serviceOrders(Request $request)
     {
         $this->authorize('viewAny', \App\Models\ServiceOrder::class);
 
         $query = \App\Models\ServiceOrder::with(['customer' => function ($query) {
             $query->withoutGlobalScope(AreaScope::class)->withTrashed();
         }, 'address.area']);
+
+        // Apply status filter if present in the request
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
 
         return DataTables::of($query)
             ->order(function ($query) {
@@ -237,6 +243,9 @@ class DataTablesController extends Controller
             ->orderColumn('work_date', function ($query, $order) {
                 $query->orderBy('work_date', $order);
             })
+            ->orderColumn('status', function ($query, $order) {
+                $query->orderBy('status', $order);
+            })
             ->addColumn('action', function ($so) {
                 $detailUrl = route('web.service-orders.show', $so->id);
                 $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a> ';
@@ -249,14 +258,11 @@ class DataTablesController extends Controller
                         break;
                     case \App\Models\ServiceOrder::STATUS_PROSES:
                         $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_DONE . '">Done</button> ';
-                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_CANCELLED . '">Cancel</button> ';
-                        break;
-                    case \App\Models\ServiceOrder::STATUS_INVOICED:
-                        if ($so->status !== \App\Models\ServiceOrder::STATUS_DONE) {
-                            $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_DONE . '">Done</button> ';
+                        if (auth()->user()->role === 'owner') {
+                            $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_CANCELLED . '">Cancel</button> ';
                         }
                         break;
-                    // For CANCELLED and DONE, no further status transitions are allowed from the UI
+                    // For CANCELLED, DONE, and INVOICED, no further status transitions are allowed from the UI
                 }
 
                 if ($so->invoice) {
