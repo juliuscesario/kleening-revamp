@@ -236,6 +236,46 @@ class ServiceOrderController extends Controller
     }
 
     /**
+     * Method khusus untuk staff mengunggah bukti kerja (foto before/after).
+     */
+    public function uploadWorkProof(Request $request, ServiceOrder $serviceOrder)
+    {
+        $this->authorize('uploadWorkProof', $serviceOrder);
+
+        $validated = $request->validate([
+            'type' => 'required|string|in:before,after',
+            'photo' => 'required|image|max:2048', // Max 2MB
+        ]);
+
+        if ($serviceOrder->status !== ServiceOrder::STATUS_PROSES) {
+            return response()->json(['success' => false, 'message' => 'Service Order must be in proses status to upload work proof.'], 400);
+        }
+
+        DB::transaction(function () use ($request, $serviceOrder, $validated) {
+            // Store the photo
+            $path = $request->file('photo')->store('work_photos', 'public');
+
+            // Create WorkPhoto record
+            $serviceOrder->workPhotos()->create([
+                'uploaded_by' => $request->user()->id,
+                'file_path' => $path,
+                'type' => $validated['type'],
+            ]);
+
+            // Check if both 'before' and 'after' photos exist
+            $hasBeforePhoto = $serviceOrder->workPhotos()->where('type', 'before')->exists();
+            $hasAfterPhoto = $serviceOrder->workPhotos()->where('type', 'after')->exists();
+
+            if ($hasBeforePhoto && $hasAfterPhoto) {
+                $serviceOrder->work_proof_completed_at = now();
+                $serviceOrder->save();
+            }
+        });
+
+        return response()->json(['success' => true, 'message' => 'Work proof photo uploaded successfully.']);
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(ServiceOrder $serviceOrder)

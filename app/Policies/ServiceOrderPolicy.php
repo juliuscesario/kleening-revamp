@@ -67,6 +67,18 @@ class ServiceOrderPolicy
         return false;
     }
 
+    /**
+     * Determine whether the user can upload work proof photos for the service order.
+     */
+    public function uploadWorkProof(User $user, ServiceOrder $serviceOrder): bool
+    {
+        // Only staff assigned to the service order can upload work proof
+        if ($user->role == 'staff' && $user->staff) {
+            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+        }
+        return false;
+    }
+
     public function delete(User $user, ServiceOrder $serviceorder): bool
     {
         return in_array($user->role, ['owner', 'co_owner', 'admin']);

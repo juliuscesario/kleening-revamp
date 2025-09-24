@@ -36,6 +36,12 @@ class ServiceOrder extends Model
         'work_notes',
         'staff_notes',
         'created_by',
+        'work_proof_completed_at',
+    ];
+
+    protected $casts = [
+        'work_date' => 'date',
+        'work_proof_completed_at' => 'datetime',
     ];
 
     /**
