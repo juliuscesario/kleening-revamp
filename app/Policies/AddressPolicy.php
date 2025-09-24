@@ -31,7 +31,7 @@ class AddressPolicy
     // Siapa yang boleh membuat alamat baru?
     public function create(User $user): bool
     {
-        return in_array($user->role, ['co_owner', 'admin']);
+        return in_array($user->role, ['owner', 'co_owner', 'admin']);
     }
 
     // Siapa yang boleh update alamat?

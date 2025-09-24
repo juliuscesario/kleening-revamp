@@ -29,6 +29,9 @@ class DataTablesController extends Controller
             ->editColumn('created_at', function ($area) {
                 return Carbon::parse($area->created_at)->format('d M Y');
             })
+            ->orderColumn('created_at', function ($query, $order) {
+                $query->orderBy('created_at', $order);
+            })
             ->addColumn('action', function ($area) {
                 return '
                     <button class="btn btn-sm btn-warning editArea" data-id="' . $area->id . '" data-name="' . e($area->name) . '">Edit</button>
@@ -50,6 +53,9 @@ class DataTablesController extends Controller
         return DataTables::of($query)
             ->editColumn('created_at', function ($category) {
                 return Carbon::parse($category->created_at)->format('d M Y H:i');
+            })
+            ->orderColumn('created_at', function ($query, $order) {
+                $query->orderBy('created_at', $order);
             })
             ->addColumn('action', function ($category) {
                 $name = htmlspecialchars($category->name, ENT_QUOTES, 'UTF-8');
@@ -83,6 +89,9 @@ class DataTablesController extends Controller
             ->editColumn('created_at', function ($staff) {
                 return \Carbon\Carbon::parse($staff->created_at)->format('d M Y');
             })
+            ->orderColumn('created_at', function ($query, $order) {
+                $query->orderBy('created_at', $order);
+            })
             ->addColumn('action', function ($staff) {
                 $actions = '<button class="btn btn-sm btn-info edit-button" data-id="' . $staff->id . '">Edit</button>';
                 if ($staff->user) {
@@ -110,6 +119,9 @@ class DataTablesController extends Controller
             ->editColumn('created_at', function ($service) {
                 return \Carbon\Carbon::parse($service->created_at)->format('d M Y H:i');
             })
+            ->orderColumn('created_at', function ($query, $order) {
+                $query->orderBy('created_at', $order);
+            })
             ->addColumn('action', function ($service) {
                 $actions = '';
                 if (auth()->user()->can('update', $service)) {
@@ -134,8 +146,14 @@ class DataTablesController extends Controller
             ->addColumn('latest_order_date', function ($customer) {
                 return $customer->last_order_date ? \Carbon\Carbon::parse($customer->last_order_date)->format('d M Y') : 'N/A';
             })
+            ->orderColumn('latest_order_date', function ($query, $order) {
+                $query->orderBy('last_order_date', $order);
+            })
             ->editColumn('created_at', function ($customer) {
                 return \Carbon\Carbon::parse($customer->created_at)->format('d M Y');
+            })
+            ->orderColumn('created_at', function ($query, $order) {
+                $query->orderBy('created_at', $order);
             })
             ->addColumn('action', function ($customer) {
                 $detailUrl = route('web.customers.show', $customer->id);
@@ -205,10 +223,12 @@ class DataTablesController extends Controller
             ->editColumn('work_date', function ($so) {
                 return \Carbon\Carbon::parse($so->work_date)->format('d M Y');
             })
+            ->orderColumn('work_date', function ($query, $order) {
+                $query->orderBy('work_date', $order);
+            })
             ->addColumn('action', function ($so) {
                 $detailUrl = route('web.service-orders.show', $so->id);
                 $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a> ';
-                $actions .= '<button class="btn btn-sm btn-info assign-staff" data-id="' . $so->id . '">Assign Staff</button> ';
                 
                 if ($so->invoice) {
                     $actions .= '<a href="#" class="btn btn-sm btn-success">Invoice</a> ';

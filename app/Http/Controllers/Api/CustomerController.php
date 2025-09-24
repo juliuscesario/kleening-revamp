@@ -43,7 +43,7 @@ class CustomerController extends Controller
             'google_maps_link' => 'nullable|url',
         ]);
 
-        $customer = DB::transaction(function () use ($validated) {
+        $customer = DB::transaction(function () use ($validated, $request) {
             $customer = Customer::create([
                 'name' => $validated['name'],
                 'phone_number' => $validated['phone_number'],
