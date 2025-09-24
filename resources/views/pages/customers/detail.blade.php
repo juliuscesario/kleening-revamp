@@ -7,7 +7,7 @@
     <div class="page-header d-print-none">
         <div class="row align-items-center">
             <div class="col">
-                <h2 class="page-title">Detail Customer: {{ $customer->name }}</h2>
+                <h2 class="page-title" id="customer-detail-page">Detail Customer: {{ $customer->name }}</h2>
                 <div class="text-muted mt-1">ID: CUST-{{ $customer->id }}</div>
             </div>
             <div class="col-auto ms-auto d-print-none">
@@ -136,46 +136,49 @@
 </div>
 
 {{-- Modal for editing address --}}
-<div class="modal modal-blur fade" id="modal-edit-address" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+<div class="modal modal-blur fade" id="modal-address" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <form id="edit-address-form">
+            {{-- Form for address data submission --}}
+            <form id="address-form">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Alamat</h5>
+                    {{-- Modal title, dynamically set to "Tambah Alamat" or "Edit Alamat" --}}
+                    <h5 class="modal-title" id="modal-title">Alamat</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="id" id="edit-address-id">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Label Alamat</label>
-                                <input type="text" class="form-control" name="label" id="edit-address-label">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Nama Kontak</label>
-                                <input type="text" class="form-control" name="contact_name" id="edit-address-contact_name">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">No. Telepon Kontak</label>
-                                <input type="text" class="form-control" name="contact_phone" id="edit-address-contact_phone">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Alamat Lengkap</label>
-                                <textarea class="form-control" name="full_address" id="edit-address-full_address" rows="5"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Link Google Maps (Opsional)</label>
-                                <input type="url" class="form-control" name="google_maps_link" id="edit-address-google_maps_link">
-                            </div>
-                        </div>
+                    {{-- Hidden input for address ID (used for editing) --}}
+                    <input type="hidden" name="id" id="address-id">
+                    <div class="mb-3">
+                        <label class="form-label">Label</label>
+                        <input type="text" class="form-control" name="label" id="address-label" placeholder="Contoh: Rumah, Kantor">
+                        <div class="invalid-feedback" id="label-error"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Kontak</label>
+                        <input type="text" class="form-control" name="contact_name" id="address-contact-name" placeholder="Contoh: John Doe">
+                        <div class="invalid-feedback" id="contact-name-error"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telepon Kontak</label>
+                        <input type="text" class="form-control" name="contact_phone" id="address-contact-phone" placeholder="Contoh: 081234567890">
+                        <div class="invalid-feedback" id="contact-phone-error"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alamat Lengkap</label>
+                        <textarea class="form-control" name="full_address" id="address-full-address" rows="3"></textarea>
+                        <div class="invalid-feedback" id="full-address-error"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Link Google Maps</label>
+                        <input type="text" class="form-control" name="google_maps_link" id="address-google-maps-link" placeholder="Contoh: https://maps.app.goo.gl/xxxx">
+                        <div class="invalid-feedback" id="google-maps-link-error"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
+                    {{-- Buttons for closing modal and submitting form --}}
                     <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    <button type="submit" class="btn btn-primary" id="submit-button">Simpan</button>
                 </div>
             </form>
         </div>
@@ -183,91 +186,4 @@
 </div>
 @endsection
 
-@push('scripts')
-<script>
-$(function() {
-    const addressesApiUrl = '{{ url("api/addresses") }}';
-    const editModalElement = document.getElementById('modal-edit-address');
-    const editModalInstance = new bootstrap.Modal(editModalElement);
 
-    // Handle Edit Address button click
-    $('.edit-address').on('click', function(e) {
-        e.preventDefault();
-        const addressId = $(this).data('id');
-        
-        $.get(`${addressesApiUrl}/${addressId}`, function(response) {
-            const address = response.data;
-            $('#edit-address-id').val(address.id);
-            $('#edit-address-label').val(address.label);
-            $('#edit-address-contact_name').val(address.contact_name);
-            $('#edit-address-contact_phone').val(address.contact_phone);
-            $('#edit-address-full_address').val(address.full_address);
-            $('#edit-address-google_maps_link').val(address.google_maps_link);
-            editModalInstance.show();
-        });
-    });
-
-    // Handle Edit Address form submission
-    $('#edit-address-form').on('submit', function(e) {
-        e.preventDefault();
-        const addressId = $('#edit-address-id').val();
-        const formData = $(this).serialize();
-
-        $.ajax({
-            url: `${addressesApiUrl}/${addressId}`,
-            type: 'PUT',
-            data: formData,
-            success: function() {
-                editModalInstance.hide();
-                Swal.fire('Berhasil!', 'Alamat berhasil diperbarui.', 'success').then(() => {
-                    location.reload(); // Reload page to see changes
-                });
-            },
-            error: function(jqXHR) {
-                if (jqXHR.status === 403) {
-                    editModalInstance.hide();
-                    Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak diizinkan mengedit alamat ini.', 'error');
-                } else {
-                    // Handle other errors like validation
-                    alert('Terjadi kesalahan.');
-                }
-            }
-        });
-    });
-
-    // Handle Delete Address button click
-    $('.delete-address').on('click', function(e) {
-        e.preventDefault();
-        const addressId = $(this).data('id');
-
-        Swal.fire({
-            title: 'Anda yakin?',
-            text: "Alamat ini akan dihapus secara permanen!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: `${addressesApiUrl}/${addressId}`,
-                    type: 'DELETE',
-                    success: function() {
-                        Swal.fire('Dihapus!', 'Alamat telah dihapus.', 'success').then(() => {
-                            location.reload();
-                        });
-                    },
-                    error: function(jqXHR) {
-                        if (jqXHR.status === 403) {
-                            Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak diizinkan menghapus alamat ini.', 'error');
-                        } else {
-                            Swal.fire('Gagal!', 'Terjadi kesalahan saat menghapus alamat.', 'error');
-                        }
-                    }
-                });
-            }
-        });
-    });
-});
-</script>
-@endpush

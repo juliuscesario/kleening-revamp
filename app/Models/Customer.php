@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute; // <-- TAMBAHKAN INI
@@ -9,7 +10,7 @@ use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
 
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     /**
      * The "booted" method of the model.
      */

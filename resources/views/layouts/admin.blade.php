@@ -103,7 +103,7 @@
       {{-- NEW HEADER WITH USER NAME AND LOGOUT BUTTON --}}
       <header class="navbar navbar-expand-md d-print-none">
         <div class="container-xl">
-          <div class="navbar-nav flex-row order-md-last">
+          <div class="navbar-nav flex-row order-md-last ms-auto">
             <div class="nav-item dropdown">
               <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
                 <span class="avatar avatar-sm">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</span>
@@ -144,5 +144,6 @@
       </div>
     </div>
     @vite(['resources/js/app.js'])
+    @stack('scripts')
   </body>
 </html>`

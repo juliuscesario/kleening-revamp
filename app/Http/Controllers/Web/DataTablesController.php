@@ -167,8 +167,13 @@ class DataTablesController extends Controller
             })
             ->addColumn('action', function ($address) {
                 $actions = '';
-                // Per user request, edit is done from customer side. We only allow delete here.
-                if (auth()->user()->can('delete', $address)) {
+                if (auth()->user()->can('update', $address)) {
+                    $actions .= '<button class="btn btn-sm btn-warning edit-address" data-id="' . $address->id . '">Edit</button> ';
+                }
+                if ($address->google_maps_link) {
+                    $actions .= '<a href="' . $address->google_maps_link . '" target="_blank" class="btn btn-sm btn-info">Peta</a> ';
+                }
+                if (auth()->user()->can('delete', 'App\\Models\\Address')) {
                     $actions .= '<button class="btn btn-sm btn-danger delete-address" data-id="' . $address->id . '">Hapus</button>';
                 }
                 return $actions;

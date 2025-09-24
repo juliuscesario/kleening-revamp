@@ -66,4 +66,7 @@ $(function() {
     if (document.getElementById('addresses-table')) {
         import('./pages/addresses.js');
     }
+    if (document.getElementById('customer-detail-page')) {
+        import('./pages/customer-detail.js');
+    }
 });
