@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute; // <-- TAMBAHKAN INI
 use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
+use App\Models\Area;
+use App\Models\Address;
 
 class Customer extends Model
 {
@@ -40,6 +42,14 @@ class Customer extends Model
     public function invoices()
     {
         return $this->hasManyThrough(Invoice::class, ServiceOrder::class);
+    }
+
+    /**
+     * Get all of the areas for the Customer through their addresses.
+     */
+    public function areas()
+    {
+        return $this->hasManyThrough(Area::class, Address::class);
     }
 
     /**

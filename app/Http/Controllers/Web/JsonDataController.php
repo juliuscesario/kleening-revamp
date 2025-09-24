@@ -9,24 +9,11 @@ use App\Models\Service;
 use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\DataTables; // Add this import
 
 class JsonDataController extends Controller
 {
-    public function customers(Request $request)
-    {
-        $user = Auth::user();
-        $query = Customer::query()->with('area');
 
-        if ($user->role == 'co-owner') {
-            $query->where('area_id', $user->area_id);
-        }
-
-        if ($request->has('q')) {
-            $query->where('name', 'like', '%' . $request->q . '%');
-        }
-
-        return $query->get();
-    }
 
     public function customerAddresses(Customer $customer)
     {

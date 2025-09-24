@@ -137,25 +137,37 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
-    public function customers()
+    public function customers(Request $request)
     {
-        $this->authorize('viewAny', \App\Models\Customer::class);
+        $this->authorize('viewAny', Customer::class);
 
-        $query = \App\Models\Customer::query()
+        $user = auth()->user();
+        $query = Customer::query()
             ->select('customers.*')
-            ->withCount('addresses')
-            ->leftJoin('service_orders', 'customers.id', '=', 'service_orders.customer_id')
-            ->groupBy('customers.id')
-            ->selectRaw('MAX(service_orders.work_date) as last_order_date_raw');
+            ->withCount('addresses') // Re-add this
+            ->with('addresses.area') // Keep this for area_name
+            ->leftJoin('service_orders', 'customers.id', '=', 'service_orders.customer_id') // Re-add this
+            ->groupBy('customers.id') // Re-add this
+            ->selectRaw('MAX(service_orders.work_date) as last_order_date_raw'); // Re-add this
+
+        if ($user->role == 'co-owner') {
+            $query->whereHas('addresses', function ($query) use ($user) {
+                $query->where('area_id', $user->area_id);
+            });
+        }
+
+        if ($request->has('q')) {
+            $query->where('name', 'like', '%' . $request->q . '%');
+        }
 
         return DataTables::of($query)
-            ->order(function ($query) {
+            ->order(function ($query) { // Re-add this
                 $query->orderBy('last_order_date_raw', 'desc');
             })
-            ->addColumn('latest_order_date', function ($customer) {
+            ->addColumn('latest_order_date', function ($customer) { // Re-add this
                 return $customer->last_order_date_raw ? \Carbon\Carbon::parse($customer->last_order_date_raw)->format('d M Y') : 'N/A';
             })
-            ->orderColumn('latest_order_date', function ($query, $order) {
+            ->orderColumn('latest_order_date', function ($query, $order) { // Re-add this
                 $query->orderBy('last_order_date_raw', $order);
             })
             ->editColumn('created_at', function ($customer) {
@@ -163,6 +175,9 @@ class DataTablesController extends Controller
             })
             ->orderColumn('created_at', function ($query, $order) {
                 $query->orderBy('created_at', $order);
+            })
+            ->addColumn('area_name', function (Customer $customer) {
+                return $customer->addresses->first()?->area->name ?? 'N/A';
             })
             ->addColumn('action', function ($customer) {
                 $detailUrl = route('web.customers.show', $customer->id);
