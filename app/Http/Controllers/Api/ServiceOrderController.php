@@ -56,7 +56,7 @@ class ServiceOrderController extends Controller
                 'work_notes' => $validated['work_notes'] ?? null,
                 'staff_notes' => $validated['staff_notes'] ?? null,
                 'so_number' => 'SO-' . time(), // Nanti bisa dibuat lebih canggih
-                'status' => ServiceOrder::STATUS_DIJADWALKAN, // Status awal
+                'status' => ServiceOrder::STATUS_BOOKED, // Status awal
                 'created_by' => $request->user()->id, // User yang sedang login
             ]);
 
@@ -101,7 +101,7 @@ class ServiceOrderController extends Controller
             'customer_id' => 'sometimes|required|exists:customers,id',
             'address_id' => 'sometimes|required|exists:addresses,id',
             'work_date' => 'sometimes|required|date',
-            'status' => ['sometimes', 'required', 'string', Rule::in([ServiceOrder::STATUS_DIJADWALKAN, ServiceOrder::STATUS_PROSES, ServiceOrder::STATUS_BATAL, ServiceOrder::STATUS_SELESAI, ServiceOrder::STATUS_INVOICED])],
+            'status' => ['sometimes', 'required', 'string', Rule::in([ServiceOrder::STATUS_BOOKED, ServiceOrder::STATUS_PROSES, ServiceOrder::STATUS_CANCELLED, ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])],
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
             'items' => 'sometimes|array|min:1',
@@ -116,7 +116,7 @@ class ServiceOrderController extends Controller
         $newStatus = $request->status ?? $originalStatus;
 
         // Conditionally make owner_password required
-        if ($originalStatus === ServiceOrder::STATUS_PROSES && $newStatus === ServiceOrder::STATUS_BATAL) {
+        if ($originalStatus === ServiceOrder::STATUS_PROSES && $newStatus === ServiceOrder::STATUS_CANCELLED) {
             $rules['owner_password'] = 'required|string';
         }
 
@@ -174,10 +174,10 @@ class ServiceOrderController extends Controller
 
         $validated = $request->validate([
             'status' => ['required', 'string', Rule::in([
-                ServiceOrder::STATUS_DIJADWALKAN,
+                ServiceOrder::STATUS_BOOKED,
                 ServiceOrder::STATUS_PROSES,
-                ServiceOrder::STATUS_SELESAI,
-                ServiceOrder::STATUS_BATAL,
+                ServiceOrder::STATUS_DONE,
+                ServiceOrder::STATUS_CANCELLED,
                 ServiceOrder::STATUS_INVOICED,
             ])],
         ]);
@@ -186,8 +186,8 @@ class ServiceOrderController extends Controller
         $newStatus = $validated['status'];
         $user = $request->user();
 
-        // Add owner password validation if changing from proses to batal
-        if ($originalStatus === ServiceOrder::STATUS_PROSES && $newStatus === ServiceOrder::STATUS_BATAL) {
+        // Add owner password validation if changing from proses to cancelled
+        if ($originalStatus === ServiceOrder::STATUS_PROSES && $newStatus === ServiceOrder::STATUS_CANCELLED) {
             $request->validate([
                 'owner_password' => 'required|string',
             ]);

@@ -91,7 +91,7 @@ class ServiceOrderController extends Controller
                 'work_date' => $request->work_date,
                 'work_notes' => $request->work_notes,
                 'staff_notes' => $request->staff_notes,
-                'status' => 'dijadwalkan',
+                'status' => 'booked',
                 'created_by' => $user->id,
                 'so_number' => 'SO-' . date('Ymd') . '-' . str_pad(ServiceOrder::count() + 1, 4, '0', STR_PAD_LEFT),
             ]);
@@ -139,7 +139,7 @@ class ServiceOrderController extends Controller
         $rules = [
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
-            'status' => 'required|in:dijadwalkan,proses,selesai,batal,invoiced',
+            'status' => 'required|in:booked,proses,done,cancelled,invoiced',
             'services' => 'sometimes|array|min:1',
             'services.*.service_id' => 'sometimes|exists:services,id',
             'services.*.quantity' => 'sometimes|integer|min:1',
@@ -147,8 +147,8 @@ class ServiceOrderController extends Controller
             'staff.*' => 'exists:staff,id',
         ];
 
-        // Add owner password validation if changing from proses to batal
-        if ($originalStatus === \App\Models\ServiceOrder::STATUS_PROSES && $newStatus === \App\Models\ServiceOrder::STATUS_BATAL) {
+        // Add owner password validation if changing from proses to cancelled
+        if ($originalStatus === \App\Models\ServiceOrder::STATUS_PROSES && $newStatus === \App\Models\ServiceOrder::STATUS_CANCELLED) {
             $rules['owner_password'] = 'required|string';
         }
 

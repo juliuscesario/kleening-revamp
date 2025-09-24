@@ -13,10 +13,10 @@ class ServiceOrder extends Model
     use HasFactory;
 
     // Define status constants
-    public const STATUS_DIJADWALKAN = 'dijadwalkan';
+    public const STATUS_BOOKED = 'booked';
     public const STATUS_PROSES = 'proses';
-    public const STATUS_BATAL = 'batal';
-    public const STATUS_SELESAI = 'selesai';
+    public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_DONE = 'done';
     public const STATUS_INVOICED = 'invoiced';
 
     /**
@@ -52,10 +52,10 @@ class ServiceOrder extends Model
 
         // Valid statuses
         $validStatuses = [
-            self::STATUS_DIJADWALKAN,
+            self::STATUS_BOOKED,
             self::STATUS_PROSES,
-            self::STATUS_BATAL,
-            self::STATUS_SELESAI,
+            self::STATUS_CANCELLED,
+            self::STATUS_DONE,
             self::STATUS_INVOICED
         ];
 
@@ -69,43 +69,34 @@ class ServiceOrder extends Model
         }
 
         switch ($currentStatus) {
-            case self::STATUS_DIJADWALKAN:
-                // Dijadwalkan can go to Proses or Batal
-                if ($newStatus === self::STATUS_PROSES || $newStatus === self::STATUS_BATAL) {
+            case self::STATUS_BOOKED:
+                // Booked can go to Proses or Cancelled
+                if ($newStatus === self::STATUS_PROSES || $newStatus === self::STATUS_CANCELLED) {
                     return ['allowed' => true, 'message' => ''];
                 }
-                return ['allowed' => false, 'message' => 'Status "dijadwalkan" can only transition to "proses" or "batal".'];
+                return ['allowed' => false, 'message' => 'Status "booked" can only transition to "proses" or "cancelled".'];
 
             case self::STATUS_PROSES:
-                // Proses can go to Batal or Selesai
-                if ($newStatus === self::STATUS_BATAL) {
-                    // Proses to Batal requires owner approval
+                // Proses can go to Cancelled or Done
+                if ($newStatus === self::STATUS_CANCELLED) {
+                    // Proses to Cancelled requires owner approval
                     if (!$user || $user->role !== 'owner') {
-                        return ['allowed' => false, 'message' => 'Only owner can change status from "proses" to "batal".'];
+                        return ['allowed' => false, 'message' => 'Only owner can change status from "proses" to "cancelled".'];
                     }
                     if (!Hash::check($ownerPassword, $user->password)) {
                         return ['allowed' => false, 'message' => 'Owner password incorrect.'];
                     }
                     return ['allowed' => true, 'message' => ''];
-                } elseif ($newStatus === self::STATUS_SELESAI) {
+                } elseif ($newStatus === self::STATUS_DONE) {
                     return ['allowed' => true, 'message' => ''];
                 }
-                return ['allowed' => false, 'message' => 'Status "proses" can only transition to "batal" or "selesai".'];
+                return ['allowed' => false, 'message' => 'Status "proses" can only transition to "cancelled" or "done".'];
 
             case self::STATUS_INVOICED:
-                // Invoiced can only go to Selesai (if not already selesai)
-                if ($newStatus === self::STATUS_SELESAI) {
-                    return ['allowed' => true, 'message' => ''];
-                }
-                return ['allowed' => false, 'message' => 'Status "invoiced" can only transition to "selesai".'];
-
-            case self::STATUS_BATAL:
-                // Batal cannot change to any other status
-                return ['allowed' => false, 'message' => 'Status "batal" cannot be changed.'];
-
-            case self::STATUS_SELESAI:
-                // Selesai cannot change to any other status
-                return ['allowed' => false, 'message' => 'Status "selesai" cannot be changed.'];
+            case self::STATUS_CANCELLED:
+            case self::STATUS_DONE:
+                // Invoiced, Cancelled, and Done are terminal states
+                return ['allowed' => false, 'message' => 'Status "' . $currentStatus . '" cannot be changed.'];
 
             default:
                 return ['allowed' => false, 'message' => 'Unknown current status.'];

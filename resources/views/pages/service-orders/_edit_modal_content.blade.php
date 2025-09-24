@@ -7,16 +7,16 @@
             <label class="form-label">Status</label>
             <input type="hidden" name="original_status" value="{{ $serviceOrder->status }}">
             <select name="status" class="form-select" id="service-order-status">
-                <option value="dijadwalkan" {{ $serviceOrder->status == 'dijadwalkan' ? 'selected' : '' }}>Dijadwalkan</option>
+                <option value="booked" {{ $serviceOrder->status == 'booked' ? 'selected' : '' }}>Booked</option>
                 <option value="proses" {{ $serviceOrder->status == 'proses' ? 'selected' : '' }}>Proses</option>
-                <option value="selesai" {{ $serviceOrder->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                <option value="batal" {{ $serviceOrder->status == 'batal' ? 'selected' : '' }}>Batal</option>
+                <option value="done" {{ $serviceOrder->status == 'done' ? 'selected' : '' }}>Done</option>
+                <option value="cancelled" {{ $serviceOrder->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                 <option value="invoiced" {{ $serviceOrder->status == 'invoiced' ? 'selected' : '' }}>Invoiced</option>
             </select>
         </div>
 
         <div class="mb-3" id="owner-password-field" style="display: none;">
-            <label class="form-label">Owner Password (for Batal)</label>
+            <label class="form-label">Owner Password (for Cancelled)</label>
             <input type="password" name="owner_password" class="form-control">
         </div>
 
@@ -40,7 +40,7 @@
                                 <option value="{{ $service->id }}">{{ $service->name }}</option>
                             @endforeach
                         </select>
-                        <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="{{ $item->quantity }}" min="1">
+                        <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="1" min="1">
                         <button type="button" class="btn btn-danger remove-service-item">Remove</button>
                     </div>
                 @endforeach
@@ -163,22 +163,22 @@
                 option.disabled = false;
             });
 
-            if (originalStatus === 'dijadwalkan') {
-                // Can go to 'proses' or 'batal'
+            if (originalStatus === 'booked') {
+                // Can go to 'proses' or 'cancelled'
                 Array.from(statusSelect.options).forEach(option => {
-                    if (option.value !== 'dijadwalkan' && option.value !== 'proses' && option.value !== 'batal') {
+                    if (option.value !== 'booked' && option.value !== 'proses' && option.value !== 'cancelled') {
                         option.disabled = true;
                     }
                 });
             } else if (originalStatus === 'proses') {
-                // Can go to 'batal' or 'selesai'
+                // Can go to 'cancelled' or 'done'
                 Array.from(statusSelect.options).forEach(option => {
-                    if (option.value !== 'proses' && option.value !== 'batal' && option.value !== 'selesai') {
+                    if (option.value !== 'proses' && option.value !== 'cancelled' && option.value !== 'done') {
                         option.disabled = true;
                     }
                 });
-            } else if (originalStatus === 'batal' || originalStatus === 'selesai') {
-                // Cannot change from 'batal' or 'selesai'
+            } else if (originalStatus === 'invoiced' || originalStatus === 'cancelled' || originalStatus === 'done') {
+                // Cannot change from 'invoiced', 'cancelled' or 'done'
                 Array.from(statusSelect.options).forEach(option => {
                     if (option.value !== originalStatus) {
                         option.disabled = true;
@@ -186,8 +186,8 @@
                 });
             }
 
-            // Show/hide owner password field for 'proses' to 'batal' transition
-            if (originalStatus === 'proses' && currentSelectedStatus === 'batal') {
+            // Show/hide owner password field for 'proses' to 'cancelled' transition
+            if (originalStatus === 'proses' && currentSelectedStatus === 'cancelled') {
                 ownerPasswordField.style.display = 'block';
             } else {
                 ownerPasswordField.style.display = 'none';

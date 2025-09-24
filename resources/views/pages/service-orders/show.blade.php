@@ -68,10 +68,10 @@
                             @php
                                 $statusBadgeClass = '';
                                 switch ($serviceOrder->status) {
-                                    case 'dijadwalkan': $statusBadgeClass = 'bg-primary'; break;
+                                    case 'booked': $statusBadgeClass = 'bg-primary'; break;
                                     case 'proses': $statusBadgeClass = 'bg-warning'; break;
-                                    case 'batal': $statusBadgeClass = 'bg-danger'; break;
-                                    case 'selesai': $statusBadgeClass = 'bg-success'; break;
+                                    case 'cancelled': $statusBadgeClass = 'bg-danger'; break;
+                                    case 'done': $statusBadgeClass = 'bg-success'; break;
                                     case 'invoiced': $statusBadgeClass = 'bg-secondary'; break;
                                     default: $statusBadgeClass = 'bg-secondary'; break;
                                 }

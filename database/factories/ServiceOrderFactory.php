@@ -27,7 +27,7 @@ class ServiceOrderFactory extends Factory
             'customer_id' => Customer::inRandomOrder()->first()->id,
             'address_id' => Address::inRandomOrder()->first()->id,
             'work_date' => fake()->dateTimeBetween('-1 month', '+1 month'),
-            'status' => fake()->randomElement(['confirmed', 'invoiced', 'done', 'cancelled']),
+            'status' => fake()->randomElement(['booked', 'invoiced', 'done', 'cancelled','proses']),
             'work_notes' => fake()->sentence(),
             'staff_notes' => fake()->sentence(),
             'created_by' => User::where('role', 'admin')->first()->id,

@@ -243,25 +243,25 @@ class DataTablesController extends Controller
                 
                 // Conditional buttons for status transitions
                 switch ($so->status) {
-                    case \App\Models\ServiceOrder::STATUS_DIJADWALKAN:
+                    case \App\Models\ServiceOrder::STATUS_BOOKED:
                         $actions .= '<button class="btn btn-sm btn-primary change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_PROSES . '">Proses</button> ';
-                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_BATAL . '">Batal</button> ';
+                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_CANCELLED . '">Cancel</button> ';
                         break;
                     case \App\Models\ServiceOrder::STATUS_PROSES:
-                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_SELESAI . '">Selesai</button> ';
-                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_BATAL . '">Batal</button> ';
+                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_DONE . '">Done</button> ';
+                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_CANCELLED . '">Cancel</button> ';
                         break;
                     case \App\Models\ServiceOrder::STATUS_INVOICED:
-                        if ($so->status !== \App\Models\ServiceOrder::STATUS_SELESAI) {
-                            $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_SELESAI . '">Selesai</button> ';
+                        if ($so->status !== \App\Models\ServiceOrder::STATUS_DONE) {
+                            $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_DONE . '">Done</button> ';
                         }
                         break;
-                    // For BATAL and SELESAI, no further status transitions are allowed from the UI
+                    // For CANCELLED and DONE, no further status transitions are allowed from the UI
                 }
 
                 if ($so->invoice) {
                     $actions .= '<a href="#" class="btn btn-sm btn-success">Invoice</a> ';
-                } else if ($so->status === \App\Models\ServiceOrder::STATUS_SELESAI) {
+                } else if ($so->status === \App\Models\ServiceOrder::STATUS_DONE) {
                     $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Create Invoice</button> ';
                 }
 
