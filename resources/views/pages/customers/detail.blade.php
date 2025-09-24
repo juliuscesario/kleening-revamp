@@ -111,7 +111,7 @@
                                 <p class="text-muted mb-0">{{ $address->full_address }}</p>
                             </div>
                             <div class="col-auto">
-                                <a href="#" class="btn btn-sm btn-primary">Buat SO</a>
+                                <a href="{{ route('web.service-orders.create', ['address_id' => $address->id]) }}" class="btn btn-sm btn-primary">Buat SO</a>
                                 <a href="#" class="btn btn-sm btn-warning edit-address" data-id="{{ $address->id }}">Edit</a>
                                 <a href="#" class="btn btn-sm btn-danger delete-address" data-id="{{ $address->id }}">Hapus</a>
                             </div>

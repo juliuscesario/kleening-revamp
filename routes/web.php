@@ -34,6 +34,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/customers', [DataTablesController::class, 'customers'])->name('data.customers');
     Route::resource('addresses', \App\Http\Controllers\Web\AddressController::class)->names('web.addresses');
     Route::get('data/addresses', [DataTablesController::class, 'addresses'])->name('data.addresses');
+    Route::resource('service-orders', \App\Http\Controllers\Web\ServiceOrderController::class)->names('web.service-orders');
+    Route::get('data/service-orders', [DataTablesController::class, 'serviceOrders'])->name('data.service-orders');
     // ROUTE for logout
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });

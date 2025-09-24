@@ -7,6 +7,7 @@ use App\Models\Area;
 use App\Models\ServiceCategory;
 use App\Models\Customer; // <-- Tambahkan model lain jika perlu
 use App\Models\Staff;
+use App\Models\Scopes\AreaScope;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -179,6 +180,45 @@ class DataTablesController extends Controller
                 return $actions;
             })
             ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    public function serviceOrders()
+    {
+        $this->authorize('viewAny', \App\Models\ServiceOrder::class);
+
+        $query = \App\Models\ServiceOrder::with(['customer' => function ($query) {
+            $query->withoutGlobalScope(AreaScope::class)->withTrashed();
+        }, 'address.area']);
+
+        return DataTables::of($query)
+            ->addColumn('customer_name', function ($so) {
+                if ($so->customer) {
+                    $customerName = $so->customer->name;
+                    if ($so->customer->trashed()) {
+                        $customerName .= ' <span class="badge bg-danger text-bg-secondary">Archived</span>';
+                    }
+                    return $customerName;
+                }
+                return 'N/A';
+            })
+            ->editColumn('work_date', function ($so) {
+                return \Carbon\Carbon::parse($so->work_date)->format('d M Y');
+            })
+            ->addColumn('action', function ($so) {
+                $detailUrl = route('web.service-orders.show', $so->id);
+                $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a> ';
+                $actions .= '<button class="btn btn-sm btn-info assign-staff" data-id="' . $so->id . '">Assign Staff</button> ';
+                
+                if ($so->invoice) {
+                    $actions .= '<a href="#" class="btn btn-sm btn-success">Invoice</a> ';
+                } else {
+                    $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Create Invoice</button> ';
+                }
+
+                return $actions;
+            })
+            ->rawColumns(['action', 'customer_name'])
             ->make(true);
     }
 

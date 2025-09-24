@@ -69,4 +69,7 @@ $(function() {
     if (document.getElementById('customer-detail-page')) {
         import('./pages/customer-detail.js');
     }
+    if (document.getElementById('service-orders-table')) {
+        import('./pages/service-orders.js');
+    }
 });
