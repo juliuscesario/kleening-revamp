@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ServiceOrderController extends Controller
 {
+    use AuthorizesRequests;
     public function index()
     {
         return view('pages.service-orders.index');
@@ -40,28 +42,45 @@ class ServiceOrderController extends Controller
     {
         $user = Auth::user();
 
-        // Authorization for co_owner
+        // Apply the policy
+        $this->authorize('view', $serviceOrder);
+
+        // Authorization for co_owner (existing logic)
         if ($user->role === 'co_owner') {
             // Load address with trashed to check area_id even if address is soft-deleted
             $serviceOrder->load(['address' => function ($query) {
-                $query->withTrashed();
+                $query->withTrashed()->with('area'); // Ensure area is loaded
             }]);
 
-            if ($serviceOrder->address && $user->area_id !== $serviceOrder->address->area_id) {
+            if ($serviceOrder->address && $user->area_id !== $serviceOrder->address->area->id) { // Changed $serviceOrder->address->area_id to $serviceOrder->address->area->id
                 abort(403, 'Anda tidak diizinkan melihat pesanan di luar area Anda.');
             }
         }
 
-        $serviceOrder->load(['customer' => function ($query) {
+        $relationsToLoad = ['customer' => function ($query) {
             $query->withTrashed();
         }, 'address' => function ($query) {
             $query->withTrashed();
-        }, 'address.area', 'items.service', 'staff']);
+        }, 'address.area', 'items.service', 'staff'];
+
+        $isStaff = ($user->role === 'staff');
+
+        if ($isStaff) {
+            $relationsToLoad[] = 'creator'; // Load creator if user is staff
+        } else {
+            $relationsToLoad[] = 'workPhotos.uploader'; // Load work photos and their uploaders for non-staff
+        }
+
+        $serviceOrder->load($relationsToLoad);
 
         $allServices = Service::all();
         $allStaff = Staff::all();
 
-        return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff'));
+        if ($isStaff) {
+            return view('pages.service-orders.staff-show', compact('serviceOrder', 'isStaff'));
+        } else {
+            return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff', 'isStaff'));
+        }
     }
 
     public function store(Request $request)

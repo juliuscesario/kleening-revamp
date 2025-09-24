@@ -27,6 +27,7 @@ class StaffServiceOrderResource extends JsonResource
                     'quantity' => $item->quantity,
                 ];
             }),
+            'creator' => new UserResource($this->whenLoaded('creator')),
             'staff' => StaffResource::collection($this->whenLoaded('staff')),
             'work_notes' => $this->work_notes,
             'staff_notes' => $this->staff_notes,

@@ -1,0 +1,1479 @@
+{
+	"info": {
+		"_postman_id": "752d80c8-811d-4d3c-8c3d-6c9b8bb586c5",
+		"name": "Kleening Revamp",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18232976"
+	},
+	"item": [
+		{
+			"name": "Area Endpoint",
+			"item": [
+				{
+					"name": "Add new Area",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Sumatera Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/areas",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"areas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Area",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Jakarta Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/areas/1",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"areas",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Area",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Jakarta Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/areas/4",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"areas",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by Area ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/areas/",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"areas",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This is for Area Endpoint make sure only owner that can access it",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Staff Endpoint",
+			"item": [
+				{
+					"name": "Add new Staff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Akri\",\r\n    \"phone_number\": \"08771235678\",\r\n    \"area_id\": 1,\r\n    \"is_active\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/staff",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"staff"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Staff",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Agus Makan\",\r\n    \"phone_number\": \"087712345678\",\r\n    \"area_id\": 1,\r\n    \"is_active\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/staff/1",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Staff",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Jakarta Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/staff/5",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by Staff ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/staff/",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This is for Area Endpoint make sure only owner that can access it",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Category",
+			"item": [
+				{
+					"name": "Add new Service Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Cuci bersih\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/service-categories",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Service Category",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Cuci Bersih\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/service-categories/1",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-categories",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Service Category",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Jakarta Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/service-categories/4",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-categories",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by Service Category ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/service-categories/",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-categories",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This is for Service Categories for all the backbone of services",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Service",
+			"item": [
+				{
+					"name": "Add new Service",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"category_id\":\"1\",\r\n    \"name\":\"Cuci Karpet Super Besar\",\r\n    \"price\":\"750000\",\r\n    \"description\":\"Pembersihan Karpet sangat besar ukuran 200mx200m\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/services",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"services"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Service",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"category_id\":\"1\",\r\n    \"name\":\"Cuci Karpet Super Besar Edit\",\r\n    \"price\":\"150000\",\r\n    \"description\":\"Pembersihan Karpet sangat besar ukuran 200mx200m\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/services/1",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"services",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Service",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Jakarta Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/services/4",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"services",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by Service ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/services/",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"services",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This is for list of Services or Items that can be sell within kleening.id",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Order",
+			"item": [
+				{
+					"name": "Add new Service Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"customer_id\": 1,\r\n    \"address_id\": 1,\r\n    \"work_date\": \"2025-09-20\",\r\n    \"work_notes\": \"Tolong bersihkan bagian bawah sofa.\",\r\n    \"items\": [\r\n        {\r\n            \"service_id\": 1,\r\n            \"quantity\": 2\r\n        },\r\n        {\r\n            \"service_id\": 2,\r\n            \"quantity\": 1\r\n        }\r\n    ],\r\n    \"staff_ids\": [1, 2]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/service-orders",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Service Order",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"customer_id\": 1,\r\n    \"address_id\": 1,\r\n    \"work_date\": \"2025-09-20\",\r\n    \"work_notes\": \"Tolong kenapa.\",\r\n    \"items\": [\r\n        {\r\n            \"service_id\": 1,\r\n            \"quantity\": 2\r\n        },\r\n        {\r\n            \"service_id\": 2,\r\n            \"quantity\": 1\r\n        }\r\n    ],\r\n    \"staff_ids\": [1, 2]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/service-orders/3",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-orders",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Service Order",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Jakarta Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/service-orders/3",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-orders",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by Service Order ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/service-orders/",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-orders",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This is for list of Services Order within kleening.id",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Invoice",
+			"item": [
+				{
+					"name": "Work Photos",
+					"item": [
+						{
+							"name": "Adding Photos",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "multipart/form-data",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "photo",
+											"type": "file",
+											"src": "postman-cloud:///1f0936af-3040-49f0-9734-286888070652"
+										},
+										{
+											"key": "type",
+											"value": "arrival",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/service-orders/3/photos",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"service-orders",
+										"3",
+										"photos"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Photos",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/javascript",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/service-orders/3/photos",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"service-orders",
+										"3",
+										"photos"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Add Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"transport_fee\": 75000\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/service-orders/3/invoice",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"service-orders",
+								"3",
+								"invoice"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Invoice",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"status\": \"paid\",\r\n    \"signature\":\"sign by julius\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/invoices/2",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Jakarta Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/invoices/1",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by Invoice ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/invoices/2",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This is for list of Invoices within kleening.id",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Customer",
+			"item": [
+				{
+					"name": "Addresses",
+					"item": [
+						{
+							"name": "Get Address by Customer ID",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Budi Santoso\",\r\n    \"phone_number\": \"081234567890\"\r\n}"
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/customers/1/addresses",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"customers",
+										"1",
+										"addresses"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Post Address by Customer ID",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"Rumah Ibu\",\r\n    \"contact_name\": \"Ibu Budi\",\r\n    \"contact_phone\": \"081987654321\",\r\n    \"full_address\": \"Jl. Merdeka No. 10, Jakarta\",\r\n    \"google_maps_link\": \"https://maps.google.com/...\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/customers/1/addresses",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"customers",
+										"1",
+										"addresses"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Edit by Address ID",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"Rumah Ibu\",\r\n    \"contact_name\": \"Ibu Budi\",\r\n    \"contact_phone\": \"081987654321\",\r\n    \"full_address\": \"Jl. Merdeka No. 10, Banten\",\r\n    \"google_maps_link\": \"https://maps.google.com/...\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/addresses/1",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"addresses",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete by Address ID",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseURL}}/api/addresses/1",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"api",
+										"addresses",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Add new Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Budi Santoso\",\r\n    \"phone_number\": \"081234567890\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/customers",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Customer",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Budi\",\r\n    \"phone_number\": \"081234567890\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/customers/1",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Customers",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Jakarta Utara\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/customers/1",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"customers",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by Customers ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/api/customers",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"customers"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This is Customer endpoint",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Script ini akan otomatis menyimpan token ke environment\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"const response = pm.response.json();\r",
+									"pm.environment.set(\"token\", response.access_token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"phone_number\": \"081000000001\",\r\n    \"password\": \"password\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/login",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": ""
+		},
+		{
+			"key": "token",
+			"value": ""
+		}
+	]
+}

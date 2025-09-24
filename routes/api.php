@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Route Service Order
     Route::apiResource('service-orders', ServiceOrderController::class);
+    Route::post('/service-orders/{serviceOrder}/start-work', [ServiceOrderController::class, 'startWork']);
 
     // Route khusus untuk membuat Invoice dari Service Order
     Route::post('/service-orders/{serviceOrder}/invoice', [InvoiceController::class, 'storeFromServiceOrder']);

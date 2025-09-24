@@ -19,6 +19,10 @@ class WorkPhoto extends Model
         'type',
         'uploaded_by',
     ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+    ];
     
     // Ini otomatis menambahkan 'created_at' saat data dibuat
     protected static function boot()

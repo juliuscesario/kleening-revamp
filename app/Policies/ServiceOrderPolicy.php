@@ -10,7 +10,31 @@ class ServiceOrderPolicy
 {
     // Di dalam class CustomerPolicy
     public function viewAny(User $user): bool { return true; }
-    public function view(User $user, ServiceOrder $serviceorder): bool { return true; }
+    public function view(User $user, ServiceOrder $serviceOrder): bool
+    {
+        if (in_array($user->role, ['owner', 'co_owner', 'admin'])) {
+            return true;
+        }
+
+        // Staff can only view service orders assigned to them
+        if ($user->role == 'staff' && $user->staff) {
+            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can view the staff-specific details of the service order.
+     */
+    public function viewStaffDetails(User $user, ServiceOrder $serviceOrder): bool
+    {
+        // Staff can view staff-specific details if they are assigned to the service order
+        if ($user->role == 'staff' && $user->staff) {
+            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+        }
+        return false;
+    }
     public function create(User $user): bool
     {
         return in_array($user->role, ['owner', 'co_owner', 'admin']);
@@ -30,6 +54,19 @@ class ServiceOrderPolicy
         }
         return false;
     }
+
+    /**
+     * Determine whether the user can start work on the service order.
+     */
+    public function startWork(User $user, ServiceOrder $serviceOrder): bool
+    {
+        // Only staff assigned to the service order can start work
+        if ($user->role == 'staff' && $user->staff) {
+            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+        }
+        return false;
+    }
+
     public function delete(User $user, ServiceOrder $serviceorder): bool
     {
         return in_array($user->role, ['owner', 'co_owner', 'admin']);

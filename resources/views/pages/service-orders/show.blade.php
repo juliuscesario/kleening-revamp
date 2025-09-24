@@ -108,6 +108,36 @@
                         </table>
                     </div>
                 </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="card-title">Bukti Pekerjaan</h3>
+                    </div>
+                    <div class="card-body">
+                        @if($serviceOrder->workPhotos->isNotEmpty())
+                            <div class="row row-cards">
+                                @foreach($serviceOrder->workPhotos as $photo)
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card card-sm">
+                                            <a href="{{ $photo->photo_url }}" target="_blank" class="d-block"><img src="{{ $photo->photo_url }}" class="card-img-top"></a>
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge bg-{{ $photo->type == 'arrival' ? 'primary' : ($photo->type == 'before' ? 'info' : 'success') }} me-2">{{ ucfirst($photo->type) }}</span>
+                                                    <div>
+                                                        <div>{{ $photo->uploader->name ?? 'N/A' }}</div>
+                                                        <div class="text-muted">{{ $photo->created_at->format('d M Y H:i') }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-muted">Belum ada bukti pekerjaan yang diunggah.</p>
+                        @endif
+                    </div>
+                </div>
             </div>
             <div class="col-lg-4">
                 <div class="card">

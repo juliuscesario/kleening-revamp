@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // <-- PENTING untuk transaksi
 use App\Models\ServiceOrder;
 use App\Models\Service;
-use App\Http\Resources\ServiceOrderResource; // <-- Tambahkan Http di sini
+use App\Http\Resources\ServiceOrderResource; // <-- Tambahkan Http di sini\nuse App\Http\Resources\StaffServiceOrderResource;\nuse App\Http\Resources\UserResource;
 use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -23,6 +23,8 @@ class ServiceOrderController extends Controller
             $query->whereHas('staff', function ($q) use ($user) {
                 $q->where('staff.id', $user->staff->id);
             });
+            $serviceOrders = $query->with(['customer', 'address', 'items.service', 'staff', 'creator'])->get();
+            return StaffServiceOrderResource::collection($serviceOrders);
         }
         
         $serviceOrders = $query->with(['customer', 'address', 'items.service', 'staff'])->get();
@@ -86,9 +88,16 @@ class ServiceOrderController extends Controller
      */
     public function show(ServiceOrder $serviceOrder)
     {
-        $this->authorize('view', $serviceOrder);
-        // Muat semua relasi yang dibutuhkan untuk ditampilkan
-        return new ServiceOrderResource($serviceOrder->load(['customer', 'address', 'items.service', 'staff', 'creator']));
+        $user = request()->user();
+
+        if ($user->role == 'staff') {
+            $this->authorize('viewStaffDetails', $serviceOrder);
+            return new StaffServiceOrderResource($serviceOrder->load(['customer', 'address', 'items.service', 'staff', 'creator']));
+        } else {
+            $this->authorize('view', $serviceOrder);
+            // Muat semua relasi yang dibutuhkan untuk ditampilkan
+            return new ServiceOrderResource($serviceOrder->load(['customer', 'address', 'items.service', 'staff', 'creator']));
+        }
     }
 
     /**
@@ -131,7 +140,7 @@ class ServiceOrderController extends Controller
 
         $updatedServiceOrder = DB::transaction(function () use ($validated, $serviceOrder, $newStatus) {
             // 1. Update data utama Service Order
-            $serviceOrder->update(array_merge($validated, ['status': $newStatus]));
+            $serviceOrder->update(array_merge($validated, ['status' => $newStatus]));
 
             // 2. Jika ada data 'items' yang dikirim, sinkronisasi item-itemnya
             if (isset($validated['items'])) {
@@ -190,6 +199,40 @@ class ServiceOrderController extends Controller
         $serviceOrder->update($validated);
 
         return new ServiceOrderResource($serviceOrder);
+    }
+
+    /**
+     * Method khusus untuk staff memulai pekerjaan (mengubah status ke 'proses' dan mengunggah foto).
+     */
+    public function startWork(Request $request, ServiceOrder $serviceOrder)
+    {
+        $this->authorize('startWork', $serviceOrder);
+
+        $validated = $request->validate([
+            'photo' => 'required|image|max:2048', // Max 2MB
+        ]);
+
+        if ($serviceOrder->status !== ServiceOrder::STATUS_BOOKED) {
+            return response()->json(['success' => false, 'message' => 'Service Order must be in booked status to start work.'], 400);
+        }
+
+        DB::transaction(function () use ($request, $serviceOrder, $validated) {
+            // Store the photo
+            $path = $request->file('photo')->store('work_photos', 'public');
+
+            // Create WorkPhoto record with type 'arrival'
+            $serviceOrder->workPhotos()->create([
+                'uploaded_by' => $request->user()->id, // Corrected from user_id to uploaded_by
+                'file_path' => $path,
+                'type' => 'arrival',
+            ]);
+
+            // Update service order status to 'proses'
+            $serviceOrder->status = ServiceOrder::STATUS_PROSES;
+            $serviceOrder->save();
+        });
+
+        return response()->json(['success' => true, 'message' => 'Work started and photo uploaded successfully.']);
     }
 
     /**
