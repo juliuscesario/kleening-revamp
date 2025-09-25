@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\Address; // Add this line
 
 class ServiceOrderController extends Controller
 {
@@ -79,7 +80,8 @@ class ServiceOrderController extends Controller
             'address_id' => 'required|exists:addresses,id',
             'work_date' => 'required|date',
             'services' => 'required|array|min:1',
-            'services.*' => 'required|exists:services,id',
+            'services.*.service_id' => 'required|exists:services,id',
+            'services.*.quantity' => 'required|integer|min:1',
             'staff' => 'nullable|array',
             'staff.*' => 'exists:staff,id',
         ]);
@@ -105,15 +107,24 @@ class ServiceOrderController extends Controller
                 'so_number' => 'SO-' . date('Ymd') . '-' . str_pad(ServiceOrder::count() + 1, 4, '0', STR_PAD_LEFT),
             ]);
 
-            $totalPrice = 0;
-            foreach ($request->services as $serviceId) {
-                $service = Service::find($serviceId);
-                ServiceOrderItem::create([
-                    'service_order_id' => $so->id,
-                    'service_id' => $service->id,
-                    'price' => $service->price,
-                ]);
-                $totalPrice += $service->price;
+            $submittedServices = $request->input('services', []);
+            $serviceIds = array_column($submittedServices, 'service_id');
+            $services = Service::whereIn('id', $serviceIds)->get()->keyBy('id');
+
+            foreach ($submittedServices as $serviceData) {
+                $service = $services->get($serviceData['service_id']);
+                if ($service) {
+                    $quantity = $serviceData['quantity'];
+                    $price = $service->price;
+                    
+                    ServiceOrderItem::create([
+                        'service_order_id' => $so->id,
+                        'service_id' => $service->id,
+                        'price' => $price,
+                        'quantity' => $quantity,
+                        'total' => $price * $quantity,
+                    ]);
+                }
             }
 
             if ($request->has('staff')) {

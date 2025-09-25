@@ -4,9 +4,8 @@ import './bootstrap';
 import jQuery from 'jquery';
 window.$ = window.jQuery = jQuery;
 
-// 2. Import Bootstrap's complete JavaScript bundle.
-// This will power ALL components like modals, dropdowns, etc.
-// 2. Explicitly import and initialize Bootstrap JS.
+
+
 import * as bootstrap from 'bootstrap';
 window.bootstrap = bootstrap;
 

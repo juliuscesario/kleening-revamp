@@ -17,6 +17,8 @@
         }
     </script>
     @endauth
+    
+    @stack('styles')
   </head>
   <body>
     <div class="page">
@@ -164,7 +166,7 @@
         </footer>
       </div>
     </div>
-    @stack('scripts')
     @vite(['resources/js/app.js'])
+    @stack('scripts')
   </body>
 </html>

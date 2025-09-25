@@ -40,12 +40,13 @@
                                 <option value="{{ $service->id }}" {{ $item->service_id == $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
                             @endforeach
                         </select>
-                        <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="1" min="1">
+                        <span class="input-group-text">Qty</span>
+                        <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="{{ $item->quantity ?? 1 }}" min="1">
                         <button type="button" class="btn btn-danger remove-service-item">Remove</button>
                     </div>
                 @endforeach
             </div>
-            <button type="button" class="btn btn-success mt-2" id="add-service-item">Add Service</button>
+            <button type="button" class="btn btn-success mt-2 w-100" id="add-service-item">Add Service</button>
         </div>
 
         <div class="mb-3">
@@ -62,7 +63,7 @@
                     </div>
                 @endforeach
             </div>
-            <button type="button" class="btn btn-success mt-2" id="add-staff-member">Add Staff</button>
+            <button type="button" class="btn btn-success mt-2 w-100" id="add-staff-member">Add Staff</button>
         </div>
 
         <div class="modal-footer">
@@ -87,6 +88,7 @@
                         <option value="{{ $service->id }}">{{ $service->name }}</option>
                     @endforeach
                 </select>
+                <span class="input-group-text">Qty</span>
                 <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="1">
                 <button type="button" class="btn btn-danger remove-service-item">Remove</button>
             `;
