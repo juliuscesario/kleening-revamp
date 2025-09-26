@@ -80,4 +80,7 @@ $(function() {
     if (document.getElementById('payments-table')) {
         import('./pages/payments.js');
     }
+    if (document.getElementById('create-invoice-page')) {
+        import('./pages/invoices-create.js');
+    }
 });

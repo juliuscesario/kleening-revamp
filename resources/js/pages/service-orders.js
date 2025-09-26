@@ -104,4 +104,10 @@ $(function() {
 
     // Initialize active filter button
     $('.filter-status-btn[data-status="all"]').addClass('btn-primary').removeClass('btn-outline-primary');
+
+    // Handle create invoice button click
+    $('#service-orders-table').on('click', '.create-invoice', function() {
+        const serviceOrderId = $(this).data('id');
+        window.location.href = `/invoices/create?service_order_id=${serviceOrderId}`;
+    });
 });

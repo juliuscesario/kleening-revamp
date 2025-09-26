@@ -22,6 +22,8 @@ class Invoice extends Model
         'issue_date',
         'due_date',
         'subtotal',
+        'discount',
+        'discount_type',
         'transport_fee',
         'grand_total',
         'status',

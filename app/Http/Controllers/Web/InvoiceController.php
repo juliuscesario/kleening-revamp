@@ -8,8 +8,11 @@ use Illuminate\Http\Request;
 use App\Models\ServiceOrder;
 use App\Models\Invoice;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class InvoiceController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Display a listing of the resource.
      */
@@ -24,7 +27,7 @@ class InvoiceController extends Controller
     public function create(Request $request)
     {
         $this->authorize('create', Invoice::class);
-        $serviceOrder = ServiceOrder::findOrFail($request->service_order_id);
+        $serviceOrder = ServiceOrder::with(['items.service', 'customer', 'address.area', 'staff', 'workPhotos'])->findOrFail($request->service_order_id);
 
         if (auth()->user()->role === 'co_owner' && $serviceOrder->address->area_id !== auth()->user()->area_id) {
             abort(403);
@@ -46,8 +49,9 @@ class InvoiceController extends Controller
             'issue_date' => 'required|date',
             'due_date' => 'required|date',
             'subtotal' => 'required|numeric',
+            'discount' => 'nullable|numeric',
+            'discount_type' => 'nullable|string|in:fixed,percentage',
             'transport_fee' => 'required|numeric',
-            'grand_total' => 'required|numeric',
         ]);
 
         $serviceOrder = ServiceOrder::findOrFail($request->service_order_id);
@@ -56,7 +60,34 @@ class InvoiceController extends Controller
             abort(403);
         }
 
-        $invoice = Invoice::create($request->all());
+        $subtotal = $request->subtotal;
+        $discount = $request->discount ?? 0;
+        $discountType = $request->discount_type;
+        $transportFee = $request->transport_fee;
+
+        $discountAmount = 0;
+        if ($discountType === 'percentage') {
+            $discountAmount = ($subtotal * $discount) / 100;
+        } else {
+            $discountAmount = $discount;
+        }
+
+        $grandTotal = ($subtotal - $discountAmount) + $transportFee;
+
+        $invoice = Invoice::create([
+            'service_order_id' => $request->service_order_id,
+            'invoice_number' => $request->invoice_number,
+            'issue_date' => $request->issue_date,
+            'due_date' => $request->due_date,
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'discount_type' => $discountType,
+            'transport_fee' => $transportFee,
+            'grand_total' => $grandTotal,
+            'status' => 'unpaid',
+        ]);
+
+        $serviceOrder->update(['status' => ServiceOrder::STATUS_INVOICED]);
 
         return redirect()->route('web.invoices.show', $invoice);
     }
@@ -66,7 +97,9 @@ class InvoiceController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $invoice = Invoice::with(['serviceOrder.customer', 'serviceOrder.address.area', 'serviceOrder.staff', 'serviceOrder.items.service', 'serviceOrder.workPhotos'])->findOrFail($id);
+        $this->authorize('view', $invoice);
+        return view('pages.invoices.show', compact('invoice'));
     }
 
     /**
