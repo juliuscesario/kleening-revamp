@@ -65,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('payments', PaymentController::class)->names('web.payments');
 
     // Custom Resource Routes
+    Route::put('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('web.invoices.update-status');
     Route::get('service-orders/{serviceOrder}/print', [ServiceOrderController::class, 'printPdf'])->name('web.service-orders.print');
 
     // Authentication

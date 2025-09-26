@@ -5,6 +5,7 @@ $(document).ready(function() {
         ajax: '/data/payments',
         processing: true,
         serverSide: true,
+        responsive: true,
         columns: [
             { data: 'invoice_number', name: 'invoice.invoice_number' },
             { data: 'payment_date', name: 'payment_date' },

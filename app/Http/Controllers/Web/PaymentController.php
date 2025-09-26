@@ -45,6 +45,7 @@ class PaymentController extends Controller
 
         $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
+            'reference_number' => 'nullable|string',
             'amount' => 'required|numeric',
             'payment_date' => 'required|date',
             'payment_method' => 'required|string',
@@ -59,6 +60,12 @@ class PaymentController extends Controller
 
         $payment = Payment::create($request->all());
 
+        $invoice->update(['status' => Invoice::STATUS_PAID]);
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Payment created successfully.']);
+        }
+
         return redirect()->route('web.payments.show', $payment);
     }
 
@@ -67,7 +74,9 @@ class PaymentController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $payment = Payment::with(['invoice.serviceOrder.customer'])->findOrFail($id);
+        $this->authorize('view', $payment);
+        return view('pages.payments.show', compact('payment'));
     }
 
     /**

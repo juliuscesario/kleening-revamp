@@ -305,8 +305,8 @@ class DataTablesController extends Controller
         }
 
         return DataTables::of($query)
-            ->addColumn('service_order_id', function ($invoice) {
-                return $invoice->serviceOrder->id;
+            ->addColumn('so_number', function ($invoice) {
+                return $invoice->serviceOrder->so_number;
             })
             ->editColumn('issue_date', function ($invoice) {
                 return Carbon::parse($invoice->issue_date)->format('d M Y');
@@ -315,13 +315,38 @@ class DataTablesController extends Controller
                 return Carbon::parse($invoice->due_date)->format('d M Y');
             })
             ->editColumn('grand_total', function ($invoice) {
-                return 'Rp ' . number_format($invoice->grand_total, 0, ',', '.');
+                return 'Rp ' . number_format($invoice->grand_total, 2, ',', '.');
+            })
+            ->editColumn('status', function ($invoice) {
+                $statusBadgeClass = '';
+                switch ($invoice->status) {
+                    case 'new': $statusBadgeClass = 'bg-primary'; break;
+                    case 'sent': $statusBadgeClass = 'bg-info'; break;
+                    case 'overdue': $statusBadgeClass = 'bg-warning'; break;
+                    case 'paid': $statusBadgeClass = 'bg-success'; break;
+                    default: $statusBadgeClass = 'bg-secondary'; break;
+                }
+                return '<span class="badge ' . $statusBadgeClass . ' text-bg-secondary">' . ucfirst($invoice->status) . '</span>';
             })
             ->addColumn('action', function ($invoice) {
                 $detailUrl = route('web.invoices.show', $invoice->id);
-                return '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
+                $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a> ';
+
+                switch ($invoice->status) {
+                    case 'new':
+                        $actions .= '<button class="btn btn-sm btn-info change-status-btn" data-id="' . $invoice->id . '" data-new-status="' . \App\Models\Invoice::STATUS_SENT . '">Mark as Sent</button> ';
+                        break;
+                    case 'sent':
+                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
+                        break;
+                    case 'overdue':
+                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
+                        break;
+                }
+
+                return $actions;
             })
-            ->rawColumns(['action'])
+            ->rawColumns(['action', 'status'])
             ->make(true);
     }
 

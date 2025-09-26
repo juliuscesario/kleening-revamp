@@ -9,6 +9,16 @@ use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
 class Invoice extends Model
 {
     use HasFactory;
+
+    const STATUS_NEW = 'new';
+    const STATUS_SENT = 'sent';
+    const STATUS_OVERDUE = 'overdue';
+    const STATUS_PAID = 'paid';
+
+    protected $attributes = [
+        'status' => self::STATUS_NEW,
+    ];
+
     /**
      * The "booted" method of the model.
      */

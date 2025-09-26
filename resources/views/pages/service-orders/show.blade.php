@@ -9,10 +9,12 @@
                 <h2 class="page-title">Detail Service Order: {{ $serviceOrder->so_number }}</h2>
             </div>
             <div class="col-auto ms-auto d-print-none">
+                @if(auth()->user()->role !== 'staff')
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editServiceOrderModal">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" /><path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" /><line x1="16" y1="5" x2="19" y2="8" /></svg>
                     Edit Service Order
                 </button>
+                @endif
                 <a href="{{ route('web.service-orders.print', $serviceOrder->id) }}" class="btn btn-success" target="_blank">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><rect x="7" y="13" width="10" height="8" rx="2" /></svg>
                     Print Service Order
@@ -43,6 +45,9 @@
                         <p><strong>Alamat:</strong>
                             @if ($serviceOrder->address)
                                 {{ $serviceOrder->address->full_address }}
+                                @if ($serviceOrder->address->google_maps_link)
+                                    <a href="{{ $serviceOrder->address->google_maps_link }}" class="btn btn-sm btn-outline-primary ms-2" target="_blank">Buka Peta</a>
+                                @endif
                                 @if ($serviceOrder->address->trashed())
                                     <span class="badge bg-danger text-bg-secondary">Archived</span>
                                 @endif

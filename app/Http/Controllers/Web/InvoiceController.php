@@ -84,12 +84,25 @@ class InvoiceController extends Controller
             'discount_type' => $discountType,
             'transport_fee' => $transportFee,
             'grand_total' => $grandTotal,
-            'status' => 'unpaid',
+            'status' => 'new',
         ]);
 
         $serviceOrder->update(['status' => ServiceOrder::STATUS_INVOICED]);
 
         return redirect()->route('web.invoices.show', $invoice);
+    }
+
+    public function updateStatus(Request $request, Invoice $invoice)
+    {
+        $this->authorize('update', $invoice);
+
+        $request->validate([
+            'status' => 'required|string|in:new,sent,overdue,paid',
+        ]);
+
+        $invoice->update(['status' => $request->status]);
+
+        return response()->json(['success' => true, 'message' => 'Invoice status updated successfully.']);
     }
 
     /**
