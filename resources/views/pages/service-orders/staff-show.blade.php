@@ -154,7 +154,7 @@
 
 <!-- Start Work Modal -->
 <div class="modal modal-blur fade" id="startWorkModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Mulai Kerja untuk Service Order {{ $serviceOrder->so_number }}</h5>
@@ -181,7 +181,7 @@
 
 <!-- Upload Work Proof Modal -->
 <div class="modal modal-blur fade" id="uploadWorkProofModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Lengkapi Bukti Kerja untuk Service Order {{ $serviceOrder->so_number }}</h5>
@@ -222,7 +222,7 @@
 
 <!-- Signature Modal -->
 <div class="modal modal-blur fade" id="signatureModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="signatureModalTitle">Tanda Tangan untuk Service Order {{ $serviceOrder->so_number }}</h5>
