@@ -19,6 +19,9 @@ use App\Http\Controllers\Web\ServiceController;
 use App\Http\Controllers\Web\ServiceOrderController;
 use App\Http\Controllers\Web\StaffController;
 
+use App\Http\Controllers\Web\InvoiceController;
+use App\Http\Controllers\Web\PaymentController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -47,6 +50,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/staff/by-area/{area}', [JsonDataController::class, 'staffByArea'])->name('data.staff.by-area');
     Route::get('data/addresses', [DataTablesController::class, 'addresses'])->name('data.addresses');
     Route::get('data/service-orders', [DataTablesController::class, 'serviceOrders'])->name('data.service-orders');
+    Route::get('data/invoices', [DataTablesController::class, 'invoices'])->name('data.invoices');
+    Route::get('data/payments', [DataTablesController::class, 'payments'])->name('data.payments');
 
     // Resource Routes
     Route::resource('areas', AreaController::class)->names('web.areas');
@@ -56,6 +61,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('customers', CustomerController::class)->names('web.customers');
     Route::resource('addresses', AddressController::class)->names('web.addresses');
     Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
+    Route::resource('invoices', InvoiceController::class)->names('web.invoices');
+    Route::resource('payments', PaymentController::class)->names('web.payments');
 
     // Custom Resource Routes
     Route::get('service-orders/{serviceOrder}/print', [ServiceOrderController::class, 'printPdf'])->name('web.service-orders.print');

@@ -292,6 +292,69 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
+    public function invoices()
+    {
+        $this->authorize('viewAny', \App\Models\Invoice::class);
+
+        $query = \App\Models\Invoice::with('serviceOrder.customer');
+
+        if (auth()->user()->role === 'co_owner') {
+            $query->whereHas('serviceOrder.address', function ($q) {
+                $q->where('area_id', auth()->user()->area_id);
+            });
+        }
+
+        return DataTables::of($query)
+            ->addColumn('service_order_id', function ($invoice) {
+                return $invoice->serviceOrder->id;
+            })
+            ->editColumn('issue_date', function ($invoice) {
+                return Carbon::parse($invoice->issue_date)->format('d M Y');
+            })
+            ->editColumn('due_date', function ($invoice) {
+                return Carbon::parse($invoice->due_date)->format('d M Y');
+            })
+            ->editColumn('grand_total', function ($invoice) {
+                return 'Rp ' . number_format($invoice->grand_total, 0, ',', '.');
+            })
+            ->addColumn('action', function ($invoice) {
+                $detailUrl = route('web.invoices.show', $invoice->id);
+                return '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    public function payments()
+    {
+        $this->authorize('viewAny', \App\Models\Payment::class);
+
+        $query = \App\Models\Payment::with('invoice.serviceOrder.customer');
+
+        if (auth()->user()->role === 'co_owner') {
+            $query->whereHas('invoice.serviceOrder.address', function ($q) {
+                $q->where('area_id', auth()->user()->area_id);
+            });
+        }
+
+        return DataTables::of($query)
+            ->addColumn('invoice_number', function ($payment) {
+                return $payment->invoice->invoice_number;
+            })
+            ->editColumn('payment_date', function ($payment) {
+                return Carbon::parse($payment->payment_date)->format('d M Y');
+            })
+            ->editColumn('amount', function ($payment) {
+                return 'Rp ' . number_format($payment->amount, 0, ',', '.');
+            })
+            ->addColumn('action', function ($payment) {
+                $detailUrl = route('web.payments.show', $payment->id);
+                return '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
     // --- CONTOH UNTUK CUSTOMER ---
     // Nanti, saat Anda membuat halaman customer, Anda tinggal tambahkan method ini
     /*

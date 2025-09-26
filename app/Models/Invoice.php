@@ -32,4 +32,9 @@ class Invoice extends Model
     {
         return $this->belongsTo(ServiceOrder::class);
     }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
 }

@@ -74,4 +74,10 @@ $(function() {
     if (document.getElementById('create-so-form')) {
         import('./pages/service-orders-create.js');
     }
+    if (document.getElementById('invoices-table')) {
+        import('./pages/invoices.js');
+    }
+    if (document.getElementById('payments-table')) {
+        import('./pages/payments.js');
+    }
 });

@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\User;
 
-class InvoicePolicy
+class PaymentPolicy
 {
     // Method ini otomatis memberi akses penuh ke owner
     public function before(User $user, string $ability): bool|null
@@ -16,41 +16,41 @@ class InvoicePolicy
         return null;
     }
 
-    // Siapa yang boleh melihat daftar invoice?
+    // Siapa yang boleh melihat daftar payment?
     public function viewAny(User $user): bool
     {
         return in_array($user->role, ['co_owner', 'admin']);
     }
 
-    // Siapa yang boleh melihat detail satu invoice?
-    public function view(User $user, Invoice $invoice): bool
+    // Siapa yang boleh melihat detail satu payment?
+    public function view(User $user, Payment $payment): bool
     {
         if ($user->role === 'co_owner') {
-            return $invoice->serviceOrder->address->area_id === $user->area_id;
+            return $payment->invoice->serviceOrder->address->area_id === $user->area_id;
         }
         return in_array($user->role, ['admin']);
     }
 
-    // Siapa yang boleh membuat invoice?
+    // Siapa yang boleh membuat payment?
     public function create(User $user): bool
     {
         return in_array($user->role, ['co_owner', 'admin']);
     }
 
-    // Siapa yang boleh update invoice?
-    public function update(User $user, Invoice $invoice): bool
+    // Siapa yang boleh update payment?
+    public function update(User $user, Payment $payment): bool
     {
         if ($user->role === 'co_owner') {
-            return $invoice->serviceOrder->address->area_id === $user->area_id;
+            return $payment->invoice->serviceOrder->address->area_id === $user->area_id;
         }
         return in_array($user->role, ['admin']);
     }
 
-    // Siapa yang boleh hapus invoice?
-    public function delete(User $user, Invoice $invoice): bool
+    // Siapa yang boleh hapus payment?
+    public function delete(User $user, Payment $payment): bool
     {
         if ($user->role === 'co_owner') {
-            return $invoice->serviceOrder->address->area_id === $user->area_id;
+            return $payment->invoice->serviceOrder->address->area_id === $user->area_id;
         }
         return in_array($user->role, ['admin']);
     }

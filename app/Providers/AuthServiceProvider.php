@@ -23,6 +23,7 @@ class AuthServiceProvider extends ServiceProvider
         \App\Models\WorkPhoto::class => \App\Policies\WorkPhotoPolicy::class,
         \App\Models\Invoice::class => \App\Policies\InvoicePolicy::class,
         \App\Models\Address::class => \App\Policies\AddressPolicy::class,
+        \App\Models\Payment::class => \App\Policies\PaymentPolicy::class,
 
     ];
 
