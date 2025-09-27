@@ -53,6 +53,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/invoices', [DataTablesController::class, 'invoices'])->name('data.invoices');
     Route::get('data/payments', [DataTablesController::class, 'payments'])->name('data.payments');
 
+    // Report Data Routes
+    Route::get('data/reports/revenue', [DataTablesController::class, 'revenueReportData'])->name('data.reports.revenue');
+
+
     // Resource Routes
     Route::resource('areas', AreaController::class)->names('web.areas');
     Route::resource('service-categories', ServiceCategoriesController::class)->names('web.service-categories');
@@ -63,6 +67,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
     Route::resource('invoices', InvoiceController::class)->names('web.invoices');
     Route::resource('payments', PaymentController::class)->names('web.payments');
+
+    // Reports
+    Route::get('reports/revenue', [\App\Http\Controllers\Web\ReportController::class, 'revenue'])->name('web.reports.revenue');
+
 
     // Custom Resource Routes
     Route::put('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('web.invoices.update-status');

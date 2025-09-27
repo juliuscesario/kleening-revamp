@@ -9,8 +9,8 @@ class AreaSeeder extends Seeder
 {
     public function run(): void
     {
-        Area::create(['name' => 'Jakarta']);
-        Area::create(['name' => 'Banten']);
-        Area::create(['name' => 'Bekasi']);
+        Area::updateOrCreate(['name' => 'Jakarta']);
+        Area::updateOrCreate(['name' => 'Banten']);
+        Area::updateOrCreate(['name' => 'Bekasi']);
     }
 }

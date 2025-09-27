@@ -380,6 +380,82 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
+    public function revenueReportData(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\Invoice::class);
+
+        $query = \App\Models\ServiceCategory::query()
+            ->withCount(['serviceOrderItems as total_orders' => function ($query) use ($request) {
+                $query->whereHas('serviceOrder.invoice', function ($q) use ($request) {
+                    $q->where('status', \App\Models\Invoice::STATUS_PAID);
+                    if ($request->filled('start_date') && $request->filled('end_date')) {
+                        $q->whereBetween('updated_at', [$request->start_date, $request->end_date]);
+                    }
+                });
+            }])
+            ->withSum(['serviceOrderItems as total_revenue' => function ($query) use ($request) {
+                $query->whereHas('serviceOrder.invoice', function ($q) use ($request) {
+                    $q->where('status', \App\Models\Invoice::STATUS_PAID);
+                    if ($request->filled('start_date') && $request->filled('end_date')) {
+                        $q->whereBetween('updated_at', [$request->start_date, $request->end_date]);
+                    }
+                });
+            }], 'total');
+
+        if (auth()->user()->role === 'co_owner') {
+            $areaId = auth()->user()->area_id;
+            $query->whereHas('serviceOrderItems.serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $areaId = $request->area_id;
+            $query->whereHas('serviceOrderItems.serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        }
+
+        $dataTable = DataTables::of($query)
+            ->editColumn('total_revenue', function ($category) {
+                return 'Rp ' . number_format($category->total_revenue ?? 0, 0, ',', '.');
+            })
+            ->orderColumn('total_revenue', function ($query, $order) {
+                $query->orderBy('total_revenue', $order);
+            })
+            ->orderColumn('total_orders', function ($query, $order) {
+                $query->orderBy('total_orders', $order);
+            });
+
+        // Calculate summary data
+        $summaryQuery = \App\Models\Invoice::query()
+            ->where('status', \App\Models\Invoice::STATUS_PAID);
+        
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $summaryQuery->whereBetween('updated_at', [$request->start_date, $request->end_date]);
+        }
+
+        if (auth()->user()->role === 'co_owner') {
+            $areaId = auth()->user()->area_id;
+            $summaryQuery->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $areaId = $request->area_id;
+            $summaryQuery->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        }
+
+        $totalRevenue = $summaryQuery->sum('grand_total');
+        $totalOrders = $summaryQuery->count();
+        $avgRevenue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
+
+        return $dataTable->with('summary', [
+            'total_revenue' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
+            'total_orders' => number_format($totalOrders, 0, ',', '.'),
+            'avg_revenue' => 'Rp ' . number_format($avgRevenue, 0, ',', '.'),
+        ])->make(true);
+    }
+
     // --- CONTOH UNTUK CUSTOMER ---
     // Nanti, saat Anda membuat halaman customer, Anda tinggal tambahkan method ini
     /*

@@ -24,13 +24,13 @@ class ServiceOrderFactory extends Factory
     public function definition(): array
     {
         return [
-            'customer_id' => Customer::inRandomOrder()->first()->id,
-            'address_id' => Address::inRandomOrder()->first()->id,
+            'customer_id' => (Customer::inRandomOrder()->first() ?? Customer::factory()->create())->id,
+            'address_id' => (Address::inRandomOrder()->first() ?? Address::factory()->create())->id,
             'work_date' => fake()->dateTimeBetween('-1 month', '+1 month'),
             'status' => fake()->randomElement(['booked', 'invoiced', 'done', 'cancelled','proses']),
             'work_notes' => fake()->sentence(),
             'staff_notes' => fake()->sentence(),
-            'created_by' => User::where('role', 'admin')->first()->id,
+            'created_by' => (User::where('role', 'admin')->first() ?? User::factory()->create(['role' => 'admin']))->id,
             'so_number' => 'SO-' . fake()->unique()->randomNumber(8),
         ];
     }

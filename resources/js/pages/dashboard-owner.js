@@ -1,18 +1,9 @@
-import 'apexcharts';
+import ApexCharts from 'apexcharts';
 
-document.addEventListener("DOMContentLoaded", function () {
-    console.log('Dashboard script loaded.');
-    const chartEl = document.getElementById('chart-daily-revenue');
-    if (!chartEl) {
-        return;
-    }
+console.log('Dashboard script loaded.');
+const chartEl = document.getElementById('chart-daily-revenue');
 
-    // Ensure the global ApexCharts is available
-    if (typeof window.ApexCharts === 'undefined') {
-        console.error('ApexCharts library not found on window object.');
-        return;
-    }
-
+if (chartEl) {
     const dates = JSON.parse(chartEl.dataset.dates);
     const totals = JSON.parse(chartEl.dataset.totals);
 
@@ -63,9 +54,9 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     try {
-        const chart = new window.ApexCharts(chartEl, options);
+        const chart = new ApexCharts(chartEl, options);
         chart.render();
     } catch (e) {
         console.error("Error rendering ApexChart:", e);
     }
-});
+}

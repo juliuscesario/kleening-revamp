@@ -89,4 +89,7 @@ $(function() {
     if (document.getElementById('chart-daily-revenue')) {
         import('./pages/dashboard-owner.js');
     }
+    if (document.getElementById('revenue-report-table')) {
+        import('./pages/report-revenue.js');
+    }
 });

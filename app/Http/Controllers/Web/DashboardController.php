@@ -29,16 +29,14 @@ class DashboardController extends Controller
             $startOfMonth = $today->copy()->startOfMonth();
 
             // KPIs
-            $viewData['monthlyRevenue'] = Invoice::where('status', Invoice::STATUS_PAID)
-                ->whereBetween('updated_at', [$startOfMonth, $today])
-                ->sum('grand_total');
+            $viewData['monthlyRevenue'] = Payment::whereBetween('payment_date', [$startOfMonth, $today])->sum('amount');
 
             $viewData['jobsCompletedThisMonth'] = ServiceOrder::whereIn('status', [ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])
                 ->whereBetween('work_date', [$startOfMonth, $today])
                 ->count();
 
-            $viewData['outstandingInvoices'] = Invoice::whereIn('status', [Invoice::STATUS_NEW, Invoice::STATUS_SENT])->sum('grand_total');
-            $viewData['overdueInvoices'] = Invoice::where('status', Invoice::STATUS_OVERDUE)->sum('grand_total');
+            $viewData['outstandingInvoices'] = Invoice::where('status', '!=', Invoice::STATUS_PAID)->sum('grand_total');
+            $viewData['overdueInvoices'] = Invoice::where('status', '!=', Invoice::STATUS_PAID)->where('due_date', '<', $today)->sum('grand_total');
             $viewData['newCustomersThisMonth'] = Customer::whereBetween('created_at', [$startOfMonth, $today])->count();
 
             // Service Order Funnel

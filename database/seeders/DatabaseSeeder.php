@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AreaSeeder::class,
             UserSeeder::class, // Ini membuat Owner, Admin, Co-Owner
+            DummySeptember2025Seeder::class, // Add this line
         ]);
 
         // 2. Gunakan Factory untuk membuat data dummy dalam jumlah banyak
