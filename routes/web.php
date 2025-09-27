@@ -44,7 +44,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/areas', [DataTablesController::class, 'areas'])->name('data.areas');
     Route::get('data/service-categories', [DataTablesController::class, 'serviceCategories'])->name('data.service-categories');
     Route::get('data/staff', [DataTablesController::class, 'staff'])->name('data.staff');
-    Route::get('data/services', [JsonDataController::class, 'services'])->name('data.services');
+    Route::get('data/services', [DataTablesController::class, 'services'])->name('data.services');
     Route::get('data/customers', [DataTablesController::class, 'customers'])->name('data.customers');
     Route::get('data/customers/{customer}/addresses', [JsonDataController::class, 'customerAddresses'])->name('data.customers.addresses');
     Route::get('data/staff/by-area/{area}', [JsonDataController::class, 'staffByArea'])->name('data.staff.by-area');

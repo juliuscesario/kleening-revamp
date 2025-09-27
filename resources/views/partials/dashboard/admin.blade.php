@@ -100,7 +100,7 @@
                                     <h5 class="mb-1">{{ $so->so_number }}</h5>
                                     <small>{{ $so->created_at->diffForHumans() }}</small>
                                 </div>
-                                <p class="mb-1">Status: <span class="badge bg-info">{{ ucfirst($so->status) }}</span></p>
+                                <p class="mb-1">Status: <span class="badge bg-info text-white">{{ ucfirst($so->status) }}</span></p>
                                 <small>Pelanggan: {{ $so->customer->name }}</small>
                             </a>
                         @endforeach

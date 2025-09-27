@@ -29,7 +29,7 @@ class ServicePolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return in_array($user->role, ['owner']);
     }
 
     /**
@@ -37,7 +37,7 @@ class ServicePolicy
      */
     public function update(User $user, Service $service): bool
     {
-        return false;
+        return in_array($user->role, ['owner']);
     }
 
     /**
@@ -45,7 +45,7 @@ class ServicePolicy
      */
     public function delete(User $user, Service $service): bool
     {
-        return false;
+        return in_array($user->role, ['owner']);
     }
 
     /**

@@ -94,7 +94,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <span>Booked</span>
-                    <span class="badge bg-secondary">{{ $funnelBooked }}</span>
+                    <span class="badge bg-secondary text-white">{{ $funnelBooked }}</span>
                 </div>
                 <div class="progress mt-1 mb-2" style="height: 5px;">
                     <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ $funnelBooked > 0 ? 100 : 0 }}%" aria-valuenow="{{ $funnelBooked }}"></div>
@@ -102,7 +102,7 @@
 
                 <div class="d-flex justify-content-between align-items-center">
                     <span>Proses</span>
-                    <span class="badge bg-info">{{ $funnelProses }}</span>
+                    <span class="badge bg-info text-white">{{ $funnelProses }}</span>
                 </div>
                 <div class="progress mt-1 mb-2" style="height: 5px;">
                     <div class="progress-bar bg-info" role="progressbar" style="width: {{ $funnelProses > 0 ? 100 : 0 }}%" aria-valuenow="{{ $funnelProses }}"></div>
@@ -110,7 +110,7 @@
 
                 <div class="d-flex justify-content-between align-items-center">
                     <span>Invoiced</span>
-                    <span class="badge bg-success">{{ $funnelInvoiced }}</span>
+                    <span class="badge bg-success text-white">{{ $funnelInvoiced }}</span>
                 </div>
                 <div class="progress mt-1" style="height: 5px;">
                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ $funnelInvoiced > 0 ? 100 : 0 }}%" aria-valuenow="{{ $funnelInvoiced }}"></div>
@@ -123,7 +123,7 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Grafik Pendapatan Harian</h3>
+                <h3 class="card-title">Grafik Pendapatan Bulan Ini (Harian)</h3>
             </div>
             <div class="card-body">
                 @php
