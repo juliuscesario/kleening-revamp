@@ -281,7 +281,7 @@ class DataTablesController extends Controller
                 }
 
                 if ($so->invoice) {
-                    $actions .= '<a href="#" class="btn btn-sm btn-success">Invoice</a> ';
+                    $actions .= '<a href="' . route('web.invoices.show', $so->invoice->id) . '" class="btn btn-sm btn-success">Invoice</a> ';
                 } else if ($so->status === \App\Models\ServiceOrder::STATUS_DONE) {
                     $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Create Invoice</button> ';
                 }

@@ -11,10 +11,21 @@
                     Invoice #{{ $invoice->invoice_number }}
                 </h2>
             </div>
+            <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                    @if($invoice->status === 'new')
+                        <button class="btn btn-info change-status-btn" data-id="{{ $invoice->id }}" data-new-status="sent">Mark as Sent</button>
+                    @endif
+                    @if($invoice->status === 'sent' || $invoice->status === 'overdue')
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#markAsPaidModal">Make Payment</button>
+                    @endif
+                    <a href="{{ route('web.invoices.index') }}" class="btn">Kembali</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-<div class="page-body">
+<div class="page-body" id="invoice-show-page">
     <div class="container-xl">
         <div class="card card-lg">
             <div class="card-body">
@@ -32,6 +43,7 @@
                         <p><strong>Issue Date:</strong> {{ $invoice->issue_date }}</p>
                         <p><strong>Due Date:</strong> {{ $invoice->due_date }}</p>
                         <p><strong>Status:</strong> <span class="badge bg-{{ $invoice->status === 'paid' ? 'success' : 'danger' }} text-bg-secondary">{{ ucfirst($invoice->status) }}</span></p>
+
                     </div>
                 </div>
                 <table class="table table-transparent table-responsive">
@@ -99,6 +111,52 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mark as Paid Modal -->
+<div class="modal modal-blur fade" id="markAsPaidModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Invoice as Paid</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="markAsPaidForm">
+                    <input type="hidden" id="invoice_id" name="invoice_id" value="{{ $invoice->id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" name="reference_number">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-control" name="amount" value="{{ $invoice->grand_total }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Date</label>
+                        <input type="date" class="form-control" name="payment_date" value="{{ date('Y-m-d') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-select" name="payment_method">
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cash">Cash</option>
+                            <option value="qr_payment">QR Payment</option>
+                            <option value="virtual_account">Virtual Account</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes"></textarea>
+                    </div >
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="savePaymentBtn">Save Payment</button>
             </div>
         </div>
     </div>

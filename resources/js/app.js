@@ -83,4 +83,7 @@ $(function() {
     if (document.getElementById('create-invoice-page')) {
         import('./pages/invoices-create.js');
     }
+    if (document.getElementById('invoice-show-page')) {
+        import('./pages/invoices-show.js');
+    }
 });
