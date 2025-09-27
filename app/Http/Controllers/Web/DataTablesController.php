@@ -115,7 +115,7 @@ class DataTablesController extends Controller
                 return 'Rp ' . number_format($service->price, 0, ',', '.');
             })
             ->addColumn('category_name', function ($service) {
-                return $service->category->name;
+                return $service->category ? $service->category->name : 'N/A';
             })
             ->editColumn('created_at', function ($service) {
                 return \Carbon\Carbon::parse($service->created_at)->format('d M Y H:i');
