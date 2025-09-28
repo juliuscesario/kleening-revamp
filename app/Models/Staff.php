@@ -35,4 +35,9 @@ class Staff extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function serviceOrders()
+    {
+        return $this->belongsToMany(ServiceOrder::class, 'service_order_staff');
+    }
 }

@@ -92,4 +92,10 @@ $(function() {
     if (document.getElementById('revenue-report-table')) {
         import('./pages/report-revenue.js');
     }
+    if (document.getElementById('staff-performance-report-table')) {
+        import('./pages/report-staff-performance.js');
+    }
+    if (document.getElementById('customer-growth-report-table')) {
+        import('./pages/report-customer-growth.js');
+    }
 });

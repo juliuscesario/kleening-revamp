@@ -16,4 +16,19 @@ class ReportController extends Controller
         $areas = Area::all();
         return view('pages.reports.revenue', compact('areas'));
     }
+
+    public function staffPerformance()
+    {
+        $this->authorize('viewAny', \App\Models\Staff::class);
+        $areas = Area::all();
+        $staff = \App\Models\Staff::with('user')->get();
+        return view('pages.reports.staff-performance', compact('areas', 'staff'));
+    }
+
+    public function customerGrowth()
+    {
+        $this->authorize('viewAny', \App\Models\Customer::class);
+        $areas = Area::all();
+        return view('pages.reports.customer-growth', compact('areas'));
+    }
 }

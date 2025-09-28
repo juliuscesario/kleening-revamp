@@ -55,6 +55,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Report Data Routes
     Route::get('data/reports/revenue', [DataTablesController::class, 'revenueReportData'])->name('data.reports.revenue');
+    Route::get('data/reports/staff-performance', [DataTablesController::class, 'staffPerformanceReportData'])->name('data.reports.staff-performance');
+    Route::get('data/reports/customer-growth', [DataTablesController::class, 'customerGrowthReportData'])->name('data.reports.customer-growth');
 
 
     // Resource Routes
@@ -70,6 +72,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Reports
     Route::get('reports/revenue', [\App\Http\Controllers\Web\ReportController::class, 'revenue'])->name('web.reports.revenue');
+    Route::get('reports/staff-performance', [\App\Http\Controllers\Web\ReportController::class, 'staffPerformance'])->name('web.reports.staff-performance');
+    Route::get('reports/customer-growth', [\App\Http\Controllers\Web\ReportController::class, 'customerGrowth'])->name('web.reports.customer-growth');
 
 
     // Custom Resource Routes

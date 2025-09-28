@@ -173,6 +173,12 @@
                       <a class="dropdown-item {{ request()->is('reports/revenue*') ? 'active' : '' }}" href="{{ route('web.reports.revenue') }}">
                         Laporan Pendapatan
                       </a>
+                      <a class="dropdown-item {{ request()->is('reports/staff-performance*') ? 'active' : '' }}" href="{{ route('web.reports.staff-performance') }}">
+                        Laporan Kinerja Staff
+                      </a>
+                      <a class="dropdown-item {{ request()->is('reports/customer-growth*') ? 'active' : '' }}" href="{{ route('web.reports.customer-growth') }}">
+                        Laporan Pertumbuhan Pelanggan
+                      </a>
                     </div>
                   </div>
                 </div>

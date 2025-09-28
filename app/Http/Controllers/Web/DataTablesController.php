@@ -464,6 +464,117 @@ class DataTablesController extends Controller
         ])->make(true);
     }
 
+    public function staffPerformanceReportData(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\Staff::class);
+
+        $query = \App\Models\Staff::with('user', 'area')->select('staff.*');
+
+        if (auth()->user()->role === 'co_owner') {
+            $query->where('area_id', auth()->user()->area_id);
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $query->where('area_id', $request->area_id);
+        }
+
+        if ($request->filled('staff_id') && $request->staff_id !== 'all') {
+            $query->where('id', $request->staff_id);
+        }
+
+        $dataTable = DataTables::of($query)
+            ->addColumn('name', function($staff) {
+                return $staff->name;
+            })
+            ->addColumn('area_name', function($staff) {
+                return $staff->area->name ?? 'N/A';
+            })
+            ->addColumn('jobs_completed', function ($staff) use ($request) {
+                $jobsQuery = $staff->serviceOrders()
+                    ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED]);
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $jobsQuery->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                }
+                return $jobsQuery->count();
+            })
+            ->addColumn('total_revenue', function ($staff) use ($request) {
+                $revenueQuery = \App\Models\Invoice::where('status', \App\Models\Invoice::STATUS_PAID)
+                    ->whereHas('serviceOrder', function($soQuery) use ($staff) {
+                        $soQuery->whereHas('staff', function($staffQuery) use ($staff) {
+                            $staffQuery->where('staff.id', $staff->id);
+                        });
+                    });
+
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $revenueQuery->whereHas('payments', function ($paymentQuery) use ($request) {
+                        $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                    });
+                }
+                return 'Rp ' . number_format($revenueQuery->sum('grand_total'), 0, ',', '.');
+            });
+
+        return $dataTable->make(true);
+    }
+
+    public function customerGrowthReportData(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\Customer::class);
+
+        // 1. Create the base subquery with calculated columns
+        $subQuery = \App\Models\Customer::query()->select('customers.*')->withTrashed();
+
+        $user = auth()->user();
+        if ($user->role == 'co-owner') {
+            $subQuery->whereHas('addresses', function ($q) use ($user) {
+                $q->where('area_id', $user->area_id);
+            });
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $areaId = $request->area_id;
+            $subQuery->whereHas('addresses', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        }
+
+        $subQuery->withSum(['invoices as total_revenue' => function ($q) use ($request) {
+            $q->where('invoices.status', \App\Models\Invoice::STATUS_PAID);
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                    $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                });
+            }
+        }], 'grand_total')
+        ->withCount(['invoices as total_orders' => function ($q) use ($request) {
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                    $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                });
+            }
+        }]);
+
+        // 2. Create the main query from the subquery, which allows WHERE on aliases
+        $query = \App\Models\Customer::fromSub($subQuery, 'customers')
+            ->where('total_revenue', '>', 0);
+
+        return DataTables::of($query)
+            ->addColumn('name', function($customer) {
+                $name = $customer->name;
+                // Manually check for soft delete, since we don't have an Eloquent model
+                if (!empty($customer->deleted_at)) {
+                    $name .= ' <span class="badge bg-danger text-bg-secondary">Archived</span>';
+                }
+                return $name;
+            })
+            ->editColumn('total_revenue', function ($customer) {
+                return 'Rp ' . number_format($customer->total_revenue ?? 0, 0, ',', '.');
+            })
+            ->orderColumn('total_revenue', function ($query, $order) {
+                $query->orderBy('total_revenue', $order);
+            })
+            ->orderColumn('total_orders', function ($query, $order) {
+                $query->orderBy('total_orders', $order);
+            })
+            ->rawColumns(['name'])
+            ->make(true);
+    }
+
     // --- CONTOH UNTUK CUSTOMER ---
     // Nanti, saat Anda membuat halaman customer, Anda tinggal tambahkan method ini
     /*
