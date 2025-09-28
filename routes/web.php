@@ -57,6 +57,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/reports/revenue', [DataTablesController::class, 'revenueReportData'])->name('data.reports.revenue');
     Route::get('data/reports/staff-performance', [DataTablesController::class, 'staffPerformanceReportData'])->name('data.reports.staff-performance');
     Route::get('data/reports/customer-growth', [DataTablesController::class, 'customerGrowthReportData'])->name('data.reports.customer-growth');
+    Route::get('data/reports/revenue/drilldown/{serviceCategory}/trend', [DataTablesController::class, 'revenueTrendChartData'])->name('data.reports.revenue.trend');
+    Route::get('data/reports/revenue/drilldown/{serviceCategory}/area', [DataTablesController::class, 'revenueAreaChartData'])->name('data.reports.revenue.area');
+    Route::get('data/reports/revenue/drilldown/{serviceCategory}/table', [DataTablesController::class, 'revenueDrilldownTableData'])->name('data.reports.revenue.table');
+    Route::get('data/reports/staff/drilldown/{staff}/workload', [DataTablesController::class, 'staffWorkloadChartData'])->name('data.reports.staff.workload');
+    Route::get('data/reports/staff/drilldown/{staff}/specialization', [DataTablesController::class, 'staffSpecializationChartData'])->name('data.reports.staff.specialization');
+    Route::get('data/reports/staff/drilldown/{staff}/table', [DataTablesController::class, 'staffDrilldownTableData'])->name('data.reports.staff.table');
+    Route::get('data/reports/customer/drilldown/{customer}/spending-timeline', [DataTablesController::class, 'customerSpendingTimelineData'])->name('data.reports.customer.spending-timeline');
+    Route::get('data/reports/customer/drilldown/{customer}/key-metrics', [DataTablesController::class, 'customerKeyMetricsData'])->name('data.reports.customer.key-metrics');
+    Route::get('data/reports/customer/drilldown/{customer}/service-frequency', [DataTablesController::class, 'customerServiceFrequencyData'])->name('data.reports.customer.service-frequency');
+    Route::get('data/reports/customer/drilldown/{customer}/order-history', [DataTablesController::class, 'customerOrderHistoryData'])->name('data.reports.customer.order-history');
 
 
     // Resource Routes
@@ -74,6 +84,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reports/revenue', [\App\Http\Controllers\Web\ReportController::class, 'revenue'])->name('web.reports.revenue');
     Route::get('reports/staff-performance', [\App\Http\Controllers\Web\ReportController::class, 'staffPerformance'])->name('web.reports.staff-performance');
     Route::get('reports/customer-growth', [\App\Http\Controllers\Web\ReportController::class, 'customerGrowth'])->name('web.reports.customer-growth');
+    Route::get('reports/revenue/drilldown/{serviceCategory}', [\App\Http\Controllers\Web\ReportController::class, 'revenueDrilldown'])->name('web.reports.revenue.drilldown');
+    Route::get('reports/staff/drilldown/{staff}', [\App\Http\Controllers\Web\ReportController::class, 'staffDrilldown'])->name('web.reports.staff.drilldown');
+    Route::get('reports/customer/drilldown/{customer}', [\App\Http\Controllers\Web\ReportController::class, 'customerDrilldown'])->name('web.reports.customer.drilldown');
 
 
     // Custom Resource Routes

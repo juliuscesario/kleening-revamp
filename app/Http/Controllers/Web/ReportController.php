@@ -31,4 +31,23 @@ class ReportController extends Controller
         $areas = Area::all();
         return view('pages.reports.customer-growth', compact('areas'));
     }
+
+    public function revenueDrilldown(\App\Models\ServiceCategory $serviceCategory)
+    {
+        $this->authorize('viewAny', \App\Models\Invoice::class);
+        return view('pages.reports.revenue-drilldown', compact('serviceCategory'));
+    }
+
+    public function staffDrilldown(\App\Models\Staff $staff)
+    {
+        $this->authorize('view', $staff);
+        return view('pages.reports.staff-drilldown', compact('staff'));
+    }
+
+    public function customerDrilldown($customerId)
+    {
+        $customer = \App\Models\Customer::withTrashed()->findOrFail($customerId);
+        $this->authorize('view', $customer);
+        return view('pages.reports.customer-drilldown', compact('customer'));
+    }
 }

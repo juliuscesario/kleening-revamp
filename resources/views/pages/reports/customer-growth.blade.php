@@ -51,7 +51,8 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table id="customer-growth-report-table" class="table card-table table-vcenter text-nowrap datatable"
-                        data-url="{{ route('data.reports.customer-growth') }}">
+                        data-url="{{ route('data.reports.customer-growth') }}"
+                        data-drilldown-url="{{ route('web.reports.customer.drilldown', ['customer' => '__ID__']) }}">
                         <thead>
                             <tr>
                                 <th>Nama Pelanggan</th>

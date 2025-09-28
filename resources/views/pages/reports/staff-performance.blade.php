@@ -57,7 +57,8 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table id="staff-performance-report-table" class="table card-table table-vcenter text-nowrap datatable"
-                        data-url="{{ route('data.reports.staff-performance') }}">
+                        data-url="{{ route('data.reports.staff-performance') }}"
+                        data-drilldown-url="{{ route('web.reports.staff.drilldown', ['staff' => '__ID__']) }}">
                         <thead>
                             <tr>
                                 <th>Nama Staff</th>

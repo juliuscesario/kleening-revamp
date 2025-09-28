@@ -91,7 +91,8 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table id="revenue-report-table" class="table card-table table-vcenter text-nowrap datatable"
-                        data-url="{{ route('data.reports.revenue') }}">
+                        data-url="{{ route('data.reports.revenue') }}"
+                        data-drilldown-url="{{ route('web.reports.revenue.drilldown', ['serviceCategory' => '__ID__']) }}">
                         <thead>
                             <tr>
                                 <th>Kategori Layanan</th>

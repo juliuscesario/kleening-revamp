@@ -12,7 +12,20 @@ $(function() {
             }
         },
         columns: [
-            { data: 'name', name: 'name' },
+            {
+                data: 'name',
+                name: 'name',
+                render: function(data, type, row) {
+                    if (type === 'display') {
+                        const drilldownBaseUrl = table.data('drilldown-url');
+                        if (!drilldownBaseUrl) return data;
+
+                        let drilldownUrl = new URL(drilldownBaseUrl.replace('__ID__', row.id), window.location.origin);
+                        return `<a href="${drilldownUrl.toString()}">${data}</a>`;
+                    }
+                    return data;
+                }
+            },
             { data: 'total_orders', name: 'total_orders' },
             { data: 'total_revenue', name: 'total_revenue' }
         ],

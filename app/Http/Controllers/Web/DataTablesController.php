@@ -13,6 +13,9 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request; // <-- ADD THIS LINE
 
+use Illuminate\Support\Facades\DB;
+use Carbon\CarbonPeriod;
+
 class DataTablesController extends Controller
 {
     use AuthorizesRequests; // <-- Gunakan trait ini untuk cek hak akses
@@ -572,6 +575,353 @@ class DataTablesController extends Controller
                 $query->orderBy('total_orders', $order);
             })
             ->rawColumns(['name'])
+            ->make(true);
+    }
+
+    public function revenueTrendChartData(Request $request, \App\Models\ServiceCategory $serviceCategory)
+    {
+        $this->authorize('viewAny', \App\Models\Invoice::class);
+
+        $query = \App\Models\ServiceOrderItem::query()
+            ->whereHas('service', function ($query) use ($serviceCategory) { $query->where('category_id', $serviceCategory->id); })
+            ->whereHas('serviceOrder.invoice', function ($q) use ($request) {
+                $q->where('status', \App\Models\Invoice::STATUS_PAID);
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                        $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                    });
+                }
+            });
+
+        if (auth()->user()->role === 'co_owner') {
+            $areaId = auth()->user()->area_id;
+            $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $areaId = $request->area_id;
+            $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        }
+
+        $revenueData = $query->join('service_orders', 'service_order_items.service_order_id', '=', 'service_orders.id')
+            ->select(
+                DB::raw('DATE(service_orders.work_date) as date'),
+                DB::raw('SUM(service_order_items.total) as daily_revenue')
+            )
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get()
+            ->keyBy('date');
+
+        $period = CarbonPeriod::create($request->start_date, $request->end_date);
+        $labels = [];
+        $data = [];
+
+        foreach ($period as $date) {
+            $formattedDate = $date->format('Y-m-d');
+            $labels[] = $date->format('d M');
+            $data[] = $revenueData->get($formattedDate)->daily_revenue ?? 0;
+        }
+
+        return response()->json([
+            'labels' => $labels,
+            'data' => $data,
+        ]);
+    }
+
+    public function revenueAreaChartData(Request $request, \App\Models\ServiceCategory $serviceCategory)
+    {
+        $this->authorize('viewAny', \App\Models\Invoice::class);
+
+        $query = \App\Models\ServiceOrderItem::query()
+            ->whereHas('service', function ($query) use ($serviceCategory) { $query->where('category_id', $serviceCategory->id); })
+            ->whereHas('serviceOrder.invoice', function ($q) use ($request) {
+                $q->where('status', \App\Models\Invoice::STATUS_PAID);
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                        $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                    });
+                }
+            });
+
+        if (auth()->user()->role === 'owner' && $request->filled('area_id') && $request->area_id !== 'all') {
+             $areaId = $request->area_id;
+             $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        } elseif (auth()->user()->role === 'co_owner') {
+            $areaId = auth()->user()->area_id;
+            $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        }
+
+        $revenueByArea = $query->join('service_orders', 'service_order_items.service_order_id', '=', 'service_orders.id')
+            ->join('addresses', 'service_orders.address_id', '=', 'addresses.id')
+            ->join('areas', 'addresses.area_id', '=', 'areas.id')
+            ->select('areas.name as area_name', DB::raw('SUM(service_order_items.total) as total_revenue'))
+            ->groupBy('areas.name')
+            ->orderBy('total_revenue', 'desc')
+            ->get();
+
+        return response()->json([
+            'labels' => $revenueByArea->pluck('area_name'),
+            'data' => $revenueByArea->pluck('total_revenue'),
+        ]);
+    }
+
+    public function revenueDrilldownTableData(Request $request, \App\Models\ServiceCategory $serviceCategory)
+    {
+        $this->authorize('viewAny', \App\Models\Invoice::class);
+
+        $query = \App\Models\ServiceOrderItem::with(['serviceOrder', 'service', 'serviceOrder.customer'])
+            ->whereHas('service', function ($query) use ($serviceCategory) { $query->where('category_id', $serviceCategory->id); })
+            ->whereHas('serviceOrder.invoice', function ($q) use ($request) {
+                $q->where('status', \App\Models\Invoice::STATUS_PAID);
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                        $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                    });
+                }
+            });
+
+        if (auth()->user()->role === 'co_owner') {
+            $areaId = auth()->user()->area_id;
+            $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $areaId = $request->area_id;
+            $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        }
+
+        return DataTables::of($query)
+            ->addColumn('so_number', function($item) {
+                return $item->serviceOrder->so_number;
+            })
+            ->addColumn('customer_name', function($item) {
+                return $item->serviceOrder->customer->name ?? 'N/A';
+            })
+            ->editColumn('work_date', function($item) {
+                return Carbon::parse($item->serviceOrder->work_date)->format('d M Y');
+            })
+            ->addColumn('service_name', function($item) {
+                return $item->service->name;
+            })
+            ->editColumn('total', function($item) {
+                return 'Rp ' . number_format($item->total, 0, ',', '.');
+            })
+            ->orderColumn('work_date', function ($query, $order) {
+                $query->orderBy(function($q) {
+                    return $q->from('service_orders')->whereColumn('id', 'service_order_items.service_order_id')->select('work_date');
+                }, $order);
+            })
+            ->make(true);
+    }
+
+    public function staffWorkloadChartData(Request $request, \App\Models\Staff $staff)
+    {
+        $this->authorize('view', $staff);
+
+        if (empty($request->start_date) || empty($request->end_date)) {
+            $request->merge([
+                'start_date' => now()->subDays(30)->toDateString(),
+                'end_date' => now()->toDateString(),
+            ]);
+        }
+
+        $query = \App\Models\ServiceOrder::query()
+            ->join('service_order_staff', 'service_orders.id', '=', 'service_order_staff.service_order_id')
+            ->where('service_order_staff.staff_id', $staff->id)
+            ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
+            ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+
+        $workload = $query->select(
+                DB::raw('DATE_TRUNC(\'week\', work_date) as week_start'),
+                DB::raw('COUNT(service_orders.id) as jobs_count')
+            )
+            ->groupBy('week_start')
+            ->orderBy('week_start', 'asc')
+            ->get();
+
+        return response()->json([
+            'labels' => $workload->map(function($item) {
+                return 'Minggu ' . Carbon::parse($item->week_start)->format('W');
+            }),
+            'data' => $workload->pluck('jobs_count'),
+        ]);
+    }
+
+    public function staffSpecializationChartData(Request $request, \App\Models\Staff $staff)
+    {
+        $this->authorize('view', $staff);
+
+        if (empty($request->start_date) || empty($request->end_date)) {
+            $request->merge([
+                'start_date' => now()->subDays(30)->toDateString(),
+                'end_date' => now()->toDateString(),
+            ]);
+        }
+
+        $specialization = \App\Models\ServiceOrderItem::query()
+            ->whereHas('serviceOrder', function($q) use ($staff, $request) {
+                $q->whereHas('staff', function($sq) use ($staff) {
+                    $sq->where('staff.id', $staff->id);
+                })
+                ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
+                ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+            })
+            ->join('services', 'service_order_items.service_id', '=', 'services.id')
+            ->join('service_categories', 'services.category_id', '=', 'service_categories.id')
+            ->select('service_categories.name', DB::raw('COUNT(service_order_items.id) as items_count'))
+            ->groupBy('service_categories.name')
+            ->orderBy('items_count', 'desc')
+            ->get();
+
+        return response()->json([
+            'labels' => $specialization->pluck('name'),
+            'data' => $specialization->pluck('items_count'),
+        ]);
+    }
+
+    public function staffDrilldownTableData(Request $request, \App\Models\Staff $staff)
+    {
+        $this->authorize('view', $staff);
+
+        if (empty($request->start_date) || empty($request->end_date)) {
+            $request->merge([
+                'start_date' => now()->subDays(30)->toDateString(),
+                'end_date' => now()->toDateString(),
+            ]);
+        }
+
+        $query = $staff->serviceOrders()
+            ->with('customer')
+            ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
+            ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+
+        return DataTables::of($query)
+            ->addColumn('customer_name', function($so) {
+                return $so->customer->name ?? 'N/A';
+            })
+            ->editColumn('work_date', function($so) {
+                return Carbon::parse($so->work_date)->format('d M Y');
+            })
+            ->editColumn('status', function($so) {
+                return '<span class="badge bg-success text-bg-secondary">' . ucfirst($so->status) . '</span>';
+            })
+            ->rawColumns(['status'])
+            ->make(true);
+    }
+
+    public function customerSpendingTimelineData($customerId)
+    {
+        $customer = \App\Models\Customer::withTrashed()->findOrFail($customerId);
+        $this->authorize('view', $customer);
+
+        $spending = \App\Models\Invoice::query()
+            ->join('service_orders', 'invoices.service_order_id', '=', 'service_orders.id')
+            ->where('service_orders.customer_id', $customer->id)
+            ->where('invoices.status', 'paid')
+            ->select(
+                DB::raw("TO_CHAR(issue_date, 'YYYY-MM') as month"),
+                DB::raw('SUM(grand_total) as total_spent')
+            )
+            ->groupBy('month')
+            ->orderBy('month', 'asc')
+            ->get();
+
+        return response()->json([
+            'labels' => $spending->map(function($item) {
+                return Carbon::createFromFormat('Y-m', $item->month)->format('M Y');
+            }),
+            'data' => $spending->pluck('total_spent'),
+        ]);
+    }
+
+    public function customerKeyMetricsData($customerId)
+    {
+        $customer = \App\Models\Customer::withTrashed()->findOrFail($customerId);
+        $this->authorize('view', $customer);
+
+        $orders = $customer->serviceOrders()->orderBy('work_date', 'asc')->get();
+        $paidInvoices = $customer->invoices()->where('invoices.status', 'paid')->get();
+
+        // Avg days between orders
+        $avgDays = 0;
+        if ($orders->count() > 1) {
+            $diffs = [];
+            for ($i = 1; $i < $orders->count(); $i++) {
+                $date1 = Carbon::parse($orders[$i-1]->work_date);
+                $date2 = Carbon::parse($orders[$i]->work_date);
+                $diffs[] = $date2->diffInDays($date1);
+            }
+            $avgDays = count($diffs) > 0 ? array_sum($diffs) / count($diffs) : 0;
+        }
+
+        // Most frequent service
+        $mostFrequentService = \App\Models\ServiceOrderItem::query()
+            ->whereIn('service_order_id', $orders->pluck('id'))
+            ->select('service_id', DB::raw('COUNT(id) as count'))
+            ->groupBy('service_id')
+            ->orderBy('count', 'desc')
+            ->first();
+
+        $serviceName = 'N/A';
+        if ($mostFrequentService) {
+            $serviceName = \App\Models\Service::find($mostFrequentService->service_id)->name ?? 'N/A';
+        }
+
+        return response()->json([
+            'total_spent' => 'Rp ' . number_format($paidInvoices->sum('grand_total'), 0, ',', '.'),
+            'total_orders' => $orders->count(),
+            'avg_days_between_orders' => round($avgDays, 1) . ' hari',
+            'most_frequent_service' => $serviceName,
+        ]);
+    }
+
+    public function customerServiceFrequencyData($customerId)
+    {
+        $customer = \App\Models\Customer::withTrashed()->findOrFail($customerId);
+        $this->authorize('view', $customer);
+
+        $query = \App\Models\ServiceOrderItem::query()
+            ->whereIn('service_order_id', $customer->serviceOrders()->pluck('id'))
+            ->join('services', 'service_order_items.service_id', '=', 'services.id')
+            ->select('services.name as service_name', DB::raw('COUNT(service_order_items.id) as count'))
+            ->groupBy('services.name')
+            ->orderBy('count', 'desc');
+
+        return DataTables::of($query)->make(true);
+    }
+
+    public function customerOrderHistoryData($customerId)
+    {
+        $customer = \App\Models\Customer::withTrashed()->findOrFail($customerId);
+        $this->authorize('view', $customer);
+
+        $query = $customer->serviceOrders()->with('address.area');
+
+        return DataTables::of($query)
+            ->editColumn('work_date', function($so) {
+                return Carbon::parse($so->work_date)->format('d M Y');
+            })
+            ->addColumn('area', function($so) {
+                return $so->address->area->name ?? 'N/A';
+            })
+            ->editColumn('status', function($so) {
+                // Simple status badge
+                return '<span class="badge">' . ucfirst($so->status) . '</span>';
+            })
+            ->addColumn('action', function ($so) {
+                $detailUrl = route('web.service-orders.show', $so->id);
+                return '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
+            })
+            ->rawColumns(['status', 'action'])
             ->make(true);
     }
 

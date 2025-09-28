@@ -98,4 +98,13 @@ $(function() {
     if (document.getElementById('customer-growth-report-table')) {
         import('./pages/report-customer-growth.js');
     }
+    if (document.getElementById('revenue-drilldown-page')) {
+        import('./pages/report-revenue-drilldown.js');
+    }
+    if (document.getElementById('staff-drilldown-page')) {
+        import('./pages/report-staff-drilldown.js');
+    }
+    if (document.getElementById('customer-drilldown-page')) {
+        import('./pages/report-customer-drilldown.js');
+    }
 });
