@@ -15,4 +15,14 @@ class ServiceCategory extends Model
      * @var array
      */
     protected $fillable = ['name']; // <-- Ini juga penting untuk method create
+
+    public function services()
+    {
+        return $this->hasMany(Service::class, 'category_id');
+    }
+
+    public function serviceOrderItems()
+    {
+        return $this->hasManyThrough(ServiceOrderItem::class, Service::class, 'category_id', 'service_id', 'id', 'id');
+    }
 }

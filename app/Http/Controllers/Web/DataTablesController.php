@@ -389,30 +389,36 @@ class DataTablesController extends Controller
                 $query->whereHas('serviceOrder.invoice', function ($q) use ($request) {
                     $q->where('status', \App\Models\Invoice::STATUS_PAID);
                     if ($request->filled('start_date') && $request->filled('end_date')) {
-                        $q->whereBetween('updated_at', [$request->start_date, $request->end_date]);
+                        $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                            $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                        });
                     }
                 });
+
+                if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
+                    $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
+                    $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                        $q->where('area_id', $areaId);
+                    });
+                }
             }])
             ->withSum(['serviceOrderItems as total_revenue' => function ($query) use ($request) {
                 $query->whereHas('serviceOrder.invoice', function ($q) use ($request) {
                     $q->where('status', \App\Models\Invoice::STATUS_PAID);
                     if ($request->filled('start_date') && $request->filled('end_date')) {
-                        $q->whereBetween('updated_at', [$request->start_date, $request->end_date]);
+                        $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                            $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                        });
                     }
                 });
-            }], 'total');
 
-        if (auth()->user()->role === 'co_owner') {
-            $areaId = auth()->user()->area_id;
-            $query->whereHas('serviceOrderItems.serviceOrder.address', function ($q) use ($areaId) {
-                $q->where('area_id', $areaId);
-            });
-        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
-            $areaId = $request->area_id;
-            $query->whereHas('serviceOrderItems.serviceOrder.address', function ($q) use ($areaId) {
-                $q->where('area_id', $areaId);
-            });
-        }
+                if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
+                    $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
+                    $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                        $q->where('area_id', $areaId);
+                    });
+                }
+            }], 'total');
 
         $dataTable = DataTables::of($query)
             ->editColumn('total_revenue', function ($category) {
@@ -430,7 +436,9 @@ class DataTablesController extends Controller
             ->where('status', \App\Models\Invoice::STATUS_PAID);
         
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $summaryQuery->whereBetween('updated_at', [$request->start_date, $request->end_date]);
+            $summaryQuery->whereHas('payments', function ($paymentQuery) use ($request) {
+                $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+            });
         }
 
         if (auth()->user()->role === 'co_owner') {

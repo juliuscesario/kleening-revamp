@@ -33,4 +33,9 @@ class ServiceOrderItem extends Model
     {
         return $this->belongsTo(Service::class);
     }
+
+    public function serviceOrder()
+    {
+        return $this->belongsTo(ServiceOrder::class, 'service_order_id');
+    }
 }
