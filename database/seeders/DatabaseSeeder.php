@@ -21,5 +21,7 @@ class DatabaseSeeder extends Seeder
             // DummySeptember2025Seeder::class, //removed when you already run it first
             DailyBookedServiceOrderSeeder::class, // Daily booked service orders for staff
         ]);
+        // run php artisan migrate:fresh --seed for dummy seeder 
+        // then comment the DummySeptember2025Seeder and run daily booked daily for data SO booked
     }
 }
