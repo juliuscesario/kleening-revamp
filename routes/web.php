@@ -57,6 +57,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/reports/revenue', [DataTablesController::class, 'revenueReportData'])->name('data.reports.revenue');
     Route::get('data/reports/staff-performance', [DataTablesController::class, 'staffPerformanceReportData'])->name('data.reports.staff-performance');
     Route::get('data/reports/customer-growth', [DataTablesController::class, 'customerGrowthReportData'])->name('data.reports.customer-growth');
+    Route::get('data/reports/profitability/services', [DataTablesController::class, 'profitabilityServiceData'])->name('data.reports.profitability.services');
+    Route::get('data/reports/profitability/areas', [DataTablesController::class, 'profitabilityAreaData'])->name('data.reports.profitability.areas');
+    Route::get('data/reports/staff-utilization', [DataTablesController::class, 'staffUtilizationReportData'])->name('data.reports.staff-utilization');
     Route::get('data/reports/revenue/drilldown/{serviceCategory}/trend', [DataTablesController::class, 'revenueTrendChartData'])->name('data.reports.revenue.trend');
     Route::get('data/reports/revenue/drilldown/{serviceCategory}/area', [DataTablesController::class, 'revenueAreaChartData'])->name('data.reports.revenue.area');
     Route::get('data/reports/revenue/drilldown/{serviceCategory}/table', [DataTablesController::class, 'revenueDrilldownTableData'])->name('data.reports.revenue.table');
@@ -87,6 +90,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reports/revenue/drilldown/{serviceCategory}', [\App\Http\Controllers\Web\ReportController::class, 'revenueDrilldown'])->name('web.reports.revenue.drilldown');
     Route::get('reports/staff/drilldown/{staff}', [\App\Http\Controllers\Web\ReportController::class, 'staffDrilldown'])->name('web.reports.staff.drilldown');
     Route::get('reports/customer/drilldown/{customer}', [\App\Http\Controllers\Web\ReportController::class, 'customerDrilldown'])->name('web.reports.customer.drilldown');
+    Route::get('reports/profitability', [\App\Http\Controllers\Web\ReportController::class, 'profitability'])->name('web.reports.profitability');
+    Route::get('reports/staff-utilization', [\App\Http\Controllers\Web\ReportController::class, 'staffUtilization'])->name('web.reports.staff-utilization');
 
 
     // Custom Resource Routes

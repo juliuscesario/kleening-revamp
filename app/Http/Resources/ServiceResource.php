@@ -18,6 +18,7 @@ class ServiceResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'price' => $this->price,
+            'cost' => $this->when(in_array(auth()->user()->role, ['owner', 'co_owner']), $this->cost),
             'description' => $this->description,
             'category' => [ // Kita sertakan detail kategori
                 'id' => $this->category->id,

@@ -33,6 +33,9 @@
                                 <th>Nama Layanan</th>
                                 <th>Kategori</th>
                                 <th>Harga</th>
+                                @if(in_array(auth()->user()->role, ['owner', 'co_owner']))
+                                <th>Biaya (Cost)</th>
+                                @endif
                                 <th>Dibuat Pada</th>
                                 <th>Aksi</th>
                             </tr>
@@ -75,6 +78,13 @@
                         <input type="number" class="form-control" name="price" id="service-price" placeholder="Contoh: 10000">
                         <div class="invalid-feedback" id="price-error"></div>
                     </div>
+                    @if(in_array(auth()->user()->role, ['owner', 'co_owner']))
+                    <div class="mb-3">
+                        <label class="form-label">Biaya (Cost)</label>
+                        <input type="number" class="form-control" name="cost" id="service-cost" placeholder="Contoh: 5000">
+                        <div class="invalid-feedback" id="cost-error"></div>
+                    </div>
+                    @endif
                     <div class="mb-3">
                         <label class="form-label">Deskripsi</label>
                         <textarea class="form-control" name="description" id="service-description" rows="3"></textarea>

@@ -13,6 +13,7 @@ class Service extends Model
         'category_id',
         'name',
         'price',
+        'cost',
         'description',
     ];
 

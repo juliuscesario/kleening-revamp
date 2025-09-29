@@ -21,6 +21,7 @@ class ServiceFactory extends Factory
             'category_id' => ServiceCategory::factory(),
             'name' => 'Layanan ' . fake()->words(3, true),
             'price' => fake()->numberBetween(10, 50) * 10000,
+            'cost' => 100000,
             'description' => fake()->sentence(),
         ];
     }

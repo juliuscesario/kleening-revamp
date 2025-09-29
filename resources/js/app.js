@@ -107,4 +107,10 @@ $(function() {
     if (document.getElementById('customer-drilldown-page')) {
         import('./pages/report-customer-drilldown.js');
     }
+    if (document.getElementById('profitability-report-page')) {
+        import('./pages/report-profitability.js');
+    }
+    if (document.getElementById('staff-utilization-report-page')) {
+        import('./pages/report-staff-utilization.js');
+    }
 });

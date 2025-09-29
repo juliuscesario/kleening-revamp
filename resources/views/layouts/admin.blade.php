@@ -153,7 +153,7 @@
               @endif
               
               {{-- REPORTS DROPDOWN --}}
-              @if(in_array(strtolower(Auth::user()->role), ['owner', 'co_owner']))
+              @if(in_array(strtolower(Auth::user()->role), ['owner', 'co_owner', 'admin']))
               <li class="nav-item dropdown {{ request()->is('reports*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-reports" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="{{ request()->is('reports*') ? 'true' : 'false' }}" >
                   <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -178,6 +178,12 @@
                       </a>
                       <a class="dropdown-item {{ request()->is('reports/customer-growth*') ? 'active' : '' }}" href="{{ route('web.reports.customer-growth') }}">
                         Laporan Pertumbuhan Pelanggan
+                      </a>
+                      <a class="dropdown-item {{ request()->is('reports/profitability*') ? 'active' : '' }}" href="{{ route('web.reports.profitability') }}">
+                        Laporan Profitabilitas
+                      </a>
+                      <a class="dropdown-item {{ request()->is('reports/staff-utilization*') ? 'active' : '' }}" href="{{ route('web.reports.staff-utilization') }}">
+                        Laporan Utilisasi Staff
                       </a>
                     </div>
                   </div>

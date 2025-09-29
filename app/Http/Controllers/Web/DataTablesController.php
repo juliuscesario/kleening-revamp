@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\ServiceCategory;
+use App\Models\ServiceOrder;
 use App\Models\Customer; // <-- Tambahkan model lain jika perlu
 use App\Models\Staff;
 use App\Models\Scopes\AreaScope;
@@ -113,11 +114,18 @@ class DataTablesController extends Controller
 
         $query = \App\Models\Service::with('category');
 
-        return DataTables::of($query)
+        $dataTable = DataTables::of($query)
             ->editColumn('price', function ($service) {
                 return 'Rp ' . number_format($service->price, 0, ',', '.');
-            })
-            ->addColumn('category_name', function ($service) {
+            });
+
+        if (in_array(auth()->user()->role, ['owner', 'co_owner'])) {
+            $dataTable->addColumn('cost', function ($service) {
+                return 'Rp ' . number_format($service->cost, 0, ',', '.');
+            });
+        }
+
+        $dataTable->addColumn('category_name', function ($service) {
                 return $service->category ? $service->category->name : 'N/A';
             })
             ->editColumn('created_at', function ($service) {
@@ -136,8 +144,9 @@ class DataTablesController extends Controller
                 }
                 return $actions;
             })
-            ->rawColumns(['action'])
-            ->make(true);
+            ->rawColumns(['action']);
+
+        return $dataTable->make(true);
     }
 
     public function customers(Request $request)
@@ -922,6 +931,152 @@ class DataTablesController extends Controller
                 return '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
             })
             ->rawColumns(['status', 'action'])
+            ->make(true);
+    }
+
+    public function profitabilityServiceData(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\Invoice::class);
+
+        $query = \App\Models\Service::query()->select('services.*');
+
+        $itemsSubQuery = \App\Models\ServiceOrderItem::query()
+            ->select('service_id', DB::raw('COUNT(*) as total_items'), DB::raw('SUM(total) as total_revenue'))
+            ->whereHas('serviceOrder', function($soQuery) use ($request) {
+                $soQuery->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED]);
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $soQuery->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                }
+                if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
+                    $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
+                    $soQuery->whereHas('address', function ($a) use ($areaId) {
+                        $a->where('area_id', $areaId);
+                    });
+                }
+            })
+            ->groupBy('service_id');
+
+        $query->joinSub($itemsSubQuery, 'items_summary', function ($join) {
+            $join->on('services.id', '=', 'items_summary.service_id');
+        })->select('services.*', 'items_summary.total_items', 'items_summary.total_revenue');
+
+        return DataTables::of($query)
+            ->addColumn('total_cost', function($service) {
+                return $service->cost * $service->total_items;
+            })
+            ->addColumn('total_profit', function($service) {
+                $revenue = $service->total_revenue ?? 0;
+                $cost = $service->cost * $service->total_items;
+                return $revenue - $cost;
+            })
+            ->editColumn('total_revenue', function($service) {
+                return 'Rp ' . number_format($service->total_revenue ?? 0, 0, ',', '.');
+            })
+            ->editColumn('total_cost', function($service) {
+                return 'Rp ' . number_format($service->cost * $service->total_items, 0, ',', '.');
+            })
+            ->editColumn('total_profit', function($service) {
+                $profit = ($service->total_revenue ?? 0) - ($service->cost * $service->total_items);
+                return 'Rp ' . number_format($profit, 0, ',', '.');
+            })
+            ->orderColumn('total_profit', function($query, $order) {
+                $query->orderByRaw('(total_revenue - (cost * total_items)) ' . $order);
+            })
+            ->make(true);
+    }
+
+    public function profitabilityAreaData(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\Invoice::class);
+
+        $query = \App\Models\Area::query();
+
+        if (auth()->user()->role === 'co_owner') {
+            $query->where('id', auth()->user()->area_id);
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $query->where('id', $request->area_id);
+        }
+
+        $areas = $query->get();
+
+        $data = $areas->map(function($area) use ($request) {
+            $itemsQuery = \App\Models\ServiceOrderItem::whereHas('serviceOrder.address', function($q) use ($area) {
+                $q->where('area_id', $area->id);
+            })->whereHas('serviceOrder', function($q) use ($request) {
+                $q->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED]);
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                }
+            });
+
+            $totalProfit = $itemsQuery->get()->sum(function($item) {
+                return $item->total - ($item->service->cost * $item->quantity);
+            });
+
+            return [
+                'name' => $area->name,
+                'total_profit' => $totalProfit
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+    public function staffUtilizationReportData(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\Staff::class);
+
+        $query = \App\Models\Staff::with(['user', 'serviceOrders' => function ($query) use ($request) {
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $query->whereBetween('work_date', [$request->start_date, $request->end_date]);
+            }
+            $query->with('workPhotos'); // Eager load workPhotos for each service order
+        }])->select('staff.*');
+
+        if (auth()->user()->role === 'co_owner') {
+            $query->where('area_id', auth()->user()->area_id);
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $query->where('area_id', $request->area_id);
+        }
+
+        return DataTables::of($query)
+            ->addColumn('name', function($staff) {
+                return $staff->user->name ?? $staff->name;
+            })
+            ->addColumn('total_hours_worked', function($staff) {
+                $totalDuration = 0;
+
+                $staff->serviceOrders->each(function ($order) use (&$totalDuration) {
+                    $startTime = $order->workPhotos->where('type', 'arrival')->min('created_at');
+                    $endTime = $order->work_proof_completed_at;
+
+                    if ($startTime && $endTime) {
+                        $duration = strtotime($endTime) - strtotime($startTime);
+                        $totalDuration += $duration;
+                    }
+                });
+
+                return round($totalDuration / 3600, 2);
+            })
+            ->addColumn('utilization_rate', function($staff) {
+                $totalDuration = 0;
+
+                $staff->serviceOrders->each(function ($order) use (&$totalDuration) {
+                    $startTime = $order->workPhotos->where('type', 'arrival')->min('created_at');
+                    $endTime = $order->work_proof_completed_at;
+
+                    if ($startTime && $endTime) {
+                        $duration = strtotime($endTime) - strtotime($startTime);
+                        $totalDuration += $duration;
+                    }
+                });
+
+                $totalHoursWorked = $totalDuration / 3600;
+                // Assuming a 40-hour work week for utilization calculation.
+                // This could be made more dynamic in the future.
+                $utilizationRate = (40 > 0) ? ($totalHoursWorked / 40) * 100 : 0;
+                return round($utilizationRate, 2) . '%';
+            })
             ->make(true);
     }
 

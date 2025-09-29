@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Area;
+use App\Models\Service;
+use App\Models\Staff;
+use App\Models\Invoice;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -49,5 +53,19 @@ class ReportController extends Controller
         $customer = \App\Models\Customer::withTrashed()->findOrFail($customerId);
         $this->authorize('view', $customer);
         return view('pages.reports.customer-drilldown', compact('customer'));
+    }
+
+    public function profitability(Request $request)
+    {
+        $this->authorize('viewAny', Invoice::class); // Reuse policy
+        $areas = Area::all();
+        return view('pages.reports.profitability', compact('areas'));
+    }
+
+    public function staffUtilization(Request $request)
+    {
+        $this->authorize('viewAny', Staff::class); // Reuse policy
+        $areas = Area::all();
+        return view('pages.reports.staff_utilization', compact('areas'));
     }
 }

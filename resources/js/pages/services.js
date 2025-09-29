@@ -7,20 +7,27 @@ $(function() {
     const modalElement = document.getElementById('modal-service');
     const modalInstance = new bootstrap.Modal(modalElement);
 
+    const columns = [
+        { data: 'id', name: 'id' },
+        { data: 'name', name: 'name' },
+        { data: 'category_name', name: 'category.name' },
+        { data: 'price', name: 'price' },
+    ];
+
+    if ($('#services-table th:contains("Biaya (Cost)")').length) {
+        columns.push({ data: 'cost', name: 'cost' });
+    }
+
+    columns.push({ data: 'created_at', name: 'created_at' });
+    columns.push({ data: 'action', name: 'action', orderable: false, searchable: false });
+
     const table = $('#services-table').DataTable({
         destroy: true,
         processing: true,
         serverSide: true,
         responsive: true,
         ajax: ajaxUrl,
-        columns: [
-            { data: 'id', name: 'id' },
-            { data: 'name', name: 'name' },
-            { data: 'category_name', name: 'category.name' },
-            { data: 'price', name: 'price' },
-            { data: 'created_at', name: 'created_at' },
-            { data: 'action', name: 'action', orderable: false, searchable: false }
-        ]
+        columns: columns
     });
 
     $('#add-service-button').on('click', function() {
@@ -39,6 +46,7 @@ $(function() {
             $('#service-name').val(data.data.name);
             $('#service-category_id').val(data.data.category.id);
             $('#service-price').val(data.data.price);
+            $('#service-cost').val(data.data.cost);
             $('#service-description').val(data.data.description);
             $('.form-control').removeClass('is-invalid');
             modalInstance.show();

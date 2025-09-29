@@ -38,5 +38,10 @@ class Address extends Model
     {
         return $this->belongsTo(Area::class);
     }
+
+    public function serviceOrders()
+    {
+        return $this->hasMany(ServiceOrder::class);
+    }
     
 }

@@ -32,6 +32,7 @@ class ServiceController extends Controller
             'category_id' => 'required|integer|exists:service_categories,id', // Memastikan category_id ada di tabel service_categories
             'name' => 'required|string|unique:services|max:255',
             'price' => 'required|numeric|min:0',
+            'cost' => 'required|numeric|min:0',
             'description' => 'nullable|string',
         ]);
 
@@ -64,6 +65,7 @@ class ServiceController extends Controller
                 Rule::unique('services')->ignore($service->id),
             ],
             'price' => 'sometimes|required|numeric|min:0',
+            'cost' => 'sometimes|required|numeric|min:0',
             'description' => 'nullable|string',
         ]);
 
