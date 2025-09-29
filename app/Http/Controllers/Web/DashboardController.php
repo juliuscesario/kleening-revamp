@@ -99,15 +99,17 @@ class DashboardController extends Controller
             // Existing staff logic...
             $staffId = $user->staff->id;
             $tomorrow = Carbon::tomorrow();
+            $startOfMonth = $today->copy()->startOfMonth();
+            $endOfMonth = $today->copy()->endOfMonth();
 
             $viewData['todayServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereDate('work_date', $today)->whereIn('status', ['booked', 'proses'])->orderBy('work_date', 'asc')->get();
             $viewData['tomorrowServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereDate('work_date', $tomorrow)->where('status', 'booked')->orderBy('work_date', 'asc')->get();
-            $viewData['pastServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereDate('work_date', '<', $today)->whereIn('status', ['booked', 'proses'])->orderBy('work_date', 'desc')->get();
-            $viewData['cancelledServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'cancelled')->orderBy('work_date', 'desc')->get();
-            $viewData['doneServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->orderBy('work_date', 'desc')->get();
+            $viewData['pastServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereBetween('work_date', [$startOfMonth, $today->copy()->subDay()])->whereIn('status', ['booked', 'proses'])->orderBy('work_date', 'desc')->get();
+            $viewData['cancelledServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'cancelled')->whereBetween('work_date', [$startOfMonth, $endOfMonth])->orderBy('work_date', 'desc')->get();
+            $viewData['doneServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->whereBetween('work_date', [$startOfMonth, $endOfMonth])->orderBy('work_date', 'desc')->get();
             $viewData['totalDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->count();
-            $viewData['todayDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->whereDate('updated_at', $today)->count();
-            $viewData['bookedCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'booked')->count();
+            $viewData['todayDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->whereDate('work_date', $today)->count();
+            $viewData['bookedCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'booked')->whereDate('work_date', '>=', $today)->count();
         }
 
         // Default empty values for keys not set in every role
