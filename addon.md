@@ -130,3 +130,53 @@ To enhance the user interface by adding a bell notification icon in the header, 
     *   Ensure these routes are protected by appropriate authentication middleware (e.g., `auth:sanctum`).
 
 4.  **Database**: Ensure the `notifications` table is set up by running `php artisan notifications:table` and `php artisan migrate`.
+
+---
+
+## Feature Set 4: Communication & Payment Integrations
+
+### 4.1. WhatsApp Invoice Sending (via Taptalk API) [FURTHER INSPECTION]
+
+*   **Objective**: To enable sending invoices directly to customers via WhatsApp using the Taptalk API, and automatically mark the corresponding invoice as 'Sent' in the application.
+*   **Considerations**:
+    *   **Taptalk API Integration**: Research Taptalk API documentation for sending messages, especially those with attachments (PDF invoices).
+    *   **Invoice Generation**: Ensure the application can generate PDF invoices that can be sent via WhatsApp.
+    *   **Backend Logic**: Create a new service or job to handle the API call to Taptalk, including error handling and logging.
+    *   **Status Update**: Implement logic to update the `Invoice` status to 'Sent' after successful delivery via WhatsApp.
+    *   **UI Integration**: Add a "Send via WhatsApp" button on the invoice detail page.
+    *   **Configuration**: Store Taptalk API credentials securely (e.g., in `.env`).
+
+### 4.2. Payment Gateway Integration (Midtrans) [FURTHER INSPECTION]
+
+*   **Objective**: To integrate Midtrans payment gateway to provide dynamic payment buttons/Virtual Account (VA) numbers, with automatic callback handling to update invoice statuses.
+*   **Considerations**:
+    *   **Midtrans API Integration**: Research Midtrans API documentation for generating payment links/VA numbers and handling callbacks (notifications).
+    *   **Invoice-Payment Link Mapping**: Associate generated Midtrans transaction IDs with `Invoice` records in the application.
+    *   **Callback Handling**: Create a dedicated webhook endpoint to receive and process Midtrans payment notifications. This endpoint must be publicly accessible and secure.
+    *   **Status Update**: Implement logic to update `Invoice` status (e.g., from 'unpaid' to 'paid') based on Midtrans callback data.
+    *   **Error Handling**: Implement robust error handling and logging for payment transactions and callbacks.
+    *   **UI Integration**: Display dynamic payment buttons or VA details on invoice pages for customers.
+    *   **Configuration**: Store Midtrans API credentials (e.g., client key, server key) securely in `.env`.
+
+---
+
+## Feature Set 5: Customer Self-Service Portal
+
+### 5.1. Customer Registration, Address & Service Selection Website [FURTHER INSPECTION]
+
+*   **Objective**: To provide a dedicated web portal for customers to register, manage their addresses, and select desired services.
+*   **Considerations**:
+    *   **Frontend UI**: Develop user-friendly interfaces for:
+        *   Customer registration (name, email, password, etc.).
+        *   Adding, editing, and deleting multiple addresses.
+        *   Browsing available services and selecting them.
+        *   (Optional) Viewing past service orders or invoices.
+    *   **Backend Logic**: Implement controllers and services for:
+        *   Handling customer registration and authentication.
+        *   Managing customer addresses (CRUD operations).
+        *   Processing service selections and linking them to customer profiles.
+        *   Ensuring data integrity and security.
+    *   **Routing**: Define new web routes for customer-facing pages (e.g., `/register`, `/my-addresses`, `/select-service`).
+    *   **Authentication**: Implement a separate authentication guard or extend the existing one for customer users, if different from admin/staff roles.
+    *   **Data Models**: Ensure existing `Customer`, `Address`, and `Service` models can support customer self-management, or create new ones if necessary.
+    *   **Validation**: Implement robust input validation for all customer-submitted data.
