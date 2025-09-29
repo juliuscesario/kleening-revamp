@@ -92,6 +92,15 @@ A comprehensive overview of financial performance.
     *   Total `discount` given
     *   Revenue broken down by `service_category`
 *   **Visualization:** A line chart showing revenue trends over the selected period.
+*   **Interaction:** Clicking on a `service_category` name in the report table navigates to the **Revenue Drilldown** page.
+
+#### Revenue Drilldown View
+
+This view provides a deep dive into the performance of a specific **service category** for the selected time period and area.
+
+*   **Daily Revenue Trend:** A line chart showing the daily revenue generated specifically by this category.
+*   **Revenue Distribution by Area (Owner only):** A bar chart showing how the revenue for this category is distributed across different business areas.
+*   **Detailed Transactions:** A table listing every single `service_order_item` that contributed to this category's revenue, including the SO number, customer, work date, and total amount.
 
 ### 2. Staff Performance Report
 
@@ -106,6 +115,15 @@ Evaluate staff workload and effectiveness.
     *   Total jobs completed per staff member.
     *   Total revenue generated per staff member (from their completed jobs).
 *   **Visualization:** Bar chart comparing staff members on the selected metric.
+*   **Interaction:** Clicking on a staff member's name navigates to the **Staff Drilldown** page.
+
+#### Staff Drilldown View
+
+This page offers a detailed performance analysis of a single staff member for the selected time period.
+
+*   **Weekly Workload:** A bar chart showing the number of jobs the staff member completed each week.
+*   **Service Specialization:** A donut chart illustrating the types of services the staff member performed most frequently (e.g., 60% Cleaning, 30% Laundry, 10% Deep Clean).
+*   **Jobs Handled:** A table listing all the service orders assigned to and completed by the staff member in the selected period.
 
 ### 3. Customer Growth Report
 
@@ -118,6 +136,16 @@ Gain insights into the customer base.
 *   **Data to Display:**
     *   **New Customers:** A list of customers created in the date range.
     *   **Top Customers:** A list of customers ranked by total `grand_total` on their invoices in the date range.
+*   **Interaction:** Clicking on a customer's name navigates to the **Customer Drilldown** page.
+
+#### Customer Drilldown View
+
+This page provides a 360-degree view of a single customer's history and behavior.
+
+*   **Key Metrics:** Cards displaying lifetime stats like Total Spent, Total Orders, Average Days Between Orders, and their most frequently ordered service.
+*   **Spending Timeline:** A chart showing the customer's spending month by month.
+*   **Service Frequency:** A table showing which services the customer orders most often.
+*   **Order History:** A complete, searchable history of all past service orders for the customer.
 
 ### 4. Area Performance Report (Owner Role Only)
 
