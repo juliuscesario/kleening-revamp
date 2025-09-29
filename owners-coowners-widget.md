@@ -1,13 +1,13 @@
-# Kleening.id Owner & Co-owner Business Dashboard
+# Kleening.id Owner & co_owner Business Dashboard
 
-This document outlines the enhanced widgets and reports for the **Owner** and **Co-owner** roles. The primary goal is to provide a clear, high-level overview of business performance, with specific data access rules for each role.
+This document outlines the enhanced widgets and reports for the **Owner** and **co_owner** roles. The primary goal is to provide a clear, high-level overview of business performance, with specific data access rules for each role.
 
 ## Role-Based Data Access
 
 This is the core principle for this dashboard:
 
 *   **Owner:** Has a global view. Sees aggregated data from **all areas**. Can filter reports and widgets by one or more specific areas.
-*   **Co-owner:** Has a local view. All data displayed is **automatically filtered** to their single assigned `area_id`. They cannot view data from other areas.
+*   **co_owner:** Has a local view. All data displayed is **automatically filtered** to their single assigned `area_id`. They cannot view data from other areas.
 
 ---
 
@@ -18,7 +18,7 @@ A real-time snapshot of the most important business metrics, tailored by role.
 ### 1. Key Performance Indicators (KPIs)
 
 At-a-glance metrics showing the current health of the business.
-*(For Co-owners, all KPIs reflect their area only. For Owners, they reflect the entire business).*
+*(For co_owners, all KPIs reflect their area only. For Owners, they reflect the entire business).*
 
 *   **This Month's Revenue:**
     *   **Description:** Running total of `grand_total` from all invoices with `status = 'paid'` for the current calendar month.
@@ -55,7 +55,7 @@ Visualizes the current operational pipeline.
 
 A competitive overview of how different business areas are performing.
 
-*   **Description:** A ranked list of all `areas`, showing key metrics. This is hidden for Co-owners.
+*   **Description:** A ranked list of all `areas`, showing key metrics. This is hidden for co_owners.
 *   **Metrics to Display:**
     *   Area Name
     *   This Month's Revenue
@@ -68,7 +68,7 @@ A competitive overview of how different business areas are performing.
 A visual representation of revenue trends.
 
 *   **Description:** A bar chart displaying daily paid revenue for the current month.
-    *   **For Co-owners:** Shows daily revenue for their area.
+    *   **For co_owners:** Shows daily revenue for their area.
     *   **For Owners:** Can be a stacked bar chart showing the revenue contribution of each area per day.
 *   **Data Source:** `payments` table (`payment_date` and `amount`).
 
@@ -85,7 +85,7 @@ A comprehensive overview of financial performance.
 *   **Description:** Detailed analysis of revenue over a specified period.
 *   **Filters:**
     *   Date Range
-    *   Area (For Owners: multi-select dropdown. For Co-owners: hidden and fixed to their area).
+    *   Area (For Owners: multi-select dropdown. For co_owners: hidden and fixed to their area).
 *   **Data to Display:**
     *   Total Revenue (from paid invoices)
     *   Total `transport_fee` collected
@@ -109,7 +109,7 @@ Evaluate staff workload and effectiveness.
 *   **Description:** Helps identify top-performing staff and workload distribution.
 *   **Filters:**
     *   Date Range
-    *   Area (Owner vs. Co-owner logic applies)
+    *   Area (Owner vs. co_owner logic applies)
     *   Staff Member
 *   **Data to Display:**
     *   Total jobs completed per staff member.
@@ -132,7 +132,7 @@ Gain insights into the customer base.
 *   **Description:** Tracks customer acquisition and identifies top-spending customers.
 *   **Filters:**
     *   Date Range
-    *   Area (Owner vs. Co-owner logic applies)
+    *   Area (Owner vs. co_owner logic applies)
 *   **Data to Display:**
     *   **New Customers:** A list of customers created in the date range.
     *   **Top Customers:** A list of customers ranked by total `grand_total` on their invoices in the date range.
@@ -151,7 +151,7 @@ This page provides a 360-degree view of a single customer's history and behavior
 
 A detailed comparative analysis tool for the owner.
 
-*   **Description:** A comprehensive report allowing the owner to compare performance across all business areas. This report is hidden for Co-owners.
+*   **Description:** A comprehensive report allowing the owner to compare performance across all business areas. This report is hidden for co_owners.
 *   **Filters:**
     *   Date Range
 *   **Data to Display (Table Format):**

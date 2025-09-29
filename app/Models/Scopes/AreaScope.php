@@ -13,7 +13,7 @@ class AreaScope implements Scope
     {
         $user = Auth::user();
 
-        // Only apply this scope for authenticated co-owners
+        // Only apply this scope for authenticated co_owners
         if (!$user || $user->role !== 'co_owner') {
             return;
         }
@@ -21,7 +21,7 @@ class AreaScope implements Scope
         $areaId = $user->area_id;
         $tableName = $model->getTable();
 
-        // If a co-owner has no area, they should not see any area-restricted data.
+        // If a co_owner has no area, they should not see any area-restricted data.
         if (!$areaId) {
             $builder->whereRaw('1 = 0'); // Force query to return no results
             return;

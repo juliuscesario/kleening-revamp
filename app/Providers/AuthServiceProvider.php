@@ -51,7 +51,7 @@ class AuthServiceProvider extends ServiceProvider
 
         // Gate untuk melihat laporan
         Gate::define('view-reports', function (User $user) {
-            // Owner dan Co-owner bisa melihat laporan
+            // Owner dan co_owner bisa melihat laporan
             return in_array($user->role, ['owner', 'co_owner']);
         });
     }

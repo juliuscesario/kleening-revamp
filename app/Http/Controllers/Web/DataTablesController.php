@@ -26,7 +26,7 @@ class DataTablesController extends Controller
         // 1. Cek hak akses (Policy) secara manual
         $this->authorize('viewAny', Area::class);
 
-        // 2. Ambil data. Global Scope untuk co-owner akan otomatis berjalan di sini.
+        // 2. Ambil data. Global Scope untuk co_owner akan otomatis berjalan di sini.
         $query = Area::query();
 
         // 3. Serahkan ke Yajra untuk diproses
@@ -162,7 +162,7 @@ class DataTablesController extends Controller
             ->groupBy('customers.id') // Re-add this
             ->selectRaw('MAX(service_orders.work_date) as last_order_date_raw'); // Re-add this
 
-        if ($user->role == 'co-owner') {
+        if ($user->role == 'co_owner') {
             $query->whereHas('addresses', function ($query) use ($user) {
                 $query->where('area_id', $user->area_id);
             });
@@ -534,7 +534,7 @@ class DataTablesController extends Controller
         $subQuery = \App\Models\Customer::query()->select('customers.*')->withTrashed();
 
         $user = auth()->user();
-        if ($user->role == 'co-owner') {
+        if ($user->role == 'co_owner') {
             $subQuery->whereHas('addresses', function ($q) use ($user) {
                 $q->where('area_id', $user->area_id);
             });

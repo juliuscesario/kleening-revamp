@@ -25,7 +25,7 @@ class JsonDataController extends Controller
         $user = Auth::user();
         $query = Staff::query()->where('area_id', $area->id);
 
-        if ($user->role == 'co-owner' && $user->area_id != $area->id) {
+        if ($user->role == 'co_owner' && $user->area_id != $area->id) {
             return response()->json([], 403);
         }
 

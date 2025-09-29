@@ -7,7 +7,7 @@
         <div class="container-xl">
 
             @if(in_array(strtolower(Auth::user()->role), ['owner', 'co_owner']))
-                {{-- Owner & Co-owner Dashboard --}}
+                {{-- Owner & co_owner Dashboard --}}
                 @include('partials.dashboard.owner-coowner')
             @elseif(Auth::user()->role === 'admin')
                 {{-- Admin Dashboard --}}

@@ -20,7 +20,7 @@ class WorkPhotoPolicy
     // Siapa yang boleh upload foto ke sebuah SO?
     public function create(User $user, ServiceOrder $serviceOrder): bool
     {
-        // Admin & Co-Owner boleh
+        // Admin & co_owner boleh
         if (in_array($user->role, ['co_owner', 'admin'])) {
             return true;
         }
@@ -34,7 +34,7 @@ class WorkPhotoPolicy
     // Siapa yang boleh hapus foto?
     public function delete(User $user, WorkPhoto $workPhoto): bool
     {
-        // Admin & Co-Owner boleh
+        // Admin & co_owner boleh
         if (in_array($user->role, ['co_owner', 'admin'])) {
             return true;
         }
