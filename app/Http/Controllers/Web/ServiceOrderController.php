@@ -191,6 +191,11 @@ class ServiceOrderController extends Controller
             $serviceOrder->work_notes = $request->work_notes;
             $serviceOrder->staff_notes = $request->staff_notes;
             $serviceOrder->status = $newStatus;
+
+            if ($newStatus === ServiceOrder::STATUS_DONE) {
+                $serviceOrder->work_proof_completed_at = now();
+            }
+
             $serviceOrder->save();
 
             // Sync services

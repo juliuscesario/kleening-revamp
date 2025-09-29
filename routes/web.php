@@ -92,6 +92,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reports/customer/drilldown/{customer}', [\App\Http\Controllers\Web\ReportController::class, 'customerDrilldown'])->name('web.reports.customer.drilldown');
     Route::get('reports/profitability', [\App\Http\Controllers\Web\ReportController::class, 'profitability'])->name('web.reports.profitability');
     Route::get('reports/staff-utilization', [\App\Http\Controllers\Web\ReportController::class, 'staffUtilization'])->name('web.reports.staff-utilization');
+    Route::get('reports/invoice-aging', [\App\Http\Controllers\Web\ReportController::class, 'invoiceAging'])->name('web.reports.invoice-aging');
 
 
     // Custom Resource Routes

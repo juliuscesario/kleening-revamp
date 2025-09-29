@@ -38,4 +38,7 @@ $(function() {
     $('#apply-filters').on('click', function() {
         dataTable.ajax.reload();
     });
+
+    // Initial load
+    dataTable.ajax.reload();
 });

@@ -68,4 +68,38 @@ class ReportController extends Controller
         $areas = Area::all();
         return view('pages.reports.staff_utilization', compact('areas'));
     }
+
+    public function invoiceAging(Request $request)
+    {
+        $this->authorize('viewAny', Invoice::class);
+
+        $invoices = Invoice::with('serviceOrder.customer')
+            ->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_OVERDUE])
+            ->get()
+            ->map(function ($invoice) {
+                $dueDate = \Carbon\Carbon::parse($invoice->due_date);
+                $now = \Carbon\Carbon::now();
+                $daysOverdue = $now->diffInDays($dueDate, false); // false to get negative for overdue
+
+                $agingBucket = 'Current';
+                if ($daysOverdue < 0) { // If due date is in the past
+                    $absDaysOverdue = abs($daysOverdue);
+                    if ($absDaysOverdue <= 30) {
+                        $agingBucket = '1-30 Days Overdue';
+                    } elseif ($absDaysOverdue <= 60) {
+                        $agingBucket = '31-60 Days Overdue';
+                    } elseif ($absDaysOverdue <= 90) {
+                        $agingBucket = '61-90 Days Overdue';
+                    } else {
+                        $agingBucket = '90+ Days Overdue';
+                    }
+                }
+
+                $invoice->days_overdue = $daysOverdue;
+                $invoice->aging_bucket = $agingBucket;
+                return $invoice;
+            });
+
+        return view('pages.reports.invoice_aging', compact('invoices'));
+    }
 }

@@ -185,6 +185,9 @@
                       <a class="dropdown-item {{ request()->is('reports/staff-utilization*') ? 'active' : '' }}" href="{{ route('web.reports.staff-utilization') }}">
                         Laporan Utilisasi Staff
                       </a>
+                      <a class="dropdown-item {{ request()->is('reports/invoice-aging*') ? 'active' : '' }}" href="{{ route('web.reports.invoice-aging') }}">
+                        Laporan Umur Piutang
+                      </a>
                     </div>
                   </div>
                 </div>

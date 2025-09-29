@@ -1050,6 +1050,11 @@ class DataTablesController extends Controller
                     $startTime = $order->workPhotos->where('type', 'arrival')->min('created_at');
                     $endTime = $order->work_proof_completed_at;
 
+                    // Fallback for endTime if work_proof_completed_at is null but order is done/invoiced
+                    if (!$endTime && in_array($order->status, [ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])) {
+                        $endTime = $order->updated_at;
+                    }
+
                     if ($startTime && $endTime) {
                         $duration = strtotime($endTime) - strtotime($startTime);
                         $totalDuration += $duration;
@@ -1064,6 +1069,11 @@ class DataTablesController extends Controller
                 $staff->serviceOrders->each(function ($order) use (&$totalDuration) {
                     $startTime = $order->workPhotos->where('type', 'arrival')->min('created_at');
                     $endTime = $order->work_proof_completed_at;
+
+                    // Fallback for endTime if work_proof_completed_at is null but order is done/invoiced
+                    if (!$endTime && in_array($order->status, [ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])) {
+                        $endTime = $order->updated_at;
+                    }
 
                     if ($startTime && $endTime) {
                         $duration = strtotime($endTime) - strtotime($startTime);
