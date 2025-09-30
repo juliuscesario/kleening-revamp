@@ -19,6 +19,21 @@
     @endauth
     
     @stack('styles')
+    <style>
+        /* Notification Dropdown Styles */
+        .notification-dropdown-menu {
+            min-width: 25rem;
+        }
+        @media (max-width: 576px) {
+            .notification-dropdown-menu.dropdown-menu-end {
+                min-width: 95vw;
+                max-width: 95vw;
+                left: auto !important;
+                right: 5px !important;
+                transform: none !important;
+            }
+        }
+    </style>
   </head>
   <body>
     <div class="page">
@@ -210,12 +225,34 @@
                         <span id="unread-count" class="badge bg-red badge-pill d-none"></span>
                     </span>
                 </a>
-                <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <div class="list-group list-group-flush" id="notification-list">
-                        {{-- Notifications will be rendered here by JavaScript --}}
+                <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notification-dropdown-menu">
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <h5 class="mb-0 px-2">Notifications</h5>
+                        <a href="#" id="mark-all-as-read" class="btn btn-sm btn-link">Mark all as read</a>
                     </div>
-                    <div class="dropdown-divider"></div>
-                    <a href="#" id="mark-all-as-read" class="dropdown-item">Mark all as read</a>
+                    <ul class="nav nav-tabs nav-fill" id="notification-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="service-orders-tab" data-bs-toggle="tab" data-bs-target="#service-orders" type="button" role="tab" aria-controls="service-orders" aria-selected="true">Service Orders</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="invoices-tab" data-bs-toggle="tab" data-bs-target="#invoices" type="button" role="tab" aria-controls="invoices" aria-selected="false">Invoices</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="notification-tabs-content" style="max-height: 400px; overflow-y: auto;">
+                        <div class="tab-pane fade show active" id="service-orders" role="tabpanel" aria-labelledby="service-orders-tab">
+                            <div class="list-group list-group-flush" id="service-orders-notification-list">
+                                {{-- Service Order notifications will be rendered here --}}
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="invoices" role="tabpanel" aria-labelledby="invoices-tab">
+                            <div class="list-group list-group-flush" id="invoices-notification-list">
+                                {{-- Invoice notifications will be rendered here --}}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-top">
+                        <a href="{{ route('web.notifications.index') }}" class="dropdown-item text-center text-primary">View all notifications</a>
+                    </div>
                 </div>
             </div>
             <div class="nav-item dropdown">

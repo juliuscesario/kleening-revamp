@@ -18,6 +18,7 @@ use App\Http\Controllers\Web\ServiceCategoriesController;
 use App\Http\Controllers\Web\ServiceController;
 use App\Http\Controllers\Web\ServiceOrderController;
 use App\Http\Controllers\Web\StaffController;
+use App\Http\Controllers\Web\NotificationController;
 
 use App\Http\Controllers\Web\InvoiceController;
 use App\Http\Controllers\Web\PaymentController;
@@ -98,6 +99,7 @@ Route::middleware(['auth'])->group(function () {
     // Custom Resource Routes
     Route::put('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('web.invoices.update-status');
     Route::get('service-orders/{serviceOrder}/print', [ServiceOrderController::class, 'printPdf'])->name('web.service-orders.print');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('web.notifications.index');
 
     // Authentication
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
