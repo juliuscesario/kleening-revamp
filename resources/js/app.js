@@ -1,4 +1,5 @@
 import './bootstrap';
+import './notifications';
 
 // 1. Import jQuery first and make it globally available.
 import jQuery from 'jquery';

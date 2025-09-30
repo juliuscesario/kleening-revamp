@@ -53,4 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/photos/{workPhoto}', [WorkPhotoController::class, 'destroy']); // Untuk hapus foto individual
     Route::patch('/service-orders/{serviceOrder}/status', [ServiceOrderController::class, 'updateStatus']);
 
+    // Notification routes
+    Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/mark-as-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/mark-all-as-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
 });

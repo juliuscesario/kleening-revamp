@@ -20,17 +20,17 @@ class AutoCancelOldServiceOrders extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically cancels service orders that are \'baru\' and more than 7 days past their work_date.';
+    protected $description = "Automatically cancel service orders with 'booked' status that were created more than 7 days ago.";
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $thresholdDate = Carbon::now()->subDays(7)->toDateString();
+        $thresholdDate = Carbon::now()->subDays(1);
 
         $ordersToCancel = ServiceOrder::where('status', ServiceOrder::STATUS_BOOKED)
-                                      ->where('work_date', '<', $thresholdDate)
+                                      ->where('created_at', '<', $thresholdDate)
                                       ->get();
 
         if ($ordersToCancel->isEmpty()) {
