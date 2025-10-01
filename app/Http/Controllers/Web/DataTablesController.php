@@ -162,11 +162,7 @@ class DataTablesController extends Controller
             ->groupBy('customers.id') // Re-add this
             ->selectRaw('MAX(service_orders.work_date) as last_order_date_raw'); // Re-add this
 
-        if ($user->role == 'co_owner') {
-            $query->whereHas('addresses', function ($query) use ($user) {
-                $query->where('area_id', $user->area_id);
-            });
-        }
+
 
         if ($request->has('q')) {
             $query->where('name', 'like', '%' . $request->q . '%');
@@ -310,11 +306,7 @@ class DataTablesController extends Controller
 
         $query = \App\Models\Invoice::with('serviceOrder.customer');
 
-        if (auth()->user()->role === 'co_owner') {
-            $query->whereHas('serviceOrder.address', function ($q) {
-                $q->where('area_id', auth()->user()->area_id);
-            });
-        }
+
 
         return DataTables::of($query)
             ->addColumn('so_number', function ($invoice) {
@@ -368,11 +360,7 @@ class DataTablesController extends Controller
 
         $query = \App\Models\Payment::with('invoice.serviceOrder.customer');
 
-        if (auth()->user()->role === 'co_owner') {
-            $query->whereHas('invoice.serviceOrder.address', function ($q) {
-                $q->where('area_id', auth()->user()->area_id);
-            });
-        }
+
 
         return DataTables::of($query)
             ->addColumn('invoice_number', function ($payment) {
@@ -502,24 +490,36 @@ class DataTablesController extends Controller
             ->addColumn('jobs_completed', function ($staff) use ($request) {
                 $jobsQuery = $staff->serviceOrders()
                     ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED]);
+                
                 if ($request->filled('start_date') && $request->filled('end_date')) {
                     $jobsQuery->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                } else {
+                    // Default to current month if no date range is provided
+                    $jobsQuery->whereMonth('work_date', now()->month)->whereYear('work_date', now()->year);
                 }
+                
                 return $jobsQuery->count();
             })
             ->addColumn('total_revenue', function ($staff) use ($request) {
                 $revenueQuery = \App\Models\Invoice::where('status', \App\Models\Invoice::STATUS_PAID)
                     ->whereHas('serviceOrder', function($soQuery) use ($staff) {
-                        $soQuery->whereHas('staff', function($staffQuery) use ($staff) {
-                            $staffQuery->where('staff.id', $staff->id);
-                        });
+                        $soQuery->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
+                            ->whereHas('staff', function($staffQuery) use ($staff) {
+                                $staffQuery->where('staff.id', $staff->id);
+                            });
                     });
 
                 if ($request->filled('start_date') && $request->filled('end_date')) {
                     $revenueQuery->whereHas('payments', function ($paymentQuery) use ($request) {
                         $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
                     });
+                } else {
+                    // Default to current month if no date range is provided
+                    $revenueQuery->whereHas('payments', function ($paymentQuery) {
+                        $paymentQuery->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year);
+                    });
                 }
+
                 return 'Rp ' . number_format($revenueQuery->sum('grand_total'), 0, ',', '.');
             });
 
@@ -545,46 +545,67 @@ class DataTablesController extends Controller
             });
         }
 
-        $subQuery->withSum(['invoices as total_revenue' => function ($q) use ($request) {
-            $q->where('invoices.status', \App\Models\Invoice::STATUS_PAID);
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $q->whereHas('payments', function ($paymentQuery) use ($request) {
-                    $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
-                });
-            }
-        }], 'grand_total')
-        ->withCount(['invoices as total_orders' => function ($q) use ($request) {
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $q->whereHas('payments', function ($paymentQuery) use ($request) {
-                    $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
-                });
-            }
-        }]);
+    $subQuery = $subQuery->withSum(['invoices as total_revenue' => function ($q) use ($request) {
+        $q->where('invoices.status', \App\Models\Invoice::STATUS_PAID)
+            ->whereHas('serviceOrder', function ($so) {
+                $so->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);
+            });
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+            });
+        }
+    }], 'grand_total')
+    ->withCount(['serviceOrders as total_orders' => function ($q) use ($request) {
+        $q->where('status', '!=', \App\Models\ServiceOrder::STATUS_CANCELLED);
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
+        }
+    }])
+    ->withSum(['invoices as total_invoice_overdue' => function ($q) use ($request) {
+        $q->where('invoices.status', \App\Models\Invoice::STATUS_OVERDUE);
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $q->whereBetween('due_date', [$request->start_date, $request->end_date]);
+        }
+    }], 'grand_total')
+    ->addSelect(DB::raw('(SELECT SUM(total) FROM service_order_items WHERE service_order_id IN (SELECT id FROM service_orders WHERE customer_id = customers.id AND status = \'cancelled\')) as total_cancelled_revenue_potential'));
 
-        // 2. Create the main query from the subquery, which allows WHERE on aliases
-        $query = \App\Models\Customer::fromSub($subQuery, 'customers')
-            ->where('total_revenue', '>', 0);
+    // 2. Create the main query from the subquery, which allows WHERE on aliases
+    $query = \App\Models\Customer::fromSub($subQuery, 'customers')
+        ->where('total_revenue', '>', 0);
 
-        return DataTables::of($query)
-            ->addColumn('name', function($customer) {
-                $name = $customer->name;
-                // Manually check for soft delete, since we don't have an Eloquent model
-                if (!empty($customer->deleted_at)) {
-                    $name .= ' <span class="badge bg-danger text-bg-secondary">Archived</span>';
-                }
-                return $name;
-            })
-            ->editColumn('total_revenue', function ($customer) {
-                return 'Rp ' . number_format($customer->total_revenue ?? 0, 0, ',', '.');
-            })
-            ->orderColumn('total_revenue', function ($query, $order) {
-                $query->orderBy('total_revenue', $order);
-            })
-            ->orderColumn('total_orders', function ($query, $order) {
-                $query->orderBy('total_orders', $order);
-            })
-            ->rawColumns(['name'])
-            ->make(true);
+    return DataTables::of($query)
+        ->addColumn('name', function($customer) {
+            $name = $customer->name;
+            // Manually check for soft delete, since we don't have an Eloquent model
+            if (!empty($customer->deleted_at)) {
+                $name .= ' <span class="badge bg-danger text-bg-secondary">Archived</span>';
+            }
+            return $name;
+        })
+        ->editColumn('total_revenue', function ($customer) {
+            return 'Rp ' . number_format($customer->total_revenue ?? 0, 0, ',', '.');
+        })
+        ->addColumn('total_cancelled_revenue_potential', function ($customer) {
+            return 'Rp ' . number_format($customer->total_cancelled_revenue_potential ?? 0, 0, ',', '.');
+        })
+        ->addColumn('total_invoice_overdue', function ($customer) {
+            return 'Rp ' . number_format($customer->total_invoice_overdue ?? 0, 0, ',', '.');
+        })
+        ->orderColumn('total_revenue', function ($query, $order) {
+            $query->orderBy('total_revenue', $order);
+        })
+        ->orderColumn('total_orders', function ($query, $order) {
+            $query->orderBy('total_orders', $order);
+        })
+        ->orderColumn('total_cancelled_revenue_potential', function ($query, $order) {
+            $query->orderBy('total_cancelled_revenue_potential', $order);
+        })
+        ->orderColumn('total_invoice_overdue', function ($query, $order) {
+            $query->orderBy('total_invoice_overdue', $order);
+        })
+        ->rawColumns(['name'])
+        ->make(true);
     }
 
     public function revenueTrendChartData(Request $request, \App\Models\ServiceCategory $serviceCategory)
@@ -808,11 +829,13 @@ class DataTablesController extends Controller
             ]);
         }
 
-        $query = $staff->serviceOrders()
-            ->with('customer')
-            ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
-            ->whereBetween('work_date', [$request->start_date, $request->end_date]);
-
+            $query = $staff->serviceOrders()
+                ->with('customer')
+                ->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
+                ->whereHas('invoice', function ($q) {
+                    $q->where('status', \App\Models\Invoice::STATUS_PAID);
+                })
+                ->whereBetween('work_date', [$request->start_date, $request->end_date]);
         return DataTables::of($query)
             ->addColumn('customer_name', function($so) {
                 return $so->customer->name ?? 'N/A';
@@ -942,9 +965,8 @@ class DataTablesController extends Controller
 
         $itemsSubQuery = \App\Models\ServiceOrderItem::query()
             ->select('service_id', DB::raw('COUNT(*) as total_items'), DB::raw('SUM(total) as total_revenue'))
-            ->whereHas('serviceOrder', function($soQuery) use ($request) {
-                $soQuery->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED]);
-                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    ->whereHas('serviceOrder', function($soQuery) use ($request) {
+                        $soQuery->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);                if ($request->filled('start_date') && $request->filled('end_date')) {
                     $soQuery->whereBetween('work_date', [$request->start_date, $request->end_date]);
                 }
                 if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
@@ -1002,13 +1024,12 @@ class DataTablesController extends Controller
         $data = $areas->map(function($area) use ($request) {
             $itemsQuery = \App\Models\ServiceOrderItem::whereHas('serviceOrder.address', function($q) use ($area) {
                 $q->where('area_id', $area->id);
-            })->whereHas('serviceOrder', function($q) use ($request) {
-                $q->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED]);
-                if ($request->filled('start_date') && $request->filled('end_date')) {
-                    $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
-                }
-            });
-
+                    })->whereHas('serviceOrder', function($q) use ($request) {
+                        $q->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);
+                        if ($request->filled('start_date') && $request->filled('end_date')) {
+                            $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                        }
+                    });
             $totalProfit = $itemsQuery->get()->sum(function($item) {
                 return $item->total - ($item->service->cost * $item->quantity);
             });

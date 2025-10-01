@@ -4,8 +4,9 @@ $(function() {
     // Set default dates
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     $('#filter-start-date').val(firstDayOfMonth.toISOString().split('T')[0]);
-    $('#filter-end-date').val(today.toISOString().split('T')[0]);
+    $('#filter-end-date').val(lastDayOfMonth.toISOString().split('T')[0]);
 
     let dataTable = table.DataTable({
         processing: true,

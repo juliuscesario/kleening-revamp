@@ -58,6 +58,8 @@
                                 <th>Nama Pelanggan</th>
                                 <th>Total Pesanan</th>
                                 <th>Total Pendapatan</th>
+                                <th>Total Cancelled Revenue Potential</th>
+                                <th>Total Invoice Overdue</th>
                             </tr>
                         </thead>
                         <tbody></tbody>

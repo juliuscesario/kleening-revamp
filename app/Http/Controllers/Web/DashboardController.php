@@ -27,27 +27,31 @@ class DashboardController extends Controller
 
         if ($user->role === 'owner' || $user->role === 'co_owner') {
             $startOfMonth = $today->copy()->startOfMonth();
+            $endOfMonth = $today->copy()->endOfMonth();
 
             // KPIs
-            $viewData['monthlyRevenue'] = Payment::whereBetween('payment_date', [$startOfMonth, $today])->sum('amount');
+            $viewData['monthlyRevenue'] = Invoice::where('status', Invoice::STATUS_PAID)
+                ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
+                ->sum('grand_total');
 
             $viewData['jobsCompletedThisMonth'] = ServiceOrder::whereIn('status', [ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])
-                ->whereBetween('work_date', [$startOfMonth, $today])
+                ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
                 ->count();
 
-            $viewData['outstandingInvoices'] = Invoice::where('status', '!=', Invoice::STATUS_PAID)->sum('grand_total');
-            $viewData['overdueInvoices'] = Invoice::where('status', '!=', Invoice::STATUS_PAID)->where('due_date', '<', $today)->sum('grand_total');
-            $viewData['newCustomersThisMonth'] = Customer::whereBetween('created_at', [$startOfMonth, $today])->count();
+            $viewData['outstandingInvoices'] = Invoice::where('status', Invoice::STATUS_SENT)->sum('grand_total');
+            $viewData['overdueInvoices'] = Invoice::where('status', Invoice::STATUS_OVERDUE)->sum('grand_total');
+            $viewData['newCustomersThisMonth'] = Customer::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
 
             // Service Order Funnel
-            $funnelDate = $today->copy()->subDays(30);
-            $viewData['funnelBooked'] = ServiceOrder::where('status', ServiceOrder::STATUS_BOOKED)->where('created_at', '>=', $funnelDate)->count();
-            $viewData['funnelProses'] = ServiceOrder::where('status', ServiceOrder::STATUS_PROSES)->where('created_at', '>=', $funnelDate)->count();
-            $viewData['funnelInvoiced'] = ServiceOrder::where('status', ServiceOrder::STATUS_INVOICED)->where('created_at', '>=', $funnelDate)->count();
+            $viewData['funnelBooked'] = ServiceOrder::where('status', ServiceOrder::STATUS_BOOKED)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+            $viewData['funnelProses'] = ServiceOrder::where('status', ServiceOrder::STATUS_PROSES)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+            $viewData['funnelInvoiced'] = ServiceOrder::where('status', ServiceOrder::STATUS_INVOICED)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+            $viewData['funnelDone'] = ServiceOrder::where('status', ServiceOrder::STATUS_DONE)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
 
             // Monthly Revenue Chart (Daily)
-            $viewData['dailyRevenue'] = Payment::selectRaw('DATE(payment_date) as date, SUM(amount) as total')
-                ->whereBetween('payment_date', [$startOfMonth, $today])
+            $viewData['dailyRevenue'] = Invoice::selectRaw('DATE(updated_at) as date, SUM(grand_total) as total')
+                ->where('status', Invoice::STATUS_PAID)
+                ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
                 ->groupBy('date')
                 ->orderBy('date', 'asc')
                 ->get();

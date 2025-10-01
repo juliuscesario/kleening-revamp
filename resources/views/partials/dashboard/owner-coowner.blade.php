@@ -115,6 +115,14 @@
                 <div class="progress mt-1" style="height: 5px;">
                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ $funnelInvoiced > 0 ? 100 : 0 }}%" aria-valuenow="{{ $funnelInvoiced }}"></div>
                 </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <span>Done</span>
+                    <span class="badge bg-primary text-white">{{ $funnelDone }}</span>
+                </div>
+                <div class="progress mt-1" style="height: 5px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $funnelDone > 0 ? 100 : 0 }}%" aria-valuenow="{{ $funnelDone }}"></div>
+                </div>
             </div>
         </div>
     </div>
