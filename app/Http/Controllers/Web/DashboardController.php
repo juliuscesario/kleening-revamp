@@ -104,7 +104,7 @@ class DashboardController extends Controller
 
             $viewData['todayServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereDate('work_date', $today)->whereIn('status', ['booked', 'proses'])->orderBy('work_date', 'asc')->get();
             $viewData['tomorrowServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereDate('work_date', $tomorrow)->where('status', 'booked')->orderBy('work_date', 'asc')->get();
-            $viewData['pastServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereBetween('work_date', [$startOfMonth, $today->copy()->subDay()])->whereIn('status', ['booked', 'proses'])->orderBy('work_date', 'desc')->get();
+            $viewData['pastServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereBetween('work_date', [$today->copy()->subDays(6), $today->copy()->subDay()])->whereIn('status', ['booked', 'proses'])->orderBy('work_date', 'desc')->get();
             $viewData['cancelledServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'cancelled')->whereBetween('work_date', [$startOfMonth, $endOfMonth])->orderBy('work_date', 'desc')->get();
             $viewData['doneServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->whereBetween('work_date', [$startOfMonth, $endOfMonth])->orderBy('work_date', 'desc')->get();
             $viewData['totalDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->count();

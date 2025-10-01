@@ -22,6 +22,7 @@ use App\Http\Controllers\Web\NotificationController;
 
 use App\Http\Controllers\Web\InvoiceController;
 use App\Http\Controllers\Web\PaymentController;
+use App\Http\Controllers\Web\SchedulerLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -103,6 +104,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Authentication
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+});
+
+Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
+    Route::get('scheduler-logs', [SchedulerLogController::class, 'index'])->name('scheduler-logs.index');
+    Route::post('scheduler-logs/run', [SchedulerLogController::class, 'runCommand'])->name('scheduler-logs.run');
 });
 
 require __DIR__.'/auth.php';

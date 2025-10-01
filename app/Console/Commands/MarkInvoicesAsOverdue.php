@@ -28,28 +28,39 @@ class MarkInvoicesAsOverdue extends Command
      */
     public function handle()
     {
-        $today = Carbon::today();
-
-        $invoicesToMarkOverdue = Invoice::whereIn('status', [Invoice::STATUS_NEW, Invoice::STATUS_SENT])
-            ->where('due_date', '<', $today)
-            ->get();
-
-        if ($invoicesToMarkOverdue->isEmpty()) {
-            $this->info('No invoices to mark as overdue.');
-            return Command::SUCCESS;
-        }
-
+        $startTime = Carbon::now();
         $count = 0;
-        foreach ($invoicesToMarkOverdue as $invoice) {
-            $invoice->status = Invoice::STATUS_OVERDUE;
-            $invoice->save();
 
-            event(new InvoiceStatusUpdated($invoice));
+        try {
+            $today = Carbon::today();
 
-            $count++;
+            $invoicesToMarkOverdue = Invoice::whereIn('status', [Invoice::STATUS_NEW, Invoice::STATUS_SENT])
+                ->where('due_date', '<', $today)
+                ->get();
+
+            if ($invoicesToMarkOverdue->isEmpty()) {
+                $this->info('No invoices to mark as overdue.');
+                return Command::SUCCESS;
+            }
+
+            foreach ($invoicesToMarkOverdue as $invoice) {
+                $invoice->status = Invoice::STATUS_OVERDUE;
+                $invoice->save();
+
+                event(new InvoiceStatusUpdated($invoice));
+
+                $count++;
+            }
+
+            $this->info("Successfully marked {$count} invoices as overdue.");
+        } finally {
+            \App\Models\SchedulerLog::create([
+                'command' => $this->signature,
+                'start_time' => $startTime,
+                'end_time' => Carbon::now(),
+                'items_processed' => $count,
+            ]);
         }
-
-        $this->info("Successfully marked {$count} invoices as overdue.");
 
         return Command::SUCCESS;
     }

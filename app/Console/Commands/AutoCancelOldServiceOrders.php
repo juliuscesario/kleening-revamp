@@ -27,25 +27,36 @@ class AutoCancelOldServiceOrders extends Command
      */
     public function handle()
     {
-        $thresholdDate = Carbon::now()->subDays(1);
-
-        $ordersToCancel = ServiceOrder::where('status', ServiceOrder::STATUS_BOOKED)
-                                      ->where('created_at', '<', $thresholdDate)
-                                      ->get();
-
-        if ($ordersToCancel->isEmpty()) {
-            $this->info('No old service orders found to cancel.');
-            return Command::SUCCESS;
-        }
-
+        $startTime = Carbon::now();
         $count = 0;
-        foreach ($ordersToCancel as $order) {
-            $order->status = ServiceOrder::STATUS_CANCELLED;
-            $order->save();
-            $count++;
-        }
 
-        $this->info("Successfully cancelled {$count} old service orders.");
+        try {
+            $thresholdDate = Carbon::now()->subDays(1);
+
+            $ordersToCancel = ServiceOrder::where('status', ServiceOrder::STATUS_BOOKED)
+                                        ->where('created_at', '<', $thresholdDate)
+                                        ->get();
+
+            if ($ordersToCancel->isEmpty()) {
+                $this->info('No old service orders found to cancel.');
+                return Command::SUCCESS;
+            }
+
+            foreach ($ordersToCancel as $order) {
+                $order->status = ServiceOrder::STATUS_CANCELLED;
+                $order->save();
+                $count++;
+            }
+
+            $this->info("Successfully cancelled {$count} old service orders.");
+        } finally {
+            \App\Models\SchedulerLog::create([
+                'command' => $this->signature,
+                'start_time' => $startTime,
+                'end_time' => Carbon::now(),
+                'items_processed' => $count,
+            ]);
+        }
 
         return Command::SUCCESS;
     }
