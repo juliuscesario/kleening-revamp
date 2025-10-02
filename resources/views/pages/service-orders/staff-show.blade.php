@@ -464,12 +464,6 @@
 
         signatureModalEl.addEventListener('shown.bs.modal', () => {
             resizeCanvas(document.getElementById('customerSignaturePad'), customerSignaturePad);
-            Object.keys(staffSignaturePads).forEach(staffId => {
-                const canvas = document.getElementById(`staffSignaturePad_${staffId}`);
-                if (canvas) {
-                    resizeCanvas(canvas, staffSignaturePads[staffId]);
-                }
-            });
         });
         const requestSignatureBtn = document.getElementById('requestSignatureBtn');
 
@@ -577,6 +571,7 @@
                     </div>
                 `;
                 staffSignaturePads[staff.id] = initializeSignaturePad(`staffSignaturePad_${staff.id}`);
+                resizeCanvas(document.getElementById(`staffSignaturePad_${staff.id}`), staffSignaturePads[staff.id]);
 
                 // Add event listeners for the dynamically created buttons
                 document.querySelector(`#staffSignaturePads button[data-staff-id="${staff.id}"][data-action="clear"]`).addEventListener('click', function() {
