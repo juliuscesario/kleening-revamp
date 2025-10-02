@@ -459,11 +459,20 @@
         }
 
         // --- Signature Pad Logic ---
-        const signatureModal = new bootstrap.Modal(document.getElementById('signatureModal'));
+        const signatureModalEl = document.getElementById('signatureModal');
+        const signatureModal = new bootstrap.Modal(signatureModalEl);
+
+        signatureModalEl.addEventListener('shown.bs.modal', () => {
+            resizeCanvas(document.getElementById('customerSignaturePad'), customerSignaturePad);
+            Object.keys(staffSignaturePads).forEach(staffId => {
+                const canvas = document.getElementById(`staffSignaturePad_${staffId}`);
+                if (canvas) {
+                    resizeCanvas(canvas, staffSignaturePads[staffId]);
+                }
+            });
+        });
         const requestSignatureBtn = document.getElementById('requestSignatureBtn');
 
-        const customerSignatureCanvas = document.getElementById('customerSignaturePad');
-        const customerSignaturePad = new SignaturePad(customerSignatureCanvas);
         const clearCustomerSignatureBtn = document.getElementById('clearCustomerSignature');
         const saveCustomerSignatureBtn = document.getElementById('saveCustomerSignature');
         const customerSignatureSection = document.getElementById('customerSignatureSection');
@@ -476,22 +485,30 @@
         let staffSignaturePads = {}; // To store SignaturePad instances for each staff
         let customerSigned = {{ $serviceOrder->customer_signature_image ? 'true' : 'false' }}; // Track customer signature status
 
+        function resizeCanvas(canvas, signaturePadInstance) {
+            if (canvas.offsetWidth === 0 || canvas.offsetHeight === 0) {
+                return;
+            }
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext('2d').scale(ratio, ratio);
+            if (signaturePadInstance) {
+                signaturePadInstance.clear();
+            }
+        }
+
         // Function to initialize a signature pad for a given canvas ID
         function initializeSignaturePad(canvasId) {
             const canvas = document.getElementById(canvasId);
             const signaturePad = new SignaturePad(canvas);
-            // Adjust canvas size for responsiveness
-            function resizeCanvas() {
-                const ratio = Math.max(window.devicePixelRatio || 1, 1);
-                canvas.width = canvas.offsetWidth * ratio;
-                canvas.height = canvas.offsetHeight * ratio;
-                canvas.getContext('2d').scale(ratio, ratio);
-                signaturePad.clear(); // important for canvas if re-sizing
-            }
-            window.addEventListener('resize', resizeCanvas);
-            resizeCanvas();
+            window.addEventListener('resize', () => resizeCanvas(canvas, signaturePad));
             return signaturePad;
         }
+
+        const customerSignaturePad = initializeSignaturePad('customerSignaturePad');
+
+
 
         // Event listener for "Minta Tanda Tangan" button
         requestSignatureBtn.addEventListener('click', function () {
@@ -499,7 +516,6 @@
             // Reset state
             customerSignaturePad.clear();
             staffSignaturePadsContainer.innerHTML = ''; // Clear previous staff pads
-            currentStaffIndex = 0;
             staffSignaturePads = {};
             saveStaffSignatureBtn.style.display = 'none';
 
@@ -672,30 +688,6 @@
                 console.error('Error:', error);
                 alert('An error occurred while updating the Service Order status.');
             });
-        }
-
-        // Adjust canvas size for responsiveness
-        function resizeCanvas(canvas, signaturePadInstance) {
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.clientWidth * ratio;
-            canvas.height = canvas.clientHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-            if (signaturePadInstance) {
-                signaturePadInstance.clear();
-            }
-        }
-
-        // Modify initializeSignaturePad to attach resize listener to the canvas itself
-        function initializeSignaturePad(canvasId) {
-            const canvas = document.getElementById(canvasId);
-            const signaturePad = new SignaturePad(canvas);
-            // Store signaturePad instance on canvas element for resize function
-            canvas.signaturePad = signaturePad;
-            // Initial resize
-            resizeCanvas(canvas, signaturePad);
-            // Attach resize listener
-            window.addEventListener('resize', () => resizeCanvas(canvas, signaturePad));
-            return signaturePad;
         }
 
     });
