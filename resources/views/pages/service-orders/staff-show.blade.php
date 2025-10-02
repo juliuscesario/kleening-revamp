@@ -164,7 +164,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="photo" class="form-label">Unggah Foto Pekerjaan</label>
-                        <input type="file" class="form-control" id="photo" name="photo" accept="image/*" capture="environment" required>
+                        <input type="file" class="form-control" id="photo" name="photo" accept="image/*" required>
                         <div class="mt-2" id="photoPreview" style="display: none;">
                             <img src="" alt="Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
                         </div>
@@ -193,7 +193,7 @@
                         <h4 class="mb-3">Foto Sebelum Pekerjaan</h4>
                         <div class="mb-3">
                             <label for="before_photo" class="form-label">Unggah Foto Sebelum</label>
-                            <input type="file" class="form-control" id="before_photo" name="photo" accept="image/*" capture="environment" required>
+                            <input type="file" class="form-control" id="before_photo" name="photo" accept="image/*" required>
                             <div class="mt-2" id="beforePhotoPreview" style="display: none;">
                                 <img src="" alt="Before Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
                             </div>
@@ -203,7 +203,7 @@
                         <h4 class="mb-3">Foto Sesudah Pekerjaan</h4>
                         <div class="mb-3">
                             <label for="after_photo" class="form-label">Unggah Foto Sesudah</label>
-                            <input type="file" class="form-control" id="after_photo" name="photo" accept="image/*" capture="environment" required>
+                            <input type="file" class="form-control" id="after_photo" name="photo" accept="image/*" required>
                             <div class="mt-2" id="afterPhotoPreview" style="display: none;">
                                 <img src="" alt="After Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
                             </div>
