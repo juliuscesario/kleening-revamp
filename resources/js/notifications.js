@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
+    updateUnreadCountBadge();
+
     const notificationDropdown = document.getElementById('notificationDropdown');
     if (notificationDropdown) {
         let isFetching = false;
@@ -42,6 +44,28 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+async function updateUnreadCountBadge() {
+    try {
+        const response = await fetch('/api/notifications', {
+            headers: {
+                'Authorization': `Bearer ${getApiToken()}`,
+                'Accept': 'application/json',
+            }
+        });
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const data = await response.json();
+        const unreadCount = data.unread.length;
+        const unreadBadge = document.getElementById('unread-count');
+        if (unreadBadge) {
+            unreadBadge.textContent = unreadCount;
+            unreadBadge.classList.toggle('d-none', unreadCount === 0);
+        }
+    } catch (error) {
+        console.error('Error fetching unread notification count:', error);
+    }
+}
 
 async function fetchNotifications() {
     try {
