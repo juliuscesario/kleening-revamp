@@ -31,7 +31,7 @@ class AutoCancelOldServiceOrders extends Command
         $count = 0;
 
         try {
-            $thresholdDate = Carbon::now()->subDays(1);
+            $thresholdDate = Carbon::now()->subDays(7);
 
             $ordersToCancel = ServiceOrder::where('status', ServiceOrder::STATUS_BOOKED)
                                         ->where('created_at', '<', $thresholdDate)
