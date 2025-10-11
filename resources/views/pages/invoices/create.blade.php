@@ -115,9 +115,29 @@
                                 <input type="number" class="form-control" id="transport_fee" name="transport_fee" value="0">
                             </div>
                             <div class="mb-3">
+                                <label class="form-label">Down Payment (DP)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="dp_value" name="dp_value" value="0">
+                                    <select class="form-select" id="dp_type" name="dp_type">
+                                        <option value="fixed">Fixed</option>
+                                        <option value="percentage">Percentage</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label">Grand Total</label>
                                 <input type="text" class="form-control" id="grand_total_display" value="Rp 0,00" readonly>
                                 <input type="hidden" id="grand_total" name="grand_total" value="0">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Total After DP</label>
+                                <input type="text" class="form-control" id="total_after_dp_display" value="Rp 0,00" readonly>
+                                <input type="hidden" id="total_after_dp" name="total_after_dp" value="0">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Balance</label>
+                                <input type="text" class="form-control" id="balance_display" value="Rp 0,00" readonly>
+                                <input type="hidden" id="balance" name="balance" value="0">
                             </div>
                             <button type="submit" class="btn btn-primary">Create Invoice</button>
                         </form>
@@ -128,3 +148,85 @@
     </div>
 </div>
 @endsection
+@push('scripts')
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const subtotalElement = document.getElementById('subtotal');
+    const subtotalDisplayElement = document.getElementById('subtotal_display');
+    const discountElement = document.getElementById('discount');
+    const discountTypeElement = document.getElementById('discount_type');
+    const transportFeeElement = document.getElementById('transport_fee');
+    const grandTotalElement = document.getElementById('grand_total');
+    const grandTotalDisplayElement = document.getElementById('grand_total_display');
+    const dpValueElement = document.getElementById('dp_value');
+    const dpTypeElement = document.getElementById('dp_type');
+    const totalAfterDpElement = document.getElementById('total_after_dp');
+    const totalAfterDpDisplayElement = document.getElementById('total_after_dp_display');
+    const balanceElement = document.getElementById('balance');
+    const balanceDisplayElement = document.getElementById('balance_display');
+
+    function formatCurrency(amount) {
+        return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
+    }
+
+    function calculateTotals() {
+        let subtotal = 0;
+        document.querySelectorAll('.item-total').forEach(function(item) {
+            subtotal += parseFloat(item.dataset.total);
+        });
+
+        const discount = parseFloat(discountElement.value) || 0;
+        const discountType = discountTypeElement.value;
+        const transportFee = parseFloat(transportFeeElement.value) || 0;
+        const dpValue = parseFloat(dpValueElement.value) || 0;
+        const dpType = dpTypeElement.value;
+
+        let discountAmount = 0;
+        if (discountType === 'percentage') {
+            discountAmount = (subtotal * discount) / 100;
+        } else {
+            discountAmount = discount;
+        }
+
+        const grandTotal = (subtotal - discountAmount) + transportFee;
+
+        let dpAmount = 0;
+        if (dpType === 'percentage') {
+            dpAmount = (grandTotal * dpValue) / 100;
+        } else {
+            dpAmount = dpValue;
+        }
+
+        const totalAfterDp = grandTotal - dpAmount;
+        const balance = grandTotal - dpAmount;
+
+        subtotalElement.value = subtotal;
+        subtotalDisplayElement.value = formatCurrency(subtotal);
+        grandTotalElement.value = grandTotal;
+        grandTotalDisplayElement.value = formatCurrency(grandTotal);
+        totalAfterDpElement.value = totalAfterDp;
+        totalAfterDpDisplayElement.value = formatCurrency(totalAfterDp);
+        balanceElement.value = balance;
+        balanceDisplayElement.value = formatCurrency(balance);
+    }
+
+    document.querySelectorAll('#discount, #discount_type, #transport_fee, #dp_value, #dp_type').forEach(function(element) {
+        element.addEventListener('input', calculateTotals);
+    });
+
+    // Due date buttons
+    document.querySelectorAll('.due-date-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.due-date-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const days = parseInt(this.dataset.days);
+            const issueDate = new Date(document.getElementById('issue_date').value);
+            issueDate.setDate(issueDate.getDate() + days);
+            document.getElementById('due_date').value = issueDate.toISOString().slice(0,10);
+        });
+    });
+
+    calculateTotals();
+});
+</script>
+@endpush

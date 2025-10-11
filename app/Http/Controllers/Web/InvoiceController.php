@@ -52,6 +52,8 @@ class InvoiceController extends Controller
             'discount' => 'nullable|numeric',
             'discount_type' => 'nullable|string|in:fixed,percentage',
             'transport_fee' => 'required|numeric',
+            'dp_value' => 'nullable|numeric',
+            'dp_type' => 'nullable|string|in:fixed,percentage',
         ]);
 
         $serviceOrder = ServiceOrder::findOrFail($request->service_order_id);
@@ -64,6 +66,8 @@ class InvoiceController extends Controller
         $discount = $request->discount ?? 0;
         $discountType = $request->discount_type;
         $transportFee = $request->transport_fee;
+        $dpValue = $request->dp_value ?? 0;
+        $dpType = $request->dp_type;
 
         $discountAmount = 0;
         if ($discountType === 'percentage') {
@@ -73,6 +77,15 @@ class InvoiceController extends Controller
         }
 
         $grandTotal = ($subtotal - $discountAmount) + $transportFee;
+
+        $dpAmount = 0;
+        if ($dpType === 'percentage') {
+            $dpAmount = ($grandTotal * $dpValue) / 100;
+        } else {
+            $dpAmount = $dpValue;
+        }
+
+        $totalAfterDp = $grandTotal - $dpAmount;
 
         $invoice = Invoice::create([
             'service_order_id' => $request->service_order_id,
@@ -84,6 +97,10 @@ class InvoiceController extends Controller
             'discount_type' => $discountType,
             'transport_fee' => $transportFee,
             'grand_total' => $grandTotal,
+            'dp_type' => $dpType,
+            'dp_value' => $dpValue,
+            'total_after_dp' => $totalAfterDp,
+            'paid_amount' => $dpAmount, // Assuming DP is paid upon invoice creation
             'status' => 'new',
         ]);
 

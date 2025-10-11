@@ -36,6 +36,10 @@ class Invoice extends Model
         'discount_type',
         'transport_fee',
         'grand_total',
+        'dp_type',
+        'dp_value',
+        'total_after_dp',
+        'paid_amount',
         'status',
         'signature',
     ];

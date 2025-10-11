@@ -96,6 +96,24 @@
                         <td colspan="4" class="font-weight-bold text-uppercase text-end">Grand Total</td>
                         <td class="font-weight-bold text-end">Rp {{ number_format($invoice->grand_total, 2, ',', '.') }}</td>
                     </tr>
+                    <tr>
+                        <td colspan="4" class="strong text-end">Down Payment</td>
+                        <td class="text-end">
+                            @if($invoice->dp_type === 'percentage')
+                                - Rp {{ number_format(($invoice->grand_total * $invoice->dp_value) / 100, 2, ',', '.') }}
+                            @else
+                                - Rp {{ number_format($invoice->dp_value, 2, ',', '.') }}
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="strong text-end">Total After DP</td>
+                        <td class="text-end">Rp {{ number_format($invoice->total_after_dp, 2, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="font-weight-bold text-uppercase text-end">Balance</td>
+                        <td class="font-weight-bold text-end">Rp {{ number_format($invoice->balance, 2, ',', '.') }}</td>
+                    </tr>
                 </table>
                 <div class="card mt-3">
                     <div class="card-header">
