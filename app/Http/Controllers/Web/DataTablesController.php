@@ -488,16 +488,24 @@ class DataTablesController extends Controller
                 return $staff->area->name ?? 'N/A';
             })
             ->addColumn('jobs_completed', function ($staff) use ($request) {
-                $jobsQuery = $staff->serviceOrders()
-                    ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED]);
-                
+                $jobsQuery = \App\Models\Invoice::where('status', \App\Models\Invoice::STATUS_PAID)
+                    ->whereHas('serviceOrder', function($soQuery) use ($staff) {
+                        $soQuery->whereHas('staff', function($staffQuery) use ($staff) {
+                            $staffQuery->where('staff.id', $staff->id);
+                        });
+                    });
+
                 if ($request->filled('start_date') && $request->filled('end_date')) {
-                    $jobsQuery->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                    $jobsQuery->whereHas('payments', function ($paymentQuery) use ($request) {
+                        $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                    });
                 } else {
                     // Default to current month if no date range is provided
-                    $jobsQuery->whereMonth('work_date', now()->month)->whereYear('work_date', now()->year);
+                    $jobsQuery->whereHas('payments', function ($paymentQuery) {
+                        $paymentQuery->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year);
+                    });
                 }
-                
+
                 return $jobsQuery->count();
             })
             ->addColumn('total_revenue', function ($staff) use ($request) {

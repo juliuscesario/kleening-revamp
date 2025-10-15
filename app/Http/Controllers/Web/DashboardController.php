@@ -34,8 +34,8 @@ class DashboardController extends Controller
                 ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
                 ->sum('grand_total');
 
-            $viewData['jobsCompletedThisMonth'] = ServiceOrder::whereIn('status', [ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])
-                ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+            $viewData['jobsCompletedThisMonth'] = Invoice::where('status', Invoice::STATUS_PAID)
+                ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
                 ->count();
 
             $viewData['outstandingInvoices'] = Invoice::where('status', Invoice::STATUS_SENT)->sum('grand_total');
@@ -60,10 +60,11 @@ class DashboardController extends Controller
             if ($user->role === 'owner') {
                 $areas = Area::all();
 
-                $jobsCount = ServiceOrder::join('addresses', 'service_orders.address_id', '=', 'addresses.id')
-                    ->whereIn('service_orders.status', [ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])
-                    ->whereBetween('work_date', [$startOfMonth, $today])
-                    ->selectRaw('addresses.area_id, count(service_orders.id) as count')
+                $jobsCount = Invoice::join('service_orders', 'invoices.service_order_id', '=', 'service_orders.id')
+                    ->join('addresses', 'service_orders.address_id', '=', 'addresses.id')
+                    ->where('invoices.status', Invoice::STATUS_PAID)
+                    ->whereBetween('invoices.updated_at', [$startOfMonth, $today])
+                    ->selectRaw('addresses.area_id, count(invoices.id) as count')
                     ->groupBy('addresses.area_id')
                     ->pluck('count', 'area_id');
 
