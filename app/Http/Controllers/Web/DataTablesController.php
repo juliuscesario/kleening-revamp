@@ -773,10 +773,17 @@ class DataTablesController extends Controller
         }
 
         $query = \App\Models\ServiceOrder::query()
+            ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
             ->join('service_order_staff', 'service_orders.id', '=', 'service_order_staff.service_order_id')
             ->where('service_order_staff.staff_id', $staff->id)
             ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
             ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+
+        if ($request->filled('area_id') && $request->area_id !== 'all') {
+            $query->whereHas('address', function ($q) use ($request) {
+                $q->where('area_id', $request->area_id);
+            });
+        }
 
         $workload = $query->select(
                 DB::raw('DATE_TRUNC(\'week\', work_date) as week_start'),
@@ -806,12 +813,19 @@ class DataTablesController extends Controller
         }
 
         $specialization = \App\Models\ServiceOrderItem::query()
+            ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
             ->whereHas('serviceOrder', function($q) use ($staff, $request) {
                 $q->whereHas('staff', function($sq) use ($staff) {
                     $sq->where('staff.id', $staff->id);
                 })
                 ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
                 ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+
+                if ($request->filled('area_id') && $request->area_id !== 'all') {
+                    $q->whereHas('address', function ($a) use ($request) {
+                        $a->where('area_id', $request->area_id);
+                    });
+                }
             })
             ->join('services', 'service_order_items.service_id', '=', 'services.id')
             ->join('service_categories', 'services.category_id', '=', 'service_categories.id')
@@ -837,13 +851,21 @@ class DataTablesController extends Controller
             ]);
         }
 
-            $query = $staff->serviceOrders()
-                ->with('customer')
-                ->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
-                ->whereHas('invoice', function ($q) {
-                    $q->where('status', \App\Models\Invoice::STATUS_PAID);
-                })
-                ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+        $query = $staff->serviceOrders()
+            ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
+            ->with('customer')
+            ->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
+            ->whereHas('invoice', function ($q) {
+                $q->where('status', \App\Models\Invoice::STATUS_PAID);
+            })
+            ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+
+        if ($request->filled('area_id') && $request->area_id !== 'all') {
+            $query->whereHas('address', function ($q) use ($request) {
+                $q->where('area_id', $request->area_id);
+            });
+        }
+
         return DataTables::of($query)
             ->addColumn('customer_name', function($so) {
                 return $so->customer->name ?? 'N/A';
