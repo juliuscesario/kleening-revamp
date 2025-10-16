@@ -91,7 +91,9 @@ $(function() {
         columns: [
             { data: 'so_number', name: 'so_number' },
             { data: 'customer_name', name: 'customer.name' },
+            { data: 'customer_address', name: 'address.full_address' },
             { data: 'work_date', name: 'work_date' },
+            { data: 'invoice_total', name: 'invoice.grand_total' },
             { data: 'status', name: 'status' },
         ],
         order: [[2, 'desc']]

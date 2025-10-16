@@ -64,7 +64,9 @@
                                     <tr>
                                         <th>No. Pesanan</th>
                                         <th>Customer</th>
+                                        <th>Alamat Customer</th>
                                         <th>Tgl. Kerja</th>
+                                        <th>Total Invoice</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>

@@ -189,7 +189,11 @@ class DataTablesController extends Controller
             })
             ->addColumn('action', function ($customer) {
                 $detailUrl = route('web.customers.show', $customer->id);
+                $detailUrl = route('web.customers.show', $customer->id);
+                $addAddressUrl = route('web.addresses.create', ['customer' => $customer->id]);
+
                 $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
+                $actions .= ' <a href="' . $addAddressUrl . '" class="btn btn-sm btn-primary">+ Alamat</a>';
                 $actions .= ' <button class="btn btn-sm btn-info show-addresses" data-id="' . $customer->id . '">Alamat</button>';
                 if (auth()->user()->can('update', $customer)) {
                     $actions .= ' <button class="btn btn-sm btn-warning edit-customer" data-id="' . $customer->id . '">Edit</button>';
@@ -853,11 +857,9 @@ class DataTablesController extends Controller
 
         $query = $staff->serviceOrders()
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
-            ->with('customer')
+            ->with(['customer', 'invoice', 'address'])
             ->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
-            ->whereHas('invoice', function ($q) {
-                $q->where('status', \App\Models\Invoice::STATUS_PAID);
-            })
+            ->whereRelation('invoice', 'status', \App\Models\Invoice::STATUS_PAID)
             ->whereBetween('work_date', [$request->start_date, $request->end_date]);
 
         if ($request->filled('area_id') && $request->area_id !== 'all') {
@@ -865,10 +867,19 @@ class DataTablesController extends Controller
                 $q->where('area_id', $request->area_id);
             });
         }
-
+        
         return DataTables::of($query)
             ->addColumn('customer_name', function($so) {
                 return $so->customer->name ?? 'N/A';
+            })
+            ->addColumn('customer_address', function($so) {
+                return $so->address->full_address ?? 'N/A';
+            })
+            ->addColumn('invoice_total', function($so) {
+                if ($so->invoice && $so->invoice->status === 'paid') {
+                    return 'Rp ' . number_format($so->invoice->grand_total, 0, ',', '.');
+                }
+                return 'Rp 0';
             })
             ->editColumn('work_date', function($so) {
                 return Carbon::parse($so->work_date)->format('d M Y');
