@@ -83,6 +83,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('addresses', AddressController::class)->names('web.addresses');
     Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
     Route::resource('invoices', InvoiceController::class)->names('web.invoices');
+    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');
     Route::resource('payments', PaymentController::class)->names('web.payments');
 
     // Reports

@@ -60,6 +60,7 @@
                                 <th>Total Pendapatan</th>
                                 <th>Total Cancelled Revenue Potential</th>
                                 <th>Total Invoice Overdue</th>
+                                <th>Total Invoice Unpaid</th>
                             </tr>
                         </thead>
                         <tbody></tbody>

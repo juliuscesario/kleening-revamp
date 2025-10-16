@@ -132,6 +132,16 @@ class InvoiceController extends Controller
         return view('pages.invoices.show', compact('invoice'));
     }
 
+    public function downloadPdf(Invoice $invoice)
+    {
+        $this->authorize('view', $invoice);
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->loadView('pdf.invoice', compact('invoice'));
+
+        return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
+    }
+
     /**
      * Show the form for editing the specified resource.
      */

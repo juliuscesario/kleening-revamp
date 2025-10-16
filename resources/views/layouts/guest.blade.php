@@ -13,7 +13,7 @@
         <div class="text-center mb-4">
           <a href="." class="navbar-brand navbar-brand-autodark">
             {{-- You can replace this with your application logo component --}}
-            <img src="{{ asset('storage/logo_kleening.png') }}" alt="Kleening Logo" class="navbar-brand-image" style="width: 250px;">
+            <img src="{{ asset('storage/logo_kleening.png') }}" alt="Kleening Logo" class="navbar-brand-image" style="height: 100px;">
           </a>
         </div>
         

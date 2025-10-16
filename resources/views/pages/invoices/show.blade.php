@@ -19,6 +19,7 @@
                     @if($invoice->status === 'sent' || $invoice->status === 'overdue')
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#markAsPaidModal">Make Payment</button>
                     @endif
+                    <a href="{{ route('web.invoices.download', $invoice) }}" class="btn btn-primary">Download PDF</a>
                     <a href="{{ route('web.invoices.index') }}" class="btn">Kembali</a>
                 </div>
             </div>
