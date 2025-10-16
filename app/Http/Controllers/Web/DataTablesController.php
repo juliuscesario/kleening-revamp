@@ -557,79 +557,95 @@ class DataTablesController extends Controller
             });
         }
 
-    $subQuery = $subQuery->withSum(['invoices as total_revenue' => function ($q) use ($request) {
-        $q->where('invoices.status', \App\Models\Invoice::STATUS_PAID)
-            ->whereHas('serviceOrder', function ($so) {
-                $so->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);
-            });
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $q->whereHas('payments', function ($paymentQuery) use ($request) {
-                $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
-            });
-        }
-    }], 'grand_total')
-    ->withCount(['serviceOrders as total_orders' => function ($q) use ($request) {
-        $q->where('status', '!=', \App\Models\ServiceOrder::STATUS_CANCELLED);
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
-        }
-    }])
-    ->withSum(['invoices as total_invoice_overdue' => function ($q) use ($request) {
-        $q->where('invoices.status', \App\Models\Invoice::STATUS_OVERDUE);
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $q->whereBetween('due_date', [$request->start_date, $request->end_date]);
-        }
-    }], 'grand_total')
-    ->withSum(['invoices as total_invoice_unpaid' => function ($q) use ($request) {
-        $q->whereIn('invoices.status', ['new', 'sent']);
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $q->whereBetween('issue_date', [$request->start_date, $request->end_date]);
-        }
-    }], 'grand_total')
-    ->addSelect(DB::raw('(SELECT SUM(total) FROM service_order_items WHERE service_order_id IN (SELECT id FROM service_orders WHERE customer_id = customers.id AND status = \'cancelled\')) as total_cancelled_revenue_potential'));
-
-    // 2. Create the main query from the subquery, which allows WHERE on aliases
-    $query = \App\Models\Customer::fromSub($subQuery, 'customers')
-        ->where('total_revenue', '>', 0);
-
-    return DataTables::of($query)
-        ->addColumn('name', function($customer) {
-            $name = $customer->name;
-            // Manually check for soft delete, since we don't have an Eloquent model
-            if (!empty($customer->deleted_at)) {
-                $name .= ' <span class="badge bg-danger text-bg-secondary">Archived</span>';
+        $subQuery = $subQuery->withSum(['invoices as total_revenue' => function ($q) use ($request) {
+            $q->where('invoices.status', \App\Models\Invoice::STATUS_PAID)
+                ->whereHas('serviceOrder', function ($so) {
+                    $so->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);
+                });
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                    $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                });
             }
-            return $name;
-        })
-        ->editColumn('total_revenue', function ($customer) {
-            return 'Rp ' . number_format($customer->total_revenue ?? 0, 0, ',', '.');
-        })
-        ->addColumn('total_cancelled_revenue_potential', function ($customer) {
-            return 'Rp ' . number_format($customer->total_cancelled_revenue_potential ?? 0, 0, ',', '.');
-        })
-        ->addColumn('total_invoice_overdue', function ($customer) {
-            return 'Rp ' . number_format($customer->total_invoice_overdue ?? 0, 0, ',', '.');
-        })
-        ->addColumn('total_invoice_unpaid', function ($customer) {
-            return 'Rp ' . number_format($customer->total_invoice_unpaid ?? 0, 0, ',', '.');
-        })
-        ->orderColumn('total_revenue', function ($query, $order) {
-            $query->orderBy('total_revenue', $order);
-        })
-        ->orderColumn('total_orders', function ($query, $order) {
-            $query->orderBy('total_orders', $order);
-        })
-        ->orderColumn('total_cancelled_revenue_potential', function ($query, $order) {
-            $query->orderBy('total_cancelled_revenue_potential', $order);
-        })
-        ->orderColumn('total_invoice_overdue', function ($query, $order) {
-            $query->orderBy('total_invoice_overdue', $order);
-        })
-        ->orderColumn('total_invoice_unpaid', function ($query, $order) {
-            $query->orderBy('total_invoice_unpaid', $order);
-        })
-        ->rawColumns(['name'])
-        ->make(true);
+        }], 'grand_total')
+        ->withCount(['serviceOrders as total_orders' => function ($q) use ($request) {
+            $q->where('status', '!=', \App\Models\ServiceOrder::STATUS_CANCELLED);
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
+            }
+        }])
+        ->withSum(['invoices as total_invoice_overdue' => function ($q) use ($request) {
+            $q->where('invoices.status', \App\Models\Invoice::STATUS_OVERDUE);
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $q->whereBetween('due_date', [$request->start_date, $request->end_date]);
+            }
+        }], 'grand_total')
+        ->withSum(['invoices as total_invoice_unpaid' => function ($q) use ($request) {
+            $q->whereIn('invoices.status', ['new', 'sent']);
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $q->whereBetween('issue_date', [$request->start_date, $request->end_date]);
+            }
+        }], 'grand_total')
+        ->addSelect(DB::raw('(SELECT SUM(total) FROM service_order_items WHERE service_order_id IN (SELECT id FROM service_orders WHERE customer_id = customers.id AND status = \'cancelled\')) as total_cancelled_revenue_potential'));
+
+        $potentialRevenueSubquery = \App\Models\ServiceOrderItem::selectRaw('sum(total)')
+            ->join('service_orders', 'service_orders.id', '=', 'service_order_items.service_order_id')
+            ->whereColumn('service_orders.customer_id', 'customers.id')
+            ->whereIn('service_orders.status', ['booked', 'proses', 'done']);
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $potentialRevenueSubquery->whereBetween('service_orders.work_date', [$request->start_date, $request->end_date]);
+        }
+        $subQuery->addSelect(['potential_revenue' => $potentialRevenueSubquery]);
+
+
+        // 2. Create the main query from the subquery, which allows WHERE on aliases
+        $query = \App\Models\Customer::fromSub($subQuery, 'customers');
+
+        return DataTables::of($query)
+            ->addColumn('name', function($customer) {
+                $name = $customer->name;
+                // Manually check for soft delete, since we don't have an Eloquent model
+                if (!empty($customer->deleted_at)) {
+                    $name .= ' <span class="badge bg-danger text-bg-secondary">Archived</span>';
+                }
+                return $name;
+            })
+            ->editColumn('total_revenue', function ($customer) {
+                return 'Rp ' . number_format($customer->total_revenue ?? 0, 0, ',', '.');
+            })
+            ->addColumn('total_cancelled_revenue_potential', function ($customer) {
+                return 'Rp ' . number_format($customer->total_cancelled_revenue_potential ?? 0, 0, ',', '.');
+            })
+            ->addColumn('total_invoice_overdue', function ($customer) {
+                return 'Rp ' . number_format($customer->total_invoice_overdue ?? 0, 0, ',', '.');
+            })
+            ->addColumn('total_invoice_unpaid', function ($customer) {
+                return 'Rp ' . number_format($customer->total_invoice_unpaid ?? 0, 0, ',', '.');
+            })
+            ->addColumn('potential_revenue', function ($customer) {
+                return 'Rp ' . number_format($customer->potential_revenue ?? 0, 0, ',', '.');
+            })
+            ->orderColumn('total_revenue', function ($query, $order) {
+                $query->orderBy('total_revenue', $order);
+            })
+            ->orderColumn('total_orders', function ($query, $order) {
+                $query->orderBy('total_orders', $order);
+            })
+            ->orderColumn('total_cancelled_revenue_potential', function ($query, $order) {
+                $query->orderBy('total_cancelled_revenue_potential', $order);
+            })
+            ->orderColumn('total_invoice_overdue', function ($query, $order) {
+                $query->orderBy('total_invoice_overdue', $order);
+            })
+            ->orderColumn('total_invoice_unpaid', function ($query, $order) {
+                $query->orderBy('total_invoice_unpaid', $order);
+            })
+            ->orderColumn('potential_revenue', function ($query, $order) {
+                $query->orderBy('potential_revenue', $order);
+            })
+            ->rawColumns(['name'])
+            ->make(true);
     }
 
     public function revenueTrendChartData(Request $request, \App\Models\ServiceCategory $serviceCategory)

@@ -28,8 +28,10 @@ $(function() {
             },
             { data: 'total_orders', name: 'total_orders' },
             { data: 'total_revenue', name: 'total_revenue' },
-            { data: 'total_cancelled_revenue_potential', name: 'total_cancelled_revenue_potential' },
-            { data: 'total_invoice_overdue', name: 'total_invoice_overdue' }
+            { data: 'total_invoice_unpaid', name: 'total_invoice_unpaid' },
+            { data: 'total_invoice_overdue', name: 'total_invoice_overdue' },
+            { data: 'potential_revenue', name: 'potential_revenue' },
+            { data: 'total_cancelled_revenue_potential', name: 'total_cancelled_revenue_potential' }
         ],
         order: [[2, 'desc']] // Order by revenue by default
     });
