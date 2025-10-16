@@ -41,20 +41,39 @@ class ServiceOrderFactory extends Factory
     public function configure(): static
     {
         return $this->afterCreating(function (ServiceOrder $so) {
-            // Ambil 1-3 layanan secara acak
-            $services = Service::inRandomOrder()->limit(rand(1, 3))->get();
+            // Ambil 1-4 layanan secara acak
+            $quantity = rand(1,2);
+            $services = Service::inRandomOrder()->limit(rand(1, 4))->get();
             foreach ($services as $service) {
                 $so->items()->create([
                     'service_id' => $service->id,
-                    'quantity' => rand(1, 2),
+                    'quantity' => $quantity,
                     'price' => $service->price,
-                    'total' => $service->price * rand(1, 2),
+                    'total' => $service->price * $quantity,
                 ]);
             }
 
             // Tugaskan 1-2 staff secara acak
-            $staff = Staff::inRandomOrder()->limit(rand(1, 2))->get();
-            $so->staff()->attach($staff->pluck('id'));
+            // Tugaskan 1-2 staff secara acak berdasarkan role 'staff' dan area pelanggan
+            $customerAddress = $so->address;
+            $customerAreaId = $customerAddress ? $customerAddress->area_id : null;
+
+            if ($customerAreaId) {
+                $staff = Staff::whereHas('user', function ($query) {
+                    $query->where('role', 'staff');
+                })
+                    ->where('area_id', $customerAreaId)
+                    ->inRandomOrder()
+                    ->limit(rand(1, 2))
+                    ->get();
+                $so->staff()->attach($staff->pluck('id'));
+            } else {
+                // Fallback if no area is found, assign any staff with 'staff' role
+                $staff = Staff::whereHas('user', function ($query) {
+                    $query->where('role', 'staff');
+                })->inRandomOrder()->limit(rand(1, 2))->get();
+                $so->staff()->attach($staff->pluck('id'));
+            }
         });
     }
 }

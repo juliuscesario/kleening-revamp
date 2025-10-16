@@ -856,6 +856,7 @@ class DataTablesController extends Controller
         }
 
         $query = $staff->serviceOrders()
+            ->select('service_orders.*')
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
             ->with(['customer', 'invoice', 'address'])
             ->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
@@ -868,15 +869,45 @@ class DataTablesController extends Controller
         }
         
         return DataTables::of($query)
+            ->addColumn('so_id', function($so) {
+                return $so->id;
+            })
+            ->addColumn('so_number', function($so) {
+                return $so->so_number;
+            })
             ->addColumn('customer_name', function($so) {
                 return $so->customer->name ?? 'N/A';
             })
             ->addColumn('customer_address', function($so) {
                 return $so->address->full_address ?? 'N/A';
             })
+            ->addColumn('invoice_id', function($so) {
+                return $so->invoice->id ?? 'N/A';
+            })
+            ->addColumn('invoice_number', function($so) {
+                return $so->invoice->invoice_number ?? 'N/A';
+            })
+            ->addColumn('invoice_status', function($so) {
+                if ($so->invoice) {
+                    $statusBadgeClass = '';
+                    switch ($so->invoice->status) {
+                        case 'new': $statusBadgeClass = 'bg-primary'; break;
+                        case 'sent': $statusBadgeClass = 'bg-info'; break;
+                        case 'overdue': $statusBadgeClass = 'bg-warning'; break;
+                        case 'paid': $statusBadgeClass = 'bg-success'; break;
+                        default: $statusBadgeClass = 'bg-secondary'; break;
+                    }
+                    return '<span class="badge ' . $statusBadgeClass . ' text-bg-secondary">' . ucfirst($so->invoice->status) . '</span>';
+                }
+                return 'N/A';
+            })
             ->addColumn('invoice_total', function($so) {
-                if ($so->invoice && $so->invoice->status === 'paid') {
-                    return 'Rp ' . number_format($so->invoice->grand_total, 0, ',', '.');
+                if ($so->invoice) {
+                    $total = 'Rp ' . number_format($so->invoice->grand_total, 0, ',', '.');
+                    if ($so->invoice->status !== 'paid') {
+                        $total .= ' (' . ucfirst($so->invoice->status) . ')';
+                    }
+                    return $total;
                 }
                 return 'Rp 0';
             })
@@ -886,7 +917,7 @@ class DataTablesController extends Controller
             ->editColumn('status', function($so) {
                 return '<span class="badge bg-success text-bg-secondary">' . ucfirst($so->status) . '</span>';
             })
-            ->rawColumns(['status'])
+            ->rawColumns(['invoice_status', 'status'])
             ->make(true);
     }
 
@@ -1004,19 +1035,23 @@ class DataTablesController extends Controller
         $query = \App\Models\Service::query()->select('services.*');
 
         $itemsSubQuery = \App\Models\ServiceOrderItem::query()
-            ->select('service_id', DB::raw('COUNT(*) as total_items'), DB::raw('SUM(total) as total_revenue'))
-                    ->whereHas('serviceOrder', function($soQuery) use ($request) {
-                        $soQuery->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);                if ($request->filled('start_date') && $request->filled('end_date')) {
-                    $soQuery->whereBetween('work_date', [$request->start_date, $request->end_date]);
-                }
-                if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
-                    $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
-                    $soQuery->whereHas('address', function ($a) use ($areaId) {
-                        $a->where('area_id', $areaId);
+            ->select('service_id', DB::raw('COUNT(*) as total_items'), DB::raw('SUM(service_order_items.total) as total_revenue'))
+            ->whereHas('serviceOrder.invoice', function ($invoiceQuery) use ($request) {
+                $invoiceQuery->where('status', \App\Models\Invoice::STATUS_PAID);
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $invoiceQuery->whereHas('payments', function ($paymentQuery) use ($request) {
+                        $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
                     });
                 }
-            })
-            ->groupBy('service_id');
+            });
+
+        if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
+            $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
+            $itemsSubQuery->whereHas('serviceOrder.address', function ($a) use ($areaId) {
+                $a->where('area_id', $areaId);
+            });
+        }
+        $itemsSubQuery->groupBy('service_id');
 
         $query->joinSub($itemsSubQuery, 'items_summary', function ($join) {
             $join->on('services.id', '=', 'items_summary.service_id');
@@ -1064,10 +1099,12 @@ class DataTablesController extends Controller
         $data = $areas->map(function($area) use ($request) {
             $itemsQuery = \App\Models\ServiceOrderItem::whereHas('serviceOrder.address', function($q) use ($area) {
                 $q->where('area_id', $area->id);
-                    })->whereHas('serviceOrder', function($q) use ($request) {
-                        $q->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);
+                    })->whereHas('serviceOrder.invoice', function($invoiceQuery) use ($request) {
+                        $invoiceQuery->where('status', \App\Models\Invoice::STATUS_PAID);
                         if ($request->filled('start_date') && $request->filled('end_date')) {
-                            $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                            $invoiceQuery->whereHas('payments', function ($paymentQuery) use ($request) {
+                                $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                            });
                         }
                     });
             $totalProfit = $itemsQuery->get()->sum(function($item) {

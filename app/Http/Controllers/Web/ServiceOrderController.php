@@ -160,6 +160,14 @@ class ServiceOrderController extends Controller
 
     public function update(Request $request, ServiceOrder $serviceOrder)
     {
+        // Load the invoice relationship to check its status
+        $serviceOrder->load('invoice');
+
+        // Check if the service order has an invoice and if it's paid
+        if ($serviceOrder->invoice && $serviceOrder->invoice->status === \App\Models\Invoice::STATUS_PAID) {
+            return response()->json(['success' => false, 'message' => 'Service Order cannot be edited because its invoice has been paid.'], 403);
+        }
+
         $originalStatus = $serviceOrder->status;
         $newStatus = $request->status;
         $user = Auth::user();
