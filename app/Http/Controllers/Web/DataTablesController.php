@@ -1063,7 +1063,7 @@ class DataTablesController extends Controller
         $query = \App\Models\Service::query()->select('services.*');
 
         $itemsSubQuery = \App\Models\ServiceOrderItem::query()
-            ->select('service_id', DB::raw('COUNT(*) as total_items'), DB::raw('SUM(service_order_items.total) as total_revenue'))
+            ->select('service_id', DB::raw('SUM(service_order_items.quantity) as total_items'), DB::raw('SUM(service_order_items.total) as total_revenue'))
             ->whereHas('serviceOrder.invoice', function ($invoiceQuery) use ($request) {
                 $invoiceQuery->where('status', \App\Models\Invoice::STATUS_PAID);
                 if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -1127,21 +1127,22 @@ class DataTablesController extends Controller
         $data = $areas->map(function($area) use ($request) {
             $itemsQuery = \App\Models\ServiceOrderItem::whereHas('serviceOrder.address', function($q) use ($area) {
                 $q->where('area_id', $area->id);
-                    })->whereHas('serviceOrder.invoice', function($invoiceQuery) use ($request) {
-                        $invoiceQuery->where('status', \App\Models\Invoice::STATUS_PAID);
-                        if ($request->filled('start_date') && $request->filled('end_date')) {
-                            $invoiceQuery->whereHas('payments', function ($paymentQuery) use ($request) {
-                                $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
-                            });
-                        }
+            })->whereHas('serviceOrder.invoice', function($invoiceQuery) use ($request) {
+                $invoiceQuery->where('status', \App\Models\Invoice::STATUS_PAID);
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $invoiceQuery->whereHas('payments', function ($paymentQuery) use ($request) {
+                        $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
                     });
-            $totalProfit = $itemsQuery->get()->sum(function($item) {
-                return $item->total - ($item->service->cost * $item->quantity);
+                }
             });
+
+            $totalProfit = $itemsQuery
+                ->join('services', 'service_order_items.service_id', '=', 'services.id')
+                ->sum(DB::raw('service_order_items.total - (services.cost * service_order_items.quantity)'));
 
             return [
                 'name' => $area->name,
-                'total_profit' => $totalProfit
+                'total_profit' => (float)($totalProfit ?? 0)
             ];
         });
 
