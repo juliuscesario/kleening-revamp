@@ -31,7 +31,7 @@ class ServiceOrderFactory extends Factory
             'work_notes' => fake()->sentence(),
             'staff_notes' => fake()->sentence(),
             'created_by' => (User::where('role', 'admin')->first() ?? User::factory()->create(['role' => 'admin']))->id,
-            'so_number' => 'SO-' . fake()->unique()->randomNumber(8),
+            'so_number' => 'SO-' . date('Ymd') . '-' . str_pad(\App\Models\ServiceOrder::count() + 1, 4, '0', STR_PAD_LEFT),
         ];
     }
 

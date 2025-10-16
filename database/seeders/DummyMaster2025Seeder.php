@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash; // Added
 use App\Models\User; // Added
 
-class DummySeptember2025Seeder extends Seeder
+class DummyMaster2025Seeder extends Seeder
 {
     public function run(): void
     {
@@ -1333,122 +1333,122 @@ class DummySeptember2025Seeder extends Seeder
             ]);
         }
 
-        // --- Step 2: Fetch all data needed for the main loop ---
-        $this->command->info('2. Fetching data for transaction generation...');
-        $customers = Customer::all();
-        $allStaff = Staff::withoutGlobalScope(\App\Models\Scopes\AreaScope::class)->get();
-        $onlyStaff = $allStaff->filter(function ($s) {
-            return $s->user->role === 'staff';
-        });
+    //     // --- Step 2: Fetch all data needed for the main loop ---
+    //     $this->command->info('2. Fetching data for transaction generation...');
+    //     $customers = Customer::all();
+    //     $allStaff = Staff::withoutGlobalScope(\App\Models\Scopes\AreaScope::class)->get();
+    //     $onlyStaff = $allStaff->filter(function ($s) {
+    //         return $s->user->role === 'staff';
+    //     });
 
-        if ($customers->isEmpty()) {
-            $this->command->error('Customer collection is empty after seeding. Cannot proceed.');
-            return;
-        }
-        if ($onlyStaff->isEmpty()) {
-            $this->command->error('No staff members found with role \'staff\'. Cannot assign service orders.');
-            return;
-        }
+    //     if ($customers->isEmpty()) {
+    //         $this->command->error('Customer collection is empty after seeding. Cannot proceed.');
+    //         return;
+    //     }
+    //     if ($onlyStaff->isEmpty()) {
+    //         $this->command->error('No staff members found with role \'staff\'. Cannot assign service orders.');
+    //         return;
+    //     }
 
-        // --- Step 3: Main Seeder Logic ---
-        $this->command->info('3. Generating transactional data from Jan to Sep 2025...');
-        $period = CarbonPeriod::create('2025-01-01', '2025-09-28');
-        $invoiceCounter = 1;
-        $delayedMayInvoices = [];
-        $totalOrdersCreated = 0;
-        $customerIndex = 0; // For cycling through customers
+    //     // --- Step 3: Main Seeder Logic ---
+    //     $this->command->info('3. Generating transactional data from Jan to Sep 2025...');
+    //     $period = CarbonPeriod::create('2025-01-01', '2025-09-28');
+    //     $invoiceCounter = 1;
+    //     $delayedMayInvoices = [];
+    //     $totalOrdersCreated = 0;
+    //     $customerIndex = 0; // For cycling through customers
 
-        $monthlyWeights = [ 1 => 1.0, 2 => 0.5, 3 => 1.0, 4 => 1.5, 5 => 1.0, 6 => 1.5, 7 => 1.0, 8 => 1.0, 9 => 1.0 ];
-        $baseOrdersPerDay = 17.5; // Adjusted for 50-100 orders per customer per month
+    //     $monthlyWeights = [ 1 => 1.0, 2 => 0.5, 3 => 1.0, 4 => 1.5, 5 => 1.0, 6 => 1.5, 7 => 1.0, 8 => 1.0, 9 => 1.0 ];
+    //     $baseOrdersPerDay = 17.5; // Adjusted for 50-100 orders per customer per month
 
-        foreach ($period as $date) {
-            $monthWeight = $monthlyWeights[$date->month] ?? 1.0;
-            $ordersPerDay = round($baseOrdersPerDay * $monthWeight * (rand(80, 120) / 100));
+    //     foreach ($period as $date) {
+    //         $monthWeight = $monthlyWeights[$date->month] ?? 1.0;
+    //         $ordersPerDay = round($baseOrdersPerDay * $monthWeight * (rand(80, 120) / 100));
 
-            for ($i = 0; $i < $ordersPerDay; $i++) {
-                $totalOrdersCreated++;
+    //         for ($i = 0; $i < $ordersPerDay; $i++) {
+    //             $totalOrdersCreated++;
 
-                // Cycle through customers
-                $customer = $customers->get($customerIndex);
-                $customerIndex = ($customerIndex + 1) % $customers->count();
+    //             // Cycle through customers
+    //             $customer = $customers->get($customerIndex);
+    //             $customerIndex = ($customerIndex + 1) % $customers->count();
 
-                $isCancelled = (rand(1, 100) <= 15); // Reduced cancellation rate to 15%
-                $hasInvoice = (rand(1, 100) <= 70); // 70% chance of having an invoice for non-cancelled orders
+    //             $isCancelled = (rand(1, 100) <= 15); // Reduced cancellation rate to 15%
+    //             $hasInvoice = (rand(1, 100) <= 70); // 70% chance of having an invoice for non-cancelled orders
 
-                $serviceOrderStatus = 'booked'; // Default status
+    //             $serviceOrderStatus = 'booked'; // Default status
 
-                if ($isCancelled) {
-                    $serviceOrderStatus = 'cancelled';
-                } elseif ($hasInvoice) {
-                    $serviceOrderStatus = 'invoiced';
-                } else {
-                    // For non-cancelled, non-invoiced orders, randomly assign booked, proses, or done
-                    $randStatus = rand(1, 100);
-                    if ($randStatus <= 30) {
-                        $serviceOrderStatus = 'booked';
-                    } elseif ($randStatus <= 60) {
-                        $serviceOrderStatus = 'proses';
-                    } else {
-                        $serviceOrderStatus = 'done'; // Done without an invoice
-                    }
-                }
+    //             if ($isCancelled) {
+    //                 $serviceOrderStatus = 'cancelled';
+    //             } elseif ($hasInvoice) {
+    //                 $serviceOrderStatus = 'invoiced';
+    //             } else {
+    //                 // For non-cancelled, non-invoiced orders, randomly assign booked, proses, or done
+    //                 $randStatus = rand(1, 100);
+    //                 if ($randStatus <= 30) {
+    //                     $serviceOrderStatus = 'booked';
+    //                 } elseif ($randStatus <= 60) {
+    //                     $serviceOrderStatus = 'proses';
+    //                 } else {
+    //                     $serviceOrderStatus = 'done'; // Done without an invoice
+    //                 }
+    //             }
 
-                $serviceOrder = ServiceOrder::factory()->create([
-                    'status' => $serviceOrderStatus,
-                    'work_date' => $date,
-                    'customer_id' => $customer->id,
-                ]);
+    //             $serviceOrder = ServiceOrder::factory()->create([
+    //                 'status' => $serviceOrderStatus,
+    //                 'work_date' => $date,
+    //                 'customer_id' => $customer->id,
+    //             ]);
 
-                $serviceOrder->staff()->sync($onlyStaff->random(rand(1, min(2, $onlyStaff->count())))->pluck('id')->toArray());
+    //             $serviceOrder->staff()->sync($onlyStaff->random(rand(1, min(2, $onlyStaff->count())))->pluck('id')->toArray());
 
-                if ($isCancelled) continue;
+    //             if ($isCancelled) continue;
 
-                // Only create invoice if service order status is 'invoiced'
-                if ($serviceOrderStatus === 'invoiced') {
-                    $subtotal = $serviceOrder->items->sum('total');
-                    $transport_fee = rand(10000, 50000);
-                    $invoice = Invoice::create([
-                        'service_order_id' => $serviceOrder->id,
-                        'invoice_number' => 'INV/' . $date->year . '/' . $invoiceCounter++,
-                        'issue_date' => $serviceOrder->work_date->addDays(rand(1, 2)),
-                        'due_date' => $serviceOrder->work_date->addDays(7),
-                        'subtotal' => $subtotal,
-                        'transport_fee' => $transport_fee,
-                        'grand_total' => $subtotal + $transport_fee,
-                        'status' => 'sent',
-                    ]);
+    //             // Only create invoice if service order status is 'invoiced'
+    //             if ($serviceOrderStatus === 'invoiced') {
+    //                 $subtotal = $serviceOrder->items->sum('total');
+    //                 $transport_fee = rand(10000, 50000);
+    //                 $invoice = Invoice::create([
+    //                     'service_order_id' => $serviceOrder->id,
+    //                     'invoice_number' => 'INV/' . $date->year . '/' . $invoiceCounter++,
+    //                     'issue_date' => $serviceOrder->work_date->addDays(rand(1, 2)),
+    //                     'due_date' => $serviceOrder->work_date->addDays(7),
+    //                     'subtotal' => $subtotal,
+    //                     'transport_fee' => $transport_fee,
+    //                     'grand_total' => $subtotal + $transport_fee,
+    //                     'status' => 'sent',
+    //                 ]);
 
-                    $isMay = $date->month == 5;
-                    $shouldPay = $isMay ? (rand(1, 100) <= 30) : (rand(1, 100) <= 90);
+    //                 $isMay = $date->month == 5;
+    //                 $shouldPay = $isMay ? (rand(1, 100) <= 30) : (rand(1, 100) <= 90);
 
-                    if ($shouldPay) {
-                        Payment::create([
-                            'invoice_id' => $invoice->id,
-                            'amount' => $invoice->grand_total,
-                            'payment_date' => $date->copy()->addDays(rand(2, 6)),
-                            'payment_method' => 'Transfer',
-                        ]);
-                        $invoice->update(['status' => 'paid']);
-                    } elseif ($isMay) {
-                        $delayedMayInvoices[] = $invoice;
-                    }
-                }
-            }
-        }
+    //                 if ($shouldPay) {
+    //                     Payment::create([
+    //                         'invoice_id' => $invoice->id,
+    //                         'amount' => $invoice->grand_total,
+    //                         'payment_date' => $date->copy()->addDays(rand(2, 6)),
+    //                         'payment_method' => 'Transfer',
+    //                     ]);
+    //                     $invoice->update(['status' => 'paid']);
+    //                 } elseif ($isMay) {
+    //                     $delayedMayInvoices[] = $invoice;
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        // --- Step 4: Process Delayed Payments ---
-        $this->command->info('4. Processing delayed May payments...');
-        foreach ($delayedMayInvoices as $invoice) {
-            Payment::create([
-                'invoice_id' => $invoice->id,
-                'amount' => $invoice->grand_total,
-                'payment_date' => Carbon::create(2025, 6, rand(1, 30)),
-                'payment_method' => 'Transfer',
-            ]);
-            $invoice->update(['status' => 'paid']);
-        }
+    //     // --- Step 4: Process Delayed Payments ---
+    //     $this->command->info('4. Processing delayed May payments...');
+    //     foreach ($delayedMayInvoices as $invoice) {
+    //         Payment::create([
+    //             'invoice_id' => $invoice->id,
+    //             'amount' => $invoice->grand_total,
+    //             'payment_date' => Carbon::create(2025, 6, rand(1, 30)),
+    //             'payment_method' => 'Transfer',
+    //         ]);
+    //         $invoice->update(['status' => 'paid']);
+    //     }
 
-        $this->command->info("Total orders created: $totalOrdersCreated");
+    //     $this->command->info("Total orders created: $totalOrdersCreated");
         $this->command->info('--- Structured Dummy Data Generation Completed ---');
     }
 }

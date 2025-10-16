@@ -138,7 +138,7 @@ class ServiceOrder extends Model
      */
     public function invoice() // <-- TAMBAHKAN METHOD INI
     {
-        return $this->hasOne(Invoice::class);
+        return $this->hasOne(Invoice::class)->withoutGlobalScope(AreaScope::class);
     }
 
     /**

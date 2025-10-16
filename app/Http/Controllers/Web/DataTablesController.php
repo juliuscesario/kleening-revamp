@@ -859,7 +859,6 @@ class DataTablesController extends Controller
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
             ->with(['customer', 'invoice', 'address'])
             ->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
-            ->whereRelation('invoice', 'status', \App\Models\Invoice::STATUS_PAID)
             ->whereBetween('work_date', [$request->start_date, $request->end_date]);
 
         if ($request->filled('area_id') && $request->area_id !== 'all') {
