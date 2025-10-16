@@ -79,7 +79,6 @@ $(function() {
     $('#staff-drilldown-table').DataTable({
         processing: true,
         serverSide: true,
-        responsive: true,
         ajax: {
             url: tableUrl,
             data: function(d) {

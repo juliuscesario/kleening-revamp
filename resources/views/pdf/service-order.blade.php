@@ -76,6 +76,8 @@
 </head>
 <body>
     <div class="header">
+        <img src="{{ public_path('storage/logo_kleening.png') }}" style="width: 150px; float: left;">
+        <div style="clear: both;"></div>
         <h1>Service Order</h1>
         <h2>{{ $serviceOrder->so_number }}</h2>
     </div>
@@ -192,6 +194,9 @@
             @endforeach
             <div style="clear: both;"></div> <!-- Clear floats -->
         </div>
+    </div>
+    <div style="position: fixed; bottom: 0; width: 100%; text-align: center;">
+        <p>PT Kilau Elok Indonesia</p>
     </div>
 </body>
 </html>

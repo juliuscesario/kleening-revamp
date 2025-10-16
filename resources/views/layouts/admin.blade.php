@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Kleening.id') }} - @yield('title')</title>
+    <title>{{ config('app.name', 'Kleening') }} - @yield('title')</title>
 
     @vite(['resources/css/app.css'])
 
@@ -43,7 +43,7 @@
             <span class="navbar-toggler-icon"></span>
           </button>
           <h1 class="navbar-brand navbar-brand-autodark">
-            <a href=".">Kleening.id</a>
+            <a href="."><img src="{{ asset('storage/logo_kleening.png') }}" alt="Kleening Logo" class="navbar-brand-image"></a>
           </h1>
           <div class="collapse navbar-collapse" id="sidebar-menu">
             <ul class="navbar-nav pt-lg-3">
@@ -310,7 +310,7 @@
               <div class="col-12 col-lg-auto mt-3 mt-lg-0">
                 <ul class="list-inline list-inline-dots mb-0">
                   <li class="list-inline-item">
-                    Copyright &copy; {{ date('Y') }} Kleening.id
+                    Copyright &copy; {{ date('Y') }} Kleening
                   </li>
                 </ul>
               </div>
