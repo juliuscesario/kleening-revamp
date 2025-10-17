@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         // 1. Jalankan Seeder data inti yang statis
         $this->call([
-            DummyMaster2025Seeder::class, //removed when you already run it first
+            //DummyMaster2025Seeder::class, //removed when you already run it first
             DailyBookedServiceOrderSeeder::class, // Daily booked service orders for staff
         ]);
         // run php artisan migrate:fresh --seed for dummy seeder 

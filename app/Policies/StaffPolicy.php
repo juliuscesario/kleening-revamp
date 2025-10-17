@@ -29,27 +29,26 @@ class StaffPolicy
         return true;
     }
 
-    // Siapa yang boleh membuat staff baru? HANYA OWNER
     public function create(User $user): bool
     {
-        return false; // Owner sudah di-handle oleh `before`
+        return in_array($user->role, ['co_owner']);
     }
 
-    // Siapa yang boleh update staff? HANYA OWNER
+    // Siapa yang boleh update staff?
     public function update(User $user, Staff $staff): bool
     {
-        return false;
+        return in_array($user->role, ['co_owner']);
     }
 
-    // Siapa yang boleh hapus staff? HANYA OWNER
+    // Siapa yang boleh hapus staff?
     public function delete(User $user, Staff $staff): bool
     {
         return false;
     }
 
-    // Siapa yang boleh resign staff? HANYA OWNER
+    // Siapa yang boleh resign staff?
     public function resign(User $user, Staff $staff): bool
     {
-        return false;
+        return in_array($user->role, ['co_owner']);
     }
 }

@@ -23,21 +23,35 @@ class DailyBookedServiceOrderSeeder extends Seeder
         // Fetch necessary data
         $customers = Customer::all();
         $staffUsers = User::where('role', 'staff')->get();
-        $staffMembers = Staff::all(); // Assuming Staff model has a user_id to link to User model
 
         if ($customers->isEmpty()) {
             $this->command->error('No customers found. Please run other seeders first.');
             return;
         }
-        if ($staffUsers->isEmpty() || $staffMembers->isEmpty()) {
-            $this->command->error('No staff users or staff members found. Please run other seeders first.');
+        if ($staffUsers->isEmpty()) {
+            $this->command->error('No staff users found. Please run other seeders first.');
             return;
         }
 
         for ($i = 0; $i < 10; $i++) {
             $customer = $customers->random();
+            if ($customer->addresses->isEmpty()) {
+                $this->command->warn("Customer {$customer->name} has no addresses, skipping.");
+                continue;
+            }
             $address = $customer->addresses->random(); // Get a random address for the customer
             $creatorUser = $staffUsers->random(); // A staff user creates the order
+
+            // Find staff available in the service order's area
+            $staffInArea = Staff::where('area_id', $address->area_id)
+                ->whereHas('user', function ($query) {
+                    $query->where('role', 'staff');
+                })->get();
+
+            if ($staffInArea->isEmpty()) {
+                $this->command->warn("No staff found for area {$address->area->name}, skipping service order creation.");
+                continue;
+            }
 
             $serviceOrder = ServiceOrder::factory()->create([
                 'customer_id' => $customer->id,
@@ -48,11 +62,11 @@ class DailyBookedServiceOrderSeeder extends Seeder
                 'work_notes' => 'Daily booked service order ' . ($i + 1),
             ]);
 
-            // Attach a random staff member to the service order
-            $randomStaff = $staffMembers->random();
+            // Attach a random staff member from the correct area to the service order
+            $randomStaff = $staffInArea->random();
             $serviceOrder->staff()->sync([$randomStaff->id]);
 
-            $this->command->info("Created Service Order #{$serviceOrder->id} for Customer {$customer->name} in Area {$address->area->name}");
+            $this->command->info("Created Service Order #{$serviceOrder->id} for Customer {$customer->name} in Area {$address->area->name} with Staff {$randomStaff->name}");
         }
 
         $this->command->info('Daily booked service orders created successfully.');

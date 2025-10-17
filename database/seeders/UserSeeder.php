@@ -38,10 +38,10 @@ class UserSeeder extends Seeder
 
         // 3. co_owner Cabang Banten (area_id = 2, sesuaikan jika perlu)
         User::updateOrCreate(
-            ['phone_number' => '081000000003'],
+            ['phone_number' => '081296038802'],
             [
                 'name' => 'co_owner Banten',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('123456'),
                 'role' => 'co_owner',
                 'area_id' => 2, // ID ini harus sesuai dengan ID area 'Banten' di tabel areas
             ]

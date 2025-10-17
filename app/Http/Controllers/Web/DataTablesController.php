@@ -154,13 +154,7 @@ class DataTablesController extends Controller
         $this->authorize('viewAny', Customer::class);
 
         $user = auth()->user();
-        $query = Customer::query()
-            ->select('customers.*')
-            ->withCount('addresses') // Re-add this
-            ->with('addresses.area') // Keep this for area_name
-            ->leftJoin('service_orders', 'customers.id', '=', 'service_orders.customer_id') // Re-add this
-            ->groupBy('customers.id') // Re-add this
-            ->selectRaw('MAX(service_orders.work_date) as last_order_date_raw'); // Re-add this
+        $query = Customer::query()->withCount('addresses')->with('addresses.area');
 
 
 
@@ -169,14 +163,11 @@ class DataTablesController extends Controller
         }
 
         return DataTables::of($query)
-            ->order(function ($query) { // Re-add this
-                $query->orderBy('last_order_date_raw', 'desc');
+            ->addColumn('last_order_date', function ($customer) {
+                return $customer->last_order_date ? \Carbon\Carbon::parse($customer->last_order_date)->format('d M Y') : 'N/A';
             })
-            ->addColumn('latest_order_date', function ($customer) { // Re-add this
-                return $customer->last_order_date_raw ? \Carbon\Carbon::parse($customer->last_order_date_raw)->format('d M Y') : 'N/A';
-            })
-            ->orderColumn('latest_order_date', function ($query, $order) { // Re-add this
-                $query->orderBy('last_order_date_raw', $order);
+            ->orderColumn('last_order_date', function ($query, $order) {
+                $query->orderBy('last_order_date', $order);
             })
             ->editColumn('created_at', function ($customer) {
                 return \Carbon\Carbon::parse($customer->created_at)->format('d M Y');

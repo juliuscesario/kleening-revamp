@@ -20,7 +20,7 @@ $(function() {
             { data: 'phone_number', name: 'phone_number' },
             { data: 'addresses_count', name: 'addresses_count', searchable: false },
             { data: 'created_at', name: 'created_at' },
-            { data: 'latest_order_date', name: 'latest_order_date', searchable: false },
+            { data: 'last_order_date', name: 'last_order_date', searchable: false },
             { data: 'action', name: 'action', orderable: false, searchable: false }
         ]
     });

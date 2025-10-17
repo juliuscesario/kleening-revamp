@@ -1316,12 +1316,18 @@ class DummyMaster2025Seeder extends Seeder
 
         // Seed Staff and Users
         foreach ($staffUserData as $staffUserDatum) {
-            $user = User::create([
+            $userData = [
                 'name' => $staffUserDatum['UserID'],
-                'phone_number' => $staffUserDatum['Phone Number'], // Assuming phone_number is unique and can be used as a login identifier if needed
+                'phone_number' => $staffUserDatum['Phone Number'],
                 'password' => Hash::make($staffUserDatum['Password']),
                 'role' => $staffUserDatum['Role'],
-            ]);
+            ];
+
+            if ($staffUserDatum['Role'] === 'co_owner') {
+                $userData['area_id'] = $areaMap[$staffUserDatum['Area']] ?? null;
+            }
+
+            $user = User::create($userData);
 
             $areaId = $areaMap[$staffUserDatum['Area']] ?? null;
 
