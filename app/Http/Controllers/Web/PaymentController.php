@@ -74,7 +74,11 @@ class PaymentController extends Controller
      */
     public function show(string $id)
     {
-        $payment = Payment::with(['invoice.serviceOrder.customer'])->findOrFail($id);
+        $payment = Payment::with([
+            'invoice.serviceOrder.customer',
+            'invoice.serviceOrder.address.area',
+            'invoice.serviceOrder.staff',
+        ])->findOrFail($id);
         $this->authorize('view', $payment);
         return view('pages.payments.show', compact('payment'));
     }
