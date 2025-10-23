@@ -1175,7 +1175,7 @@ class DummyMaster2025Seeder extends Seeder
         $staffUserData = [
             [
                 "Name" => "Iwan",
-                "Phone Number" => "088212734806",
+                "Phone Number" => "081298597778",
                 "Area" => "Jadetabek",
                 "UserID" => "Iwan",
                 "Password" => "123456",
@@ -1183,7 +1183,7 @@ class DummyMaster2025Seeder extends Seeder
             ],
             [
                 "Name" => "Christie",
-                "Phone Number" => "085723123922",
+                "Phone Number" => "081298597779",
                 "Area" => "Jadetabek",
                 "UserID" => "Christie",
                 "Password" => "123456",
