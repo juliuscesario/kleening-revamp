@@ -126,14 +126,28 @@
             </tr>
             @endforeach
         </tbody>
+        @php
+            $discountAmount = $invoice->discount_type === 'percentage'
+                ? ($invoice->subtotal * ($invoice->discount ?? 0)) / 100
+                : ($invoice->discount ?? 0);
+            $dpAmount = $invoice->dp_type === 'percentage'
+                ? ($invoice->grand_total * ($invoice->dp_value ?? 0)) / 100
+                : ($invoice->dp_value ?? 0);
+            $amountDue = max(($invoice->total_after_dp ?? 0) - ($invoice->paid_amount ?? 0), 0);
+        @endphp
         <tfoot>
             <tr>
                 <th colspan="3" class="text-right">Subtotal</th>
                 <th class="text-right">Rp {{ number_format($invoice->subtotal, 0, ',', '.') }}</th>
             </tr>
             <tr>
-                <th colspan="3" class="text-right">Discount</th>
-                <th class="text-right">- Rp {{ number_format($invoice->discount, 0, ',', '.') }}</th>
+                <th colspan="3" class="text-right">
+                    Discount
+                    @if ($invoice->discount_type === 'percentage')
+                        ({{ $invoice->discount }}%)
+                    @endif
+                </th>
+                <th class="text-right">- Rp {{ number_format($discountAmount, 0, ',', '.') }}</th>
             </tr>
             <tr>
                 <th colspan="3" class="text-right">Transport Fee</th>
@@ -144,8 +158,13 @@
                 <th class="text-right">Rp {{ number_format($invoice->grand_total, 0, ',', '.') }}</th>
             </tr>
             <tr>
-                <th colspan="3" class="text-right">Down Payment</th>
-                <th class="text-right">- Rp {{ number_format($invoice->dp_value, 0, ',', '.') }}</th>
+                <th colspan="3" class="text-right">
+                    Down Payment
+                    @if ($invoice->dp_type === 'percentage')
+                        ({{ $invoice->dp_value }}%)
+                    @endif
+                </th>
+                <th class="text-right">- Rp {{ number_format($dpAmount, 0, ',', '.') }}</th>
             </tr>
             <tr>
                 <th colspan="3" class="text-right">Total After DP</th>
@@ -157,7 +176,7 @@
             </tr>
             <tr>
                 <th colspan="3" class="text-right">Amount Due</th>
-                <th class="text-right">Rp {{ number_format($invoice->grand_total - $invoice->paid_amount - $invoice->dp_value, 0, ',', '.') }}</th>
+                <th class="text-right">Rp {{ number_format($amountDue, 0, ',', '.') }}</th>
             </tr>
         </tfoot>
     </table>
