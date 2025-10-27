@@ -353,7 +353,9 @@ class DataTablesController extends Controller
     {
         $this->authorize('viewAny', \App\Models\Payment::class);
 
-        $query = \App\Models\Payment::with('invoice.serviceOrder.customer');
+        $query = \App\Models\Payment::query()
+            ->select('payments.*', 'payments.id as payment_id')
+            ->with('invoice.serviceOrder.customer');
 
         return DataTables::of($query)
             ->addColumn('invoice_number', function ($payment) {
@@ -366,7 +368,7 @@ class DataTablesController extends Controller
                 return 'Rp ' . number_format($payment->amount, 0, ',', '.');
             })
             ->addColumn('action', function ($payment) {
-                $paymentId = $payment->getOriginal($payment->getKeyName()) ?? $payment->getKey();
+                $paymentId = $payment->payment_id ?? $payment->getKey();
                 $detailUrl = route('web.payments.show', $paymentId);
                 return '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
             })
