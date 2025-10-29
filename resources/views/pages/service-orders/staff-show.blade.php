@@ -168,14 +168,18 @@
                     <div class="mb-3">
                         <label for="photo" class="form-label">Unggah Foto Pekerjaan</label>
                         <input type="file" class="form-control" id="photo" name="photo" accept="image/*" required>
-                        <div class="mt-2" id="photoPreview" style="display: none;">
-                            <img src="" alt="Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
-                        </div>
+                    <div class="mt-2" id="photoPreview" style="display: none;">
+                        <img src="" alt="Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
+                    </div>
+                    <div class="d-flex align-items-center mt-3 d-none" id="startWorkLoading">
+                        <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                        <span>Sedang memproses dan mengunggah foto, mohon tunggu...</span>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
             </form>
         </div>
@@ -211,6 +215,10 @@
                                 <img src="" alt="After Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
                             </div>
                         </div>
+                    </div>
+                    <div class="d-flex align-items-center mt-3 d-none" id="workProofLoading">
+                        <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                        <span>Sedang memproses dan mengunggah foto, mohon tunggu...</span>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -260,74 +268,282 @@
 @endsection
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const serviceOrderId = {{ $serviceOrder->id }};
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const authToken = localStorage.getItem('auth_token') || '';
+
+        const MAX_FILE_SIZE_BYTES = 128000 * 1024; // 128 MB in bytes
+        const ALLOWED_MIME_TYPES = new Set([
+            'image/jpeg',
+            'image/png',
+            'image/jpg',
+            'image/gif',
+            'image/svg+xml',
+            'image/bmp',
+            'image/webp',
+            'image/heic',
+            'image/heif',
+            'image/heic-sequence',
+            'image/heif-sequence',
+        ]);
+        const ALLOWED_EXTENSIONS = new Set(['jpeg', 'png', 'jpg', 'gif', 'svg', 'bmp', 'webp', 'heic', 'heif']);
+        const HEIC_MIME_TYPES = new Set(['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence']);
+        const HEIC_EXTENSIONS = new Set(['heic', 'heif']);
+
+        function getFileExtension(fileName) {
+            if (!fileName) {
+                return '';
+            }
+            const parts = fileName.split('.');
+            return parts.length > 1 ? parts.pop().toLowerCase() : '';
+        }
+
+        function getBaseFileName(fileName) {
+            if (!fileName) {
+                return 'photo';
+            }
+            const lastDotIndex = fileName.lastIndexOf('.');
+            if (lastDotIndex === -1) {
+                return fileName;
+            }
+            return fileName.substring(0, lastDotIndex);
+        }
+
+        function hidePreview(wrapper, img) {
+            if (wrapper) {
+                wrapper.style.display = 'none';
+            }
+            if (img) {
+                img.src = '';
+            }
+        }
+
+        function revokePreview(input) {
+            if (input && input._previewUrl) {
+                URL.revokeObjectURL(input._previewUrl);
+                input._previewUrl = null;
+            }
+        }
+
+        function resetFileInput(input, wrapper, img) {
+            if (!input) {
+                return;
+            }
+            revokePreview(input);
+            input._processedFile = null;
+            if (wrapper || img) {
+                hidePreview(wrapper, img);
+            }
+            input.value = '';
+        }
+
+        async function prepareImageFile(file) {
+            if (!file) {
+                throw new Error('File tidak ditemukan.');
+            }
+
+            const mimeType = (file.type || '').toLowerCase();
+            const extension = getFileExtension(file.name);
+
+            const isAllowedByMime = mimeType ? ALLOWED_MIME_TYPES.has(mimeType) : false;
+            const isAllowedByExtension = ALLOWED_EXTENSIONS.has(extension);
+            if (!isAllowedByMime && !isAllowedByExtension) {
+                throw new Error('Format file tidak didukung. Gunakan jpeg, png, jpg, gif, svg, bmp, webp, heic, atau heif.');
+            }
+
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                throw new Error('Ukuran file melebihi batas 128MB.');
+            }
+
+            const shouldConvertHeic = HEIC_MIME_TYPES.has(mimeType) || HEIC_EXTENSIONS.has(extension);
+            if (shouldConvertHeic) {
+                if (typeof heic2any !== 'function') {
+                    throw new Error('Konversi HEIC tidak tersedia di browser ini.');
+                }
+                const conversionResult = await heic2any({
+                    blob: file,
+                    toType: 'image/jpeg',
+                    quality: 0.9,
+                });
+                const convertedBlob = Array.isArray(conversionResult) ? conversionResult[0] : conversionResult;
+                const baseName = getBaseFileName(file.name) || 'photo';
+                return new File([convertedBlob], `${baseName}.jpg`, { type: 'image/jpeg', lastModified: Date.now() });
+            }
+
+            return file;
+        }
+
+        async function handleImageSelection(input, wrapper, img) {
+            if (!input) {
+                return;
+            }
+            revokePreview(input);
+            input._processedFile = null;
+
+            const file = input.files && input.files[0] ? input.files[0] : null;
+
+            if (!file) {
+                if (wrapper || img) {
+                    hidePreview(wrapper, img);
+                }
+                return;
+            }
+
+            try {
+                const processedFile = await prepareImageFile(file);
+                input._processedFile = processedFile;
+
+                if (wrapper && img) {
+                    const previewSource = processedFile.type.startsWith('image/') ? processedFile : file;
+                    const previewUrl = URL.createObjectURL(previewSource);
+                    input._previewUrl = previewUrl;
+                    img.src = previewUrl;
+                    wrapper.style.display = 'block';
+                }
+            } catch (error) {
+                if (wrapper || img) {
+                    hidePreview(wrapper, img);
+                }
+                alert(error.message || 'File tidak valid.');
+                input.value = '';
+            }
+        }
+
+        async function ensureProcessedFile(input) {
+            if (!input) {
+                return null;
+            }
+
+            if (input._processedFile) {
+                return input._processedFile;
+            }
+
+            const file = input.files && input.files[0] ? input.files[0] : null;
+            if (!file) {
+                return null;
+            }
+
+            try {
+                const processedFile = await prepareImageFile(file);
+                input._processedFile = processedFile;
+                return processedFile;
+            } catch (error) {
+                alert(error.message || 'File tidak valid.');
+                return null;
+            }
+        }
+
+        function buildAuthHeaders() {
+            const headers = {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            };
+            if (authToken) {
+                headers['Authorization'] = 'Bearer ' + authToken;
+            }
+            return headers;
+        }
+
+        async function sendFormData(url, formData) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: buildAuthHeaders(),
+                body: formData,
+            });
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (error) {
+                // ignore JSON parse errors
+            }
+
+            if (!response.ok || (data && data.success === false)) {
+                const message = data && data.message ? data.message : 'Permintaan gagal diproses.';
+                throw new Error(message);
+            }
+
+            return data || {};
+        }
+
         const startWorkForm = document.getElementById('startWorkForm');
         const photoInput = document.getElementById('photo');
         const photoPreview = document.getElementById('photoPreview');
-        const photoPreviewImg = photoPreview.querySelector('img');
+        const photoPreviewImg = photoPreview ? photoPreview.querySelector('img') : null;
+        const startWorkLoading = document.getElementById('startWorkLoading');
+        const startWorkSubmitBtn = startWorkForm ? startWorkForm.querySelector('button[type="submit"]') : null;
 
-        photoInput.addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    photoPreviewImg.src = e.target.result;
-                    photoPreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                photoPreview.style.display = 'none';
-                photoPreviewImg.src = '';
+        function toggleStartWorkLoading(isLoading) {
+            if (startWorkLoading) {
+                startWorkLoading.classList.toggle('d-none', !isLoading);
             }
-        });
+            if (startWorkSubmitBtn) {
+                startWorkSubmitBtn.disabled = isLoading;
+            }
+        }
 
-        startWorkForm.addEventListener('submit', function (event) {
-            event.preventDefault();
+        if (photoInput) {
+            photoInput.addEventListener('change', function () {
+                handleImageSelection(photoInput, photoPreview, photoPreviewImg);
+            });
+        }
 
-            const formData = new FormData(this);
-            const serviceOrderId = {{ $serviceOrder->id }};
+        const startWorkModalEl = document.getElementById('startWorkModal');
+        if (startWorkModalEl) {
+            startWorkModalEl.addEventListener('hidden.bs.modal', function () {
+                toggleStartWorkLoading(false);
+                resetFileInput(photoInput, photoPreview, photoPreviewImg);
+            });
+        }
 
-            fetch(`/api/service-orders/${serviceOrderId}/start-work`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
-                },
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    // Dynamically update UI
-                    document.getElementById('startWorkModal').querySelector('.btn-close').click(); // Close modal
-                    document.querySelector('button[data-bs-target="#startWorkModal"]').style.display = 'none'; // Hide Mulai Kerja button
-                    
-                    // Show Lengkapi Bukti Kerja button if status is now proses
-                    const lengkapiBuktiKerjaBtn = document.querySelector('button[data-bs-target="#uploadWorkProofModal"]');
-                    if (lengkapiBuktiKerjaBtn) {
-                        lengkapiBuktiKerjaBtn.style.display = 'inline-block'; // Or 'block' depending on original display
+        if (startWorkForm && photoInput) {
+            startWorkForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                toggleStartWorkLoading(true);
+                try {
+                    const processedFile = await ensureProcessedFile(photoInput);
+                    if (!processedFile) {
+                        if (!photoInput.files || photoInput.files.length === 0) {
+                            alert('Mohon unggah foto terlebih dahulu.');
+                        }
+                        return;
                     }
 
-                    // Update status badge
+                    const formData = new FormData();
+                    formData.append('photo', processedFile);
+
+                    const data = await sendFormData(`/api/service-orders/${serviceOrderId}/start-work`, formData);
+                    alert(data.message || 'Work started and photo uploaded successfully.');
+                    document.getElementById('startWorkModal').querySelector('.btn-close').click();
+                    const startWorkTrigger = document.querySelector('button[data-bs-target="#startWorkModal"]');
+                    if (startWorkTrigger) {
+                        startWorkTrigger.style.display = 'none';
+                    }
+
+                    const lengkapiBuktiKerjaBtn = document.querySelector('button[data-bs-target="#uploadWorkProofModal"]');
+                    if (lengkapiBuktiKerjaBtn) {
+                        lengkapiBuktiKerjaBtn.style.display = 'inline-block';
+                    }
+
                     const statusBadge = document.querySelector('.badge');
                     if (statusBadge) {
                         statusBadge.classList.remove('bg-primary');
                         statusBadge.classList.add('bg-warning');
                         statusBadge.textContent = 'Proses';
                     }
-                } else {
-                    alert('Error: ' + data.message);
+
+                    resetFileInput(photoInput, photoPreview, photoPreviewImg);
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(error.message || 'Terjadi kesalahan saat memulai pekerjaan.');
+                } finally {
+                    toggleStartWorkLoading(false);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while starting work.');
             });
-        });
+        }
 
         // --- Upload Work Proof Modal Logic ---
         const uploadWorkProofModal = document.getElementById('uploadWorkProofModal');
@@ -342,124 +558,140 @@
         const afterPhotoPreviewImg = afterPhotoPreview.querySelector('img');
         const nextWorkProofStepBtn = document.getElementById('nextWorkProofStep');
         const submitWorkProofBtn = document.getElementById('submitWorkProof');
+        const workProofLoading = document.getElementById('workProofLoading');
+
+        function toggleWorkProofLoading(isLoading) {
+            if (workProofLoading) {
+                workProofLoading.classList.toggle('d-none', !isLoading);
+            }
+            [beforePhotoInput, afterPhotoInput].forEach((input) => {
+                if (input) {
+                    input.disabled = isLoading;
+                }
+            });
+            if (nextWorkProofStepBtn) {
+                nextWorkProofStepBtn.disabled = isLoading;
+            }
+            if (submitWorkProofBtn) {
+                submitWorkProofBtn.disabled = isLoading;
+            }
+        }
 
         let currentWorkProofStep = 1; // 1 for before, 2 for after
 
-        // Reset modal state when it's hidden
-        uploadWorkProofModal.addEventListener('hidden.bs.modal', function () {
-            currentWorkProofStep = 1;
-            beforePhotoStep.style.display = 'block';
-            afterPhotoStep.style.display = 'none';
-            nextWorkProofStepBtn.style.display = 'block';
-            submitWorkProofBtn.style.display = 'none';
-            uploadWorkProofForm.reset();
-            beforePhotoPreview.style.display = 'none';
-            beforePhotoPreviewImg.src = '';
-            afterPhotoPreview.style.display = 'none';
-            afterPhotoPreviewImg.src = '';
-        });
-
-        beforePhotoInput.addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    beforePhotoPreviewImg.src = e.target.result;
-                    beforePhotoPreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                beforePhotoPreview.style.display = 'none';
-                beforePhotoPreviewImg.src = '';
-            }
-        });
-
-        afterPhotoInput.addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    afterPhotoPreviewImg.src = e.target.result;
-                    afterPhotoPreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                afterPhotoPreview.style.display = 'none';
-                afterPhotoPreviewImg.src = '';
-            }
-        });
-
-        nextWorkProofStepBtn.addEventListener('click', function () {
-            if (currentWorkProofStep === 1) {
-                // Validate before photo
-                if (!beforePhotoInput.files[0]) {
-                    alert('Mohon unggah foto sebelum pekerjaan.');
-                    return;
-                }
-                // Upload before photo
-                uploadPhoto('before', beforePhotoInput.files[0], function () {
-                    currentWorkProofStep = 2;
-                    beforePhotoStep.style.display = 'none';
-                    afterPhotoStep.style.display = 'block';
-                    nextWorkProofStepBtn.style.display = 'none';
-                    submitWorkProofBtn.style.display = 'block';
-                });
-            } 
-        });
-
-        submitWorkProofBtn.addEventListener('click', function (event) {
-            event.preventDefault(); // Prevent default button click behavior
-            if (currentWorkProofStep === 2) {
-                // Validate after photo
-                if (!afterPhotoInput.files[0]) {
-                    alert('Mohon unggah foto sesudah pekerjaan.');
-                    return;
-                }
-                // Upload after photo
-                uploadPhoto('after', afterPhotoInput.files[0], function () {
-                    alert('Bukti kerja berhasil diunggah!');
-                    // Dynamically update UI
-                    document.getElementById('uploadWorkProofModal').querySelector('.btn-close').click(); // Close modal
-                    document.querySelector('button[data-bs-target="#uploadWorkProofModal"]').style.display = 'none'; // Hide Lengkapi Bukti Kerja button
-
-                    // Show Minta Tanda Tangan button (assuming it exists or will be created)
-                    const mintaTandaTanganBtn = document.getElementById('requestSignatureBtn'); // Assuming an ID for this button
-                    if (mintaTandaTanganBtn) {
-                        mintaTandaTanganBtn.style.display = 'inline-block';
-                    }
-                });
-            }
-        });
-
-        function uploadPhoto(type, file, callback) {
-            const formData = new FormData();
-            formData.append('photo', file);
-            formData.append('type', type);
-
-            const serviceOrderId = {{ $serviceOrder->id }};
-
-            fetch(`/api/service-orders/${serviceOrderId}/upload-work-proof`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
-                },
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    callback();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while uploading photo.');
+        if (beforePhotoInput) {
+            beforePhotoInput.addEventListener('change', function () {
+                handleImageSelection(beforePhotoInput, beforePhotoPreview, beforePhotoPreviewImg);
             });
         }
+
+        if (afterPhotoInput) {
+            afterPhotoInput.addEventListener('change', function () {
+                handleImageSelection(afterPhotoInput, afterPhotoPreview, afterPhotoPreviewImg);
+            });
+        }
+
+        function setWorkProofSteps(step) {
+            currentWorkProofStep = step;
+            if (step === 1) {
+                beforePhotoStep.style.display = 'block';
+                afterPhotoStep.style.display = 'none';
+                nextWorkProofStepBtn.style.display = 'block';
+                submitWorkProofBtn.style.display = 'none';
+            } else {
+                beforePhotoStep.style.display = 'none';
+                afterPhotoStep.style.display = 'block';
+                nextWorkProofStepBtn.style.display = 'none';
+                submitWorkProofBtn.style.display = 'block';
+            }
+        }
+
+        uploadWorkProofModal.addEventListener('hidden.bs.modal', function () {
+            toggleWorkProofLoading(false);
+            setWorkProofSteps(1);
+            uploadWorkProofForm.reset();
+            resetFileInput(beforePhotoInput, beforePhotoPreview, beforePhotoPreviewImg);
+            resetFileInput(afterPhotoInput, afterPhotoPreview, afterPhotoPreviewImg);
+        });
+
+        async function uploadWorkProofPhoto(type, inputElement) {
+            toggleWorkProofLoading(true);
+            try {
+                const processedFile = await ensureProcessedFile(inputElement);
+                if (!processedFile) {
+                    if (!inputElement.files || inputElement.files.length === 0) {
+                        alert('Mohon unggah foto terlebih dahulu.');
+                    }
+                    return null;
+                }
+
+                const formData = new FormData();
+                formData.append('type', type);
+                formData.append('photo', processedFile);
+
+                return await sendFormData(`/api/service-orders/${serviceOrderId}/upload-work-proof`, formData);
+            } finally {
+                toggleWorkProofLoading(false);
+            }
+        }
+
+        nextWorkProofStepBtn.addEventListener('click', async function () {
+            if (currentWorkProofStep !== 1) {
+                return;
+            }
+
+            if (!beforePhotoInput.files[0]) {
+                alert('Mohon unggah foto sebelum pekerjaan.');
+                return;
+            }
+
+            try {
+                const uploadResult = await uploadWorkProofPhoto('before', beforePhotoInput);
+                if (!uploadResult) {
+                    return;
+                }
+                setWorkProofSteps(2);
+                resetFileInput(beforePhotoInput, beforePhotoPreview, beforePhotoPreviewImg);
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message || 'Gagal mengunggah foto sebelum.');
+            }
+        });
+
+        submitWorkProofBtn.addEventListener('click', async function (event) {
+            event.preventDefault();
+            if (currentWorkProofStep !== 2) {
+                return;
+            }
+
+            if (!afterPhotoInput.files[0]) {
+                alert('Mohon unggah foto sesudah pekerjaan.');
+                return;
+            }
+
+            try {
+                const uploadResult = await uploadWorkProofPhoto('after', afterPhotoInput);
+                if (!uploadResult) {
+                    return;
+                }
+                alert('Bukti kerja berhasil diunggah!');
+                document.getElementById('uploadWorkProofModal').querySelector('.btn-close').click();
+                const lengkapiBuktiKerjaTrigger = document.querySelector('button[data-bs-target="#uploadWorkProofModal"]');
+                if (lengkapiBuktiKerjaTrigger) {
+                    lengkapiBuktiKerjaTrigger.style.display = 'none';
+                }
+
+                const mintaTandaTanganBtn = document.getElementById('requestSignatureBtn');
+                if (mintaTandaTanganBtn) {
+                    mintaTandaTanganBtn.style.display = 'inline-block';
+                }
+
+                resetFileInput(afterPhotoInput, afterPhotoPreview, afterPhotoPreviewImg);
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message || 'Gagal mengunggah foto sesudah.');
+            }
+        });
 
         // --- Signature Pad Logic ---
         const signatureModalEl = document.getElementById('signatureModal');

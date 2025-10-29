@@ -212,7 +212,8 @@ class ServiceOrderController extends Controller
         $this->authorize('startWork', $serviceOrder);
 
         $validated = $request->validate([
-            'photo' => 'required|image|max:2048', // Max 2MB
+            // 128 MB max, allow common image types including HEIC/HEIF
+            'photo' => 'required|file|mimes:jpeg,png,jpg,gif,svg,bmp,webp,heic,heif|max:128000',
         ]);
 
         if ($serviceOrder->status !== ServiceOrder::STATUS_BOOKED) {
@@ -247,7 +248,8 @@ class ServiceOrderController extends Controller
 
         $validated = $request->validate([
             'type' => 'required|string|in:before,after',
-            'photo' => 'required|image|max:2048', // Max 2MB
+            // Align with front-end validation to allow HEIC/HEIF up to 128 MB
+            'photo' => 'required|file|mimes:jpeg,png,jpg,gif,svg,bmp,webp,heic,heif|max:128000',
         ]);
 
         if ($serviceOrder->status !== ServiceOrder::STATUS_PROSES) {
