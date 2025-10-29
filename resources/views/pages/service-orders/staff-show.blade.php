@@ -64,6 +64,9 @@
                         <p><strong>Alamat:</strong>
                             @if ($serviceOrder->address)
                                 {{ $serviceOrder->address->full_address }}
+                                @if ($serviceOrder->address->google_maps_link)
+                                    <a href="{{ $serviceOrder->address->google_maps_link }}" class="btn btn-sm btn-outline-primary ms-2" target="_blank">Buka Peta</a>
+                                @endif
                                 @if ($serviceOrder->address->trashed())
                                     <span class="badge bg-danger text-bg-secondary">Archived</span>
                                 @endif
