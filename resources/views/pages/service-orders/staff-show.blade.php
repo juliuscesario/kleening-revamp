@@ -28,10 +28,20 @@
                         Mulai Kerja
                     </button>
                 @elseif($serviceOrder->status == 'proses' && !$serviceOrder->work_proof_completed_at)
-                    <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#uploadWorkProofModal">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
-                        Lengkapi Bukti Kerja
-                    </button>
+                    @php
+                        $hasBeforePhoto = $serviceOrder->workPhotos()->where('type', 'before')->exists();
+                    @endphp
+                    @if(!$hasBeforePhoto)
+                        <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#uploadBeforeWorkProofModal">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
+                            Upload Foto Sebelum
+                        </button>
+                    @else
+                        <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#uploadAfterWorkProofModal">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
+                            Upload Foto Sesudah
+                        </button>
+                    @endif
                 @elseif($serviceOrder->status == 'proses' && $serviceOrder->work_proof_completed_at && (!$serviceOrder->customer_signature_image || $serviceOrder->staff->whereNull('pivot.signature_image')->isNotEmpty()))
                     <button class="btn btn-success me-2" id="requestSignatureBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M17 17c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M7 13v4a3 3 0 0 0 3 3h1" /><path d="M17 13v4a3 3 0 0 0 3 3h1" /><path d="M17 10h-1a2 2 0 0 0 -2 2v2a2 2 0 0 0 2 2h1" /><path d="M7 10h1a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-1" /></svg>
@@ -189,50 +199,68 @@
     </div>
 </div>
 
-<!-- Upload Work Proof Modal -->
-<div class="modal modal-blur fade" id="uploadWorkProofModal" tabindex="-1" role="dialog" aria-hidden="true">
+<!-- Upload Before Work Proof Modal -->
+<div class="modal modal-blur fade" id="uploadBeforeWorkProofModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Lengkapi Bukti Kerja untuk Service Order {{ $serviceOrder->so_number }}</h5>
+                <h5 class="modal-title">Upload Foto Sebelum Kerja</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="uploadWorkProofForm" enctype="multipart/form-data">
+            <form id="uploadBeforeWorkProofForm" enctype="multipart/form-data">
                 <div class="modal-body">
-                    <div id="beforePhotoStep">
-                        <h4 class="mb-3">Foto Sebelum Pekerjaan</h4>
-                        <div class="mb-3">
-                            <label for="before_photo" class="form-label">Unggah Foto Sebelum</label>
-                            <input type="file" class="form-control" id="before_photo" name="photo" accept="image/*" required>
-                            <div class="mt-2" id="beforePhotoPreview" style="display: none;">
-                                <img src="" alt="Before Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
-                            </div>
+                    <div class="mb-3">
+                        <label for="before_photo" class="form-label">Unggah Foto Sebelum</label>
+                        <input type="file" class="form-control" id="before_photo" name="photo" accept="image/*" required>
+                        <div class="mt-2" id="beforePhotoPreview" style="display: none;">
+                            <img src="" alt="Before Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
                         </div>
                     </div>
-                    <div id="afterPhotoStep" style="display: none;">
-                        <h4 class="mb-3">Foto Sesudah Pekerjaan</h4>
-                        <div class="mb-3">
-                            <label for="after_photo" class="form-label">Unggah Foto Sesudah</label>
-                            <input type="file" class="form-control" id="after_photo" name="photo" accept="image/*" required>
-                            <div class="mt-2" id="afterPhotoPreview" style="display: none;">
-                                <img src="" alt="After Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center mt-3 d-none" id="workProofLoading">
+                    <div class="d-flex align-items-center mt-3 d-none" id="beforeWorkProofLoading">
                         <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
                         <span>Sedang memproses dan mengunggah foto, mohon tunggu...</span>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-primary" id="nextWorkProofStep">Selanjutnya</button>
-                    <button type="submit" class="btn btn-success" id="submitWorkProof" style="display: none;">Submit Bukti Kerja</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Upload After Work Proof Modal -->
+<div class="modal modal-blur fade" id="uploadAfterWorkProofModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Foto Sesudah Kerja</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="uploadAfterWorkProofForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="after_photo" class="form-label">Unggah Foto Sesudah</label>
+                        <input type="file" class="form-control" id="after_photo" name="photo" accept="image/*" required>
+                        <div class="mt-2" id="afterPhotoPreview" style="display: none;">
+                            <img src="" alt="After Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
+                        </div>
+                    </div>
+                     <div class="d-flex align-items-center mt-3 d-none" id="afterWorkProofLoading">
+                        <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                        <span>Sedang memproses dan mengunggah foto, mohon tunggu...</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <!-- Signature Modal -->
 <div class="modal modal-blur fade" id="signatureModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -512,6 +540,7 @@
                         if (!photoInput.files || photoInput.files.length === 0) {
                             alert('Mohon unggah foto terlebih dahulu.');
                         }
+                        toggleStartWorkLoading(false);
                         return;
                     }
 
@@ -520,25 +549,7 @@
 
                     const data = await sendFormData(`/api/service-orders/${serviceOrderId}/start-work`, formData);
                     alert(data.message || 'Work started and photo uploaded successfully.');
-                    document.getElementById('startWorkModal').querySelector('.btn-close').click();
-                    const startWorkTrigger = document.querySelector('button[data-bs-target="#startWorkModal"]');
-                    if (startWorkTrigger) {
-                        startWorkTrigger.style.display = 'none';
-                    }
-
-                    const lengkapiBuktiKerjaBtn = document.querySelector('button[data-bs-target="#uploadWorkProofModal"]');
-                    if (lengkapiBuktiKerjaBtn) {
-                        lengkapiBuktiKerjaBtn.style.display = 'inline-block';
-                    }
-
-                    const statusBadge = document.querySelector('.badge');
-                    if (statusBadge) {
-                        statusBadge.classList.remove('bg-primary');
-                        statusBadge.classList.add('bg-warning');
-                        statusBadge.textContent = 'Proses';
-                    }
-
-                    resetFileInput(photoInput, photoPreview, photoPreviewImg);
+                    location.reload();
                 } catch (error) {
                     console.error('Error:', error);
                     alert(error.message || 'Terjadi kesalahan saat memulai pekerjaan.');
@@ -548,153 +559,115 @@
             });
         }
 
-        // --- Upload Work Proof Modal Logic ---
-        const uploadWorkProofModal = document.getElementById('uploadWorkProofModal');
-        const uploadWorkProofForm = document.getElementById('uploadWorkProofForm');
-        const beforePhotoStep = document.getElementById('beforePhotoStep');
-        const afterPhotoStep = document.getElementById('afterPhotoStep');
+        // --- Upload Before Work Proof ---
+        const uploadBeforeWorkProofModalEl = document.getElementById('uploadBeforeWorkProofModal');
+        const uploadBeforeWorkProofForm = document.getElementById('uploadBeforeWorkProofForm');
         const beforePhotoInput = document.getElementById('before_photo');
-        const afterPhotoInput = document.getElementById('after_photo');
         const beforePhotoPreview = document.getElementById('beforePhotoPreview');
-        const afterPhotoPreview = document.getElementById('afterPhotoPreview');
-        const beforePhotoPreviewImg = beforePhotoPreview.querySelector('img');
-        const afterPhotoPreviewImg = afterPhotoPreview.querySelector('img');
-        const nextWorkProofStepBtn = document.getElementById('nextWorkProofStep');
-        const submitWorkProofBtn = document.getElementById('submitWorkProof');
-        const workProofLoading = document.getElementById('workProofLoading');
+        const beforePhotoPreviewImg = beforePhotoPreview ? beforePhotoPreview.querySelector('img') : null;
+        const beforeWorkProofLoading = document.getElementById('beforeWorkProofLoading');
+        const beforeWorkProofSubmitBtn = uploadBeforeWorkProofForm ? uploadBeforeWorkProofForm.querySelector('button[type="submit"]') : null;
 
-        function toggleWorkProofLoading(isLoading) {
-            if (workProofLoading) {
-                workProofLoading.classList.toggle('d-none', !isLoading);
-            }
-            [beforePhotoInput, afterPhotoInput].forEach((input) => {
-                if (input) {
-                    input.disabled = isLoading;
-                }
-            });
-            if (nextWorkProofStepBtn) {
-                nextWorkProofStepBtn.disabled = isLoading;
-            }
-            if (submitWorkProofBtn) {
-                submitWorkProofBtn.disabled = isLoading;
-            }
+        function toggleBeforeWorkProofLoading(isLoading) {
+            if (beforeWorkProofLoading) beforeWorkProofLoading.classList.toggle('d-none', !isLoading);
+            if (beforeWorkProofSubmitBtn) beforeWorkProofSubmitBtn.disabled = isLoading;
+            if (beforePhotoInput) beforePhotoInput.disabled = isLoading;
         }
 
-        let currentWorkProofStep = 1; // 1 for before, 2 for after
-
         if (beforePhotoInput) {
-            beforePhotoInput.addEventListener('change', function () {
-                handleImageSelection(beforePhotoInput, beforePhotoPreview, beforePhotoPreviewImg);
+            beforePhotoInput.addEventListener('change', () => handleImageSelection(beforePhotoInput, beforePhotoPreview, beforePhotoPreviewImg));
+        }
+
+        if (uploadBeforeWorkProofModalEl) {
+            uploadBeforeWorkProofModalEl.addEventListener('hidden.bs.modal', () => {
+                toggleBeforeWorkProofLoading(false);
+                resetFileInput(beforePhotoInput, beforePhotoPreview, beforePhotoPreviewImg);
             });
+        }
+
+        if (uploadBeforeWorkProofForm) {
+            uploadBeforeWorkProofForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                toggleBeforeWorkProofLoading(true);
+                try {
+                    const processedFile = await ensureProcessedFile(beforePhotoInput);
+                    if (!processedFile) {
+                        if (!beforePhotoInput.files || beforePhotoInput.files.length === 0) {
+                            alert('Mohon unggah foto terlebih dahulu.');
+                        }
+                        toggleBeforeWorkProofLoading(false);
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('type', 'before');
+                    formData.append('photo', processedFile);
+
+                    const data = await sendFormData(`/api/service-orders/${serviceOrderId}/upload-work-proof`, formData);
+                    alert(data.message || 'Foto "sebelum" berhasil diunggah.');
+                    location.reload();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(error.message || 'Gagal mengunggah foto "sebelum".');
+                    toggleBeforeWorkProofLoading(false);
+                }
+            });
+        }
+
+        // --- Upload After Work Proof ---
+        const uploadAfterWorkProofModalEl = document.getElementById('uploadAfterWorkProofModal');
+        const uploadAfterWorkProofForm = document.getElementById('uploadAfterWorkProofForm');
+        const afterPhotoInput = document.getElementById('after_photo');
+        const afterPhotoPreview = document.getElementById('afterPhotoPreview');
+        const afterPhotoPreviewImg = afterPhotoPreview ? afterPhotoPreview.querySelector('img') : null;
+        const afterWorkProofLoading = document.getElementById('afterWorkProofLoading');
+        const afterWorkProofSubmitBtn = uploadAfterWorkProofForm ? uploadAfterWorkProofForm.querySelector('button[type="submit"]') : null;
+
+        function toggleAfterWorkProofLoading(isLoading) {
+            if (afterWorkProofLoading) afterWorkProofLoading.classList.toggle('d-none', !isLoading);
+            if (afterWorkProofSubmitBtn) afterWorkProofSubmitBtn.disabled = isLoading;
+            if (afterPhotoInput) afterPhotoInput.disabled = isLoading;
         }
 
         if (afterPhotoInput) {
-            afterPhotoInput.addEventListener('change', function () {
-                handleImageSelection(afterPhotoInput, afterPhotoPreview, afterPhotoPreviewImg);
+            afterPhotoInput.addEventListener('change', () => handleImageSelection(afterPhotoInput, afterPhotoPreview, afterPhotoPreviewImg));
+        }
+
+        if (uploadAfterWorkProofModalEl) {
+            uploadAfterWorkProofModalEl.addEventListener('hidden.bs.modal', () => {
+                toggleAfterWorkProofLoading(false);
+                resetFileInput(afterPhotoInput, afterPhotoPreview, afterPhotoPreviewImg);
             });
         }
 
-        function setWorkProofSteps(step) {
-            currentWorkProofStep = step;
-            if (step === 1) {
-                beforePhotoStep.style.display = 'block';
-                afterPhotoStep.style.display = 'none';
-                nextWorkProofStepBtn.style.display = 'block';
-                submitWorkProofBtn.style.display = 'none';
-            } else {
-                beforePhotoStep.style.display = 'none';
-                afterPhotoStep.style.display = 'block';
-                nextWorkProofStepBtn.style.display = 'none';
-                submitWorkProofBtn.style.display = 'block';
-            }
-        }
-
-        uploadWorkProofModal.addEventListener('hidden.bs.modal', function () {
-            toggleWorkProofLoading(false);
-            setWorkProofSteps(1);
-            uploadWorkProofForm.reset();
-            resetFileInput(beforePhotoInput, beforePhotoPreview, beforePhotoPreviewImg);
-            resetFileInput(afterPhotoInput, afterPhotoPreview, afterPhotoPreviewImg);
-        });
-
-        async function uploadWorkProofPhoto(type, inputElement) {
-            toggleWorkProofLoading(true);
-            try {
-                const processedFile = await ensureProcessedFile(inputElement);
-                if (!processedFile) {
-                    if (!inputElement.files || inputElement.files.length === 0) {
-                        alert('Mohon unggah foto terlebih dahulu.');
+        if (uploadAfterWorkProofForm) {
+            uploadAfterWorkProofForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                toggleAfterWorkProofLoading(true);
+                try {
+                    const processedFile = await ensureProcessedFile(afterPhotoInput);
+                    if (!processedFile) {
+                        if (!afterPhotoInput.files || afterPhotoInput.files.length === 0) {
+                            alert('Mohon unggah foto terlebih dahulu.');
+                        }
+                        toggleAfterWorkProofLoading(false);
+                        return;
                     }
-                    return null;
+
+                    const formData = new FormData();
+                    formData.append('type', 'after');
+                    formData.append('photo', processedFile);
+
+                    const data = await sendFormData(`/api/service-orders/${serviceOrderId}/upload-work-proof`, formData);
+                    alert(data.message || 'Foto "sesudah" berhasil diunggah. Bukti kerja lengkap.');
+                    location.reload();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(error.message || 'Gagal mengunggah foto "sesudah".');
+                    toggleAfterWorkProofLoading(false);
                 }
-
-                const formData = new FormData();
-                formData.append('type', type);
-                formData.append('photo', processedFile);
-
-                return await sendFormData(`/api/service-orders/${serviceOrderId}/upload-work-proof`, formData);
-            } finally {
-                toggleWorkProofLoading(false);
-            }
+            });
         }
-
-        nextWorkProofStepBtn.addEventListener('click', async function () {
-            if (currentWorkProofStep !== 1) {
-                return;
-            }
-
-            if (!beforePhotoInput.files[0]) {
-                alert('Mohon unggah foto sebelum pekerjaan.');
-                return;
-            }
-
-            try {
-                const uploadResult = await uploadWorkProofPhoto('before', beforePhotoInput);
-                if (!uploadResult) {
-                    return;
-                }
-                setWorkProofSteps(2);
-                resetFileInput(beforePhotoInput, beforePhotoPreview, beforePhotoPreviewImg);
-            } catch (error) {
-                console.error('Error:', error);
-                alert(error.message || 'Gagal mengunggah foto sebelum.');
-            }
-        });
-
-        submitWorkProofBtn.addEventListener('click', async function (event) {
-            event.preventDefault();
-            if (currentWorkProofStep !== 2) {
-                return;
-            }
-
-            if (!afterPhotoInput.files[0]) {
-                alert('Mohon unggah foto sesudah pekerjaan.');
-                return;
-            }
-
-            try {
-                const uploadResult = await uploadWorkProofPhoto('after', afterPhotoInput);
-                if (!uploadResult) {
-                    return;
-                }
-                alert('Bukti kerja berhasil diunggah!');
-                document.getElementById('uploadWorkProofModal').querySelector('.btn-close').click();
-                const lengkapiBuktiKerjaTrigger = document.querySelector('button[data-bs-target="#uploadWorkProofModal"]');
-                if (lengkapiBuktiKerjaTrigger) {
-                    lengkapiBuktiKerjaTrigger.style.display = 'none';
-                }
-
-                const mintaTandaTanganBtn = document.getElementById('requestSignatureBtn');
-                if (mintaTandaTanganBtn) {
-                    mintaTandaTanganBtn.style.display = 'inline-block';
-                }
-
-                resetFileInput(afterPhotoInput, afterPhotoPreview, afterPhotoPreviewImg);
-            } catch (error) {
-                console.error('Error:', error);
-                alert(error.message || 'Gagal mengunggah foto sesudah.');
-            }
-        });
 
         // --- Signature Pad Logic ---
         const signatureModalEl = document.getElementById('signatureModal');
@@ -743,28 +716,30 @@
 
 
         // Event listener for "Minta Tanda Tangan" button
-        requestSignatureBtn.addEventListener('click', function () {
-            console.log('Minta Tanda Tangan button clicked.');
-            // Reset state
-            customerSignaturePad.clear();
-            staffSignaturePadsContainer.innerHTML = ''; // Clear previous staff pads
-            staffSignaturePads = {};
-            saveStaffSignatureBtn.style.display = 'none';
+        if (requestSignatureBtn) {
+            requestSignatureBtn.addEventListener('click', function () {
+                console.log('Minta Tanda Tangan button clicked.');
+                // Reset state
+                customerSignaturePad.clear();
+                staffSignaturePadsContainer.innerHTML = ''; // Clear previous staff pads
+                staffSignaturePads = {};
+                saveStaffSignatureBtn.style.display = 'none';
 
-            // Check if customer has already signed
-            if (customerSigned) {
-                console.log('Customer already signed. Proceeding to staff signatures.');
-                customerSignatureSection.style.display = 'none';
-                staffSignatureSection.style.display = 'block';
-                renderStaffSignaturePad(); // Start with staff signatures
-            } else {
-                console.log('Customer has not signed. Displaying customer signature pad.');
-                customerSignatureSection.style.display = 'block';
-                staffSignatureSection.style.display = 'none';
-            }
+                // Check if customer has already signed
+                if (customerSigned) {
+                    console.log('Customer already signed. Proceeding to staff signatures.');
+                    customerSignatureSection.style.display = 'none';
+                    staffSignatureSection.style.display = 'block';
+                    renderStaffSignaturePad(); // Start with staff signatures
+                } else {
+                    console.log('Customer has not signed. Displaying customer signature pad.');
+                    customerSignatureSection.style.display = 'block';
+                    staffSignatureSection.style.display = 'none';
+                }
 
-            signatureModal.show();
-        });
+                signatureModal.show();
+            });
+        }
 
         // Customer Signature Actions
         clearCustomerSignatureBtn.addEventListener('click', function () {
