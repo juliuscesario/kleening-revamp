@@ -1,13 +1,13 @@
 <div class="row mb-3 g-2">
     @if($doneServiceOrders->isNotEmpty())
-        <div class="col">
+        <div class="col-md">
             <button type="button" class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#doneOrdersModal">
                 Lihat Service Orders Selesai ({{ $doneServiceOrders->count() }})
             </button>
         </div>
     @endif
     @if($cancelledServiceOrders->isNotEmpty())
-        <div class="col">
+        <div class="col-md">
             <button type="button" class="btn btn-outline-secondary w-100" data-bs-toggle="modal" data-bs-target="#cancelledOrdersModal">
                 Lihat Service Orders Dibatalkan ({{ $cancelledServiceOrders->count() }})
             </button>
