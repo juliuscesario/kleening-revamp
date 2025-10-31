@@ -14,41 +14,43 @@
 </style>
 <div class="container-xl">
     <div class="page-header d-print-none">
-        <div class="row align-items-center">
+        <div class="row g-2 align-items-center">
             <div class="col">
                 <h2 class="page-title">Detail Service Order: {{ $serviceOrder->so_number }}</h2>
             </div>
             <div class="col-auto ms-auto d-print-none">
-                <button type="button" class="btn btn-warning text-dark me-2" onclick="window.location.reload();">
-                    Muat Ulang
-                </button>
-                @if($serviceOrder->status == 'booked')
-                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#startWorkModal">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.5 13.572l-7.5 7.428l-7.5 -7.428m0 0a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" /><path d="M12 7l-2 4l2 4l2 -4l-2 -4" /></svg>
-                        Mulai Kerja
+                <div class="btn-list">
+                    <button type="button" class="btn btn-warning text-dark" onclick="window.location.reload();">
+                        Muat Ulang
                     </button>
-                @elseif($serviceOrder->status == 'proses' && !$serviceOrder->work_proof_completed_at)
-                    @php
-                        $hasBeforePhoto = $serviceOrder->workPhotos()->where('type', 'before')->exists();
-                    @endphp
-                    @if(!$hasBeforePhoto)
-                        <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#uploadBeforeWorkProofModal">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
-                            Upload Foto Sebelum
+                    @if($serviceOrder->status == 'booked')
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#startWorkModal">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.5 13.572l-7.5 7.428l-7.5 -7.428m0 0a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" /><path d="M12 7l-2 4l2 4l2 -4l-2 -4" /></svg>
+                            Mulai Kerja
                         </button>
-                    @else
-                        <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#uploadAfterWorkProofModal">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
-                            Upload Foto Sesudah
+                    @elseif($serviceOrder->status == 'proses' && !$serviceOrder->work_proof_completed_at)
+                        @php
+                            $hasBeforePhoto = $serviceOrder->workPhotos()->where('type', 'before')->exists();
+                        @endphp
+                        @if(!$hasBeforePhoto)
+                            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#uploadBeforeWorkProofModal">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
+                                Upload Foto Sebelum
+                            </button>
+                        @else
+                            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#uploadAfterWorkProofModal">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
+                                Upload Foto Sesudah
+                            </button>
+                        @endif
+                    @elseif($serviceOrder->status == 'proses' && $serviceOrder->work_proof_completed_at && (!$serviceOrder->customer_signature_image || $serviceOrder->staff->whereNull('pivot.signature_image')->isNotEmpty()))
+                        <button class="btn btn-success" id="requestSignatureBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M17 17c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M7 13v4a3 3 0 0 0 3 3h1" /><path d="M17 13v4a3 3 0 0 0 3 3h1" /><path d="M17 10h-1a2 2 0 0 0 -2 2v2a2 2 0 0 0 2 2h1" /><path d="M7 10h1a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-1" /></svg>
+                            Minta Tanda Tangan
                         </button>
                     @endif
-                @elseif($serviceOrder->status == 'proses' && $serviceOrder->work_proof_completed_at && (!$serviceOrder->customer_signature_image || $serviceOrder->staff->whereNull('pivot.signature_image')->isNotEmpty()))
-                    <button class="btn btn-success me-2" id="requestSignatureBtn">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M17 17c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M7 13v4a3 3 0 0 0 3 3h1" /><path d="M17 13v4a3 3 0 0 0 3 3h1" /><path d="M17 10h-1a2 2 0 0 0 -2 2v2a2 2 0 0 0 2 2h1" /><path d="M7 10h1a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-1" /></svg>
-                        Minta Tanda Tangan
-                    </button>
-                @endif
-                <a href="{{ route('dashboard') }}" class="btn btn-secondary">Kembali ke Dashboard</a>
+                    <a href="{{ route('dashboard') }}" class="btn btn-secondary">Kembali ke Dashboard</a>
+                </div>
             </div>
         </div>
     </div>
@@ -172,15 +174,26 @@
 <div class="modal modal-blur fade" id="startWorkModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Mulai Kerja untuk Service Order {{ $serviceOrder->so_number }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
             <form id="startWorkForm" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Mulai Kerja untuk Service Order {{ $serviceOrder->so_number }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="photo" class="form-label">Unggah Foto Pekerjaan</label>
-                        <input type="file" class="form-control" id="photo" name="photo" accept="image/*" required>
+                        <label class="form-label">Unggah Foto Pekerjaan</label>
+                        <input type="file" class="d-none" id="photo" name="photo" accept="image/*" required>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary" id="startWorkTakePhotoBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                                Ambil Foto
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="startWorkSelectGalleryBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l2 2" /></svg>
+                                Pilih dari Galeri
+                            </button>
+                        </div>
+                    </div>
                     <div class="mt-2" id="photoPreview" style="display: none;">
                         <img src="" alt="Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
                     </div>
@@ -189,10 +202,9 @@
                         <span>Sedang memproses dan mengunggah foto, mohon tunggu...</span>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary">Submit</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
             </form>
         </div>
@@ -203,15 +215,25 @@
 <div class="modal modal-blur fade" id="uploadBeforeWorkProofModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Upload Foto Sebelum Kerja</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
             <form id="uploadBeforeWorkProofForm" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Foto Sebelum Kerja</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="before_photo" class="form-label">Unggah Foto Sebelum</label>
-                        <input type="file" class="form-control" id="before_photo" name="photo" accept="image/*" required>
+                        <label class="form-label">Unggah Foto Sebelum</label>
+                        <input type="file" class="d-none" id="before_photo" name="photo" accept="image/*" required>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary" id="beforeTakePhotoBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                                Ambil Foto
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="beforeSelectGalleryBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l2 2" /></svg>
+                                Pilih dari Galeri
+                            </button>
+                        </div>
                         <div class="mt-2" id="beforePhotoPreview" style="display: none;">
                             <img src="" alt="Before Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
                         </div>
@@ -222,7 +244,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
             </form>
@@ -234,15 +256,25 @@
 <div class="modal modal-blur fade" id="uploadAfterWorkProofModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Upload Foto Sesudah Kerja</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
             <form id="uploadAfterWorkProofForm" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Foto Sesudah Kerja</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="after_photo" class="form-label">Unggah Foto Sesudah</label>
-                        <input type="file" class="form-control" id="after_photo" name="photo" accept="image/*" required>
+                        <label class="form-label">Unggah Foto Sesudah</label>
+                        <input type="file" class="d-none" id="after_photo" name="photo" accept="image/*" required>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary" id="afterTakePhotoBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                                Ambil Foto
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="afterSelectGalleryBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l2 2" /></svg>
+                                Pilih dari Galeri
+                            </button>
+                        </div>
                         <div class="mt-2" id="afterPhotoPreview" style="display: none;">
                             <img src="" alt="After Photo Preview" class="img-fluid rounded" style="max-height: 200px;">
                         </div>
@@ -253,7 +285,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
             </form>
@@ -291,7 +323,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
             </div>
         </div>
     </div>
@@ -499,6 +531,27 @@
 
             return data || {};
         }
+
+        function setupPhotoButtons(takeBtnId, galleryBtnId, inputId) {
+            const takeBtn = document.getElementById(takeBtnId);
+            const galleryBtn = document.getElementById(galleryBtnId);
+            const input = document.getElementById(inputId);
+
+            if (takeBtn && galleryBtn && input) {
+                takeBtn.addEventListener('click', () => {
+                    input.setAttribute('capture', 'environment');
+                    input.click();
+                });
+                galleryBtn.addEventListener('click', () => {
+                    input.removeAttribute('capture');
+                    input.click();
+                });
+            }
+        }
+
+        setupPhotoButtons('startWorkTakePhotoBtn', 'startWorkSelectGalleryBtn', 'photo');
+        setupPhotoButtons('beforeTakePhotoBtn', 'beforeSelectGalleryBtn', 'before_photo');
+        setupPhotoButtons('afterTakePhotoBtn', 'afterSelectGalleryBtn', 'after_photo');
 
         const startWorkForm = document.getElementById('startWorkForm');
         const photoInput = document.getElementById('photo');
