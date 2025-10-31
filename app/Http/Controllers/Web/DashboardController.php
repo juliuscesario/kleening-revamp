@@ -116,7 +116,7 @@ class DashboardController extends Controller
             // Existing staff logic...
             $staffId = $user->staff->id;
             $tomorrow = Carbon::tomorrow();
-            $startOfMonth = $today->copy()->startOfMonth();
+            $startOfMonth = $today->copy()->subMonthNoOverflow()->startOfMonth();
             $endOfMonth = $today->copy()->endOfMonth();
 
             $viewData['todayServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereDate('work_date', $today)->whereIn('status', ['booked', 'proses'])->orderBy('work_date', 'asc')->get();
