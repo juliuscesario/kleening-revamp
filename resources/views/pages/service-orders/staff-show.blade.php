@@ -93,6 +93,21 @@
                                 N/A
                             @endif
                         </p>
+                        <p><strong>Nomor Handphone:</strong>
+                            @if ($serviceOrder->customer && $serviceOrder->customer->phone_number)
+                                @php
+                                    $normalizedPhone = preg_replace('/\D+/', '', $serviceOrder->customer->phone_number);
+                                @endphp
+                                <a href="tel:{{ $serviceOrder->customer->phone_number }}">{{ $serviceOrder->customer->phone_number }}</a>
+                                @if ($normalizedPhone)
+                                    <a href="https://wa.me/{{ $normalizedPhone }}" class="btn btn-sm btn-outline-success ms-2" target="_blank" rel="noopener">
+                                        Hubungi via WhatsApp
+                                    </a>
+                                @endif
+                            @else
+                                N/A
+                            @endif
+                        </p>
                         <p><strong>Tanggal Pengerjaan:</strong> {{ \Carbon\Carbon::parse($serviceOrder->work_date)->format('d M Y') }}</p>
                         <p><strong>Status:</strong>
                             @php
