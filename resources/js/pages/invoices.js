@@ -30,7 +30,14 @@ $(function() {
         const newStatus = $(this).data('new-status');
 
         if (newStatus === 'paid') {
-            $('#invoice_id').val(invoiceId);
+            const form = $('#markAsPaidForm');
+            const amountInput = form.find('input[name="amount"]');
+            const grandTotal = $(this).data('grand-total');
+
+            form.find('#invoice_id').val(invoiceId);
+            amountInput.val(typeof grandTotal !== 'undefined' ? grandTotal : '');
+            amountInput.prop('readonly', true);
+
             const modal = new bootstrap.Modal(document.getElementById('markAsPaidModal'));
             modal.show();
         } else {

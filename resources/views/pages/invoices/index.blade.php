@@ -56,7 +56,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Amount</label>
-                        <input type="number" class="form-control" name="amount">
+                        <input type="number" class="form-control" name="amount" readonly>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Payment Date</label>

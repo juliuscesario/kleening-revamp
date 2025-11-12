@@ -58,6 +58,25 @@ class PaymentController extends Controller
             abort(403);
         }
 
+        $invoiceGrandTotal = (float) $invoice->grand_total;
+        $paymentAmount = round((float) $request->amount, 2);
+        $expectedAmount = round($invoiceGrandTotal, 2);
+
+        if ($paymentAmount !== $expectedAmount) {
+            $message = 'Payment amount must match the invoice grand total (partial payments are not allowed). Expected amount: Rp ' . number_format($invoiceGrandTotal, 2, ',', '.');
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return back()
+                ->withErrors(['amount' => $message])
+                ->withInput();
+        }
+
         $payment = Payment::create($request->all());
 
         $invoice->update(['status' => Invoice::STATUS_PAID]);

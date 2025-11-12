@@ -191,7 +191,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Amount</label>
-                        <input type="number" class="form-control" name="amount" value="{{ $invoice->grand_total }}">
+                        <input type="number" class="form-control" name="amount" value="{{ $invoice->grand_total }}" readonly>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Payment Date</label>

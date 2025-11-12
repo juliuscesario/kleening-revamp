@@ -352,10 +352,10 @@ class DataTablesController extends Controller
                         $actions .= '<button class="btn btn-sm btn-info change-status-btn" data-id="' . $invoice->id . '" data-new-status="' . \App\Models\Invoice::STATUS_SENT . '">Mark as Sent</button> ';
                         break;
                     case 'sent':
-                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
+                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-grand-total="' . $invoice->grand_total . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
                         break;
                     case 'overdue':
-                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
+                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-grand-total="' . $invoice->grand_total . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
                         break;
                 }
 
