@@ -23,6 +23,8 @@
                         <tr>
                             <th>Invoice Number</th>
                             <th>Service Order</th>
+                            <th>Customer Name</th>
+                            <th>Customer Phone</th>
                             <th>Issue Date</th>
                             <th>Due Date</th>
                             <th>Grand Total</th>

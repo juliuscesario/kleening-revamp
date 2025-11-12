@@ -27,6 +27,10 @@
                         <p><strong>Address:</strong> {{ $serviceOrder->address->full_address }}</p>
                         <p><strong>Area:</strong> {{ $serviceOrder->address->area->name }}</p>
                         <p><strong>Staff:</strong> {{ $serviceOrder->staff->pluck('name')->join(', ') }}</p>
+                        <div class="mt-3">
+                            <p><strong>Catatan Invoice:</strong> {{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
+                            <p><strong>Catatan Internal:</strong> {{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>
+                        </div>
                     </div>
                 </div>
                 <div class="card">
@@ -87,10 +91,10 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Due Date</label>
-                                <input type="date" class="form-control" id="due_date" name="due_date" value="{{ date('Y-m-d', strtotime('+7 days')) }}">
+                                <input type="date" class="form-control" id="due_date" name="due_date" value="{{ date('Y-m-d', strtotime('+1 day')) }}">
                                 <div class="btn-group mt-2">
                                     <button type="button" class="btn btn-sm btn-outline-secondary due-date-btn" data-days="0">Immediately</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary due-date-btn active" data-days="7">7 Days</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary due-date-btn active" data-days="1">1 Day</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary due-date-btn" data-days="14">14 Days</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary due-date-btn" data-days="30">30 Days</button>
                                 </div>
@@ -112,7 +116,14 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Transport Fee</label>
-                                <input type="number" class="form-control" id="transport_fee" name="transport_fee" value="0">
+                                <input type="number" class="form-control" id="transport_fee" name="transport_fee" value="0" readonly>
+                                <div class="btn-group mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn active" data-fee="0">No Fee</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn" data-fee="25000">25K</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn" data-fee="50000">50K</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn" data-fee="75000">75K</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn" data-fee="100000">100K</button>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Down Payment (DP)</label>
@@ -164,6 +175,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const totalAfterDpDisplayElement = document.getElementById('total_after_dp_display');
     const balanceElement = document.getElementById('balance');
     const balanceDisplayElement = document.getElementById('balance_display');
+    const issueDateElement = document.getElementById('issue_date');
+    const dueDateElement = document.getElementById('due_date');
+    const dueDateButtons = document.querySelectorAll('.due-date-btn');
+    const transportFeeButtons = document.querySelectorAll('.transport-fee-btn');
 
     function formatCurrency(amount) {
         return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
@@ -214,19 +229,66 @@ document.addEventListener("DOMContentLoaded", function() {
         element.addEventListener('input', calculateTotals);
     });
 
+    function calculateDueDate(issueDateValue, daysToAdd) {
+        if (!issueDateValue) {
+            return '';
+        }
+        const issueDate = new Date(issueDateValue);
+        if (Number.isNaN(issueDate.getTime())) {
+            return '';
+        }
+        issueDate.setDate(issueDate.getDate() + daysToAdd);
+        return issueDate.toISOString().slice(0, 10);
+    }
+
+    function updateDueDateByDays(days) {
+        const nextDate = calculateDueDate(issueDateElement.value, days);
+        if (nextDate) {
+            dueDateElement.value = nextDate;
+        }
+    }
+
+    function getActiveDueDateDays() {
+        const activeButton = document.querySelector('.due-date-btn.active');
+        return activeButton ? parseInt(activeButton.dataset.days, 10) : 0;
+    }
+
+    function refreshDueDateBasedOnActiveButton() {
+        updateDueDateByDays(getActiveDueDateDays());
+    }
+
     // Due date buttons
-    document.querySelectorAll('.due-date-btn').forEach(function(btn) {
+    dueDateButtons.forEach(function(btn) {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.due-date-btn').forEach(b => b.classList.remove('active'));
+            dueDateButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            const days = parseInt(this.dataset.days);
-            const issueDate = new Date(document.getElementById('issue_date').value);
-            issueDate.setDate(issueDate.getDate() + days);
-            document.getElementById('due_date').value = issueDate.toISOString().slice(0,10);
+            updateDueDateByDays(parseInt(this.dataset.days, 10));
         });
     });
 
+    issueDateElement.addEventListener('change', refreshDueDateBasedOnActiveButton);
+
+    // Transport fee buttons
+    function setActiveTransportFeeButton(value) {
+        transportFeeButtons.forEach(function(btn) {
+            const feeValue = parseInt(btn.dataset.fee, 10);
+            btn.classList.toggle('active', feeValue === value);
+        });
+    }
+
+    transportFeeButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const selectedFee = parseInt(this.dataset.fee, 10);
+            transportFeeElement.value = selectedFee;
+            setActiveTransportFeeButton(selectedFee);
+            calculateTotals();
+        });
+    });
+
+    setActiveTransportFeeButton(parseInt(transportFeeElement.value, 10) || 0);
+
     calculateTotals();
+    refreshDueDateBasedOnActiveButton();
 });
 </script>
 @endpush

@@ -60,6 +60,12 @@
                             {{ $invoice->serviceOrder->address->full_address }}<br>
                             {{ $invoice->serviceOrder->address->area->name }}
                         </address>
+                        <div class="mt-3">
+                            <p class="mb-1"><strong>Catatan Invoice:</strong></p>
+                            <p class="text-muted mb-2">{{ $invoice->serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
+                            <p class="mb-1"><strong>Catatan Internal (Staff):</strong></p>
+                            <p class="text-muted">{{ $invoice->serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>
+                        </div>
                     </div>
                     <div class="col-6 text-end">
                         @php

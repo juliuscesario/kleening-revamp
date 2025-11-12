@@ -15,6 +15,8 @@ $(function() {
         columns: [
             { data: 'invoice_number', name: 'invoice_number' },
             { data: 'so_number', name: 'serviceOrder.so_number' },
+            { data: 'customer_name', name: 'customer_name', orderable: false, searchable: false },
+            { data: 'customer_phone', name: 'customer_phone', orderable: false, searchable: false },
             { data: 'issue_date', name: 'issue_date' },
             { data: 'due_date', name: 'due_date' },
             { data: 'grand_total', name: 'grand_total' },

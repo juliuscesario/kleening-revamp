@@ -312,6 +312,16 @@ class DataTablesController extends Controller
             ->addColumn('so_number', function ($invoice) {
                 return $invoice->serviceOrder->so_number;
             })
+            ->addColumn('customer_name', function ($invoice) {
+                return $invoice->serviceOrder && $invoice->serviceOrder->customer
+                    ? $invoice->serviceOrder->customer->name
+                    : 'N/A';
+            })
+            ->addColumn('customer_phone', function ($invoice) {
+                return $invoice->serviceOrder && $invoice->serviceOrder->customer
+                    ? $invoice->serviceOrder->customer->phone_number
+                    : 'N/A';
+            })
             ->editColumn('issue_date', function ($invoice) {
                 return Carbon::parse($invoice->issue_date)->format('d M Y');
             })
