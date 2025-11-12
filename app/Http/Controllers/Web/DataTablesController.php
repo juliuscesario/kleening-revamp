@@ -947,13 +947,32 @@ class DataTablesController extends Controller
                 }
                 return 'Rp 0';
             })
+            ->addColumn('invoice_show_url', function($so) {
+                return $so->invoice ? route('web.invoices.show', $so->invoice->id) : null;
+            })
+            ->addColumn('status_badge_class', function($so) {
+                switch ($so->status) {
+                    case \App\Models\ServiceOrder::STATUS_BOOKED:
+                        return 'bg-primary';
+                    case \App\Models\ServiceOrder::STATUS_PROSES:
+                        return 'bg-warning';
+                    case \App\Models\ServiceOrder::STATUS_CANCELLED:
+                        return 'bg-danger';
+                    case \App\Models\ServiceOrder::STATUS_DONE:
+                        return 'bg-success';
+                    case \App\Models\ServiceOrder::STATUS_INVOICED:
+                        return 'bg-success';
+                    default:
+                        return 'bg-secondary';
+                }
+            })
             ->editColumn('work_date', function($so) {
                 return Carbon::parse($so->work_date)->format('d M Y');
             })
             ->editColumn('status', function($so) {
-                return '<span class="badge bg-success text-bg-secondary">' . ucfirst($so->status) . '</span>';
+                return ucfirst($so->status);
             })
-            ->rawColumns(['invoice_status', 'status'])
+            ->rawColumns(['invoice_status'])
             ->make(true);
     }
 

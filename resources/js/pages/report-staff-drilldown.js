@@ -93,7 +93,27 @@ $(function() {
             { data: 'customer_address', name: 'address.full_address' },
             { data: 'work_date', name: 'work_date' },
             { data: 'invoice_total', name: 'invoice.grand_total' },
-            { data: 'status', name: 'status' },
+            {
+                data: 'status',
+                name: 'status',
+                orderable: false,
+                render: function(data, type, row) {
+                    const label = data || '-';
+
+                    if (type !== 'display') {
+                        return label;
+                    }
+
+                    const badgeClass = row.status_badge_class || 'bg-secondary';
+                    const baseClass = `badge ${badgeClass} text-bg-secondary`;
+
+                    if (row.invoice_show_url && (row.status || '').toLowerCase() === 'invoiced') {
+                        return `<a href="${row.invoice_show_url}" class="${baseClass}" target="_blank" rel="noopener">${label}</a>`;
+                    }
+
+                    return `<span class="${baseClass}">${label}</span>`;
+                }
+            },
         ],
         order: [[2, 'desc']]
     });
