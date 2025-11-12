@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\ServiceOrder;
 use App\Models\Invoice;
@@ -161,8 +162,37 @@ class InvoiceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Invoice $invoice)
     {
-        //
+        $this->authorize('delete', $invoice);
+
+        if ($invoice->status === Invoice::STATUS_PAID) {
+            return redirect()
+                ->route('web.invoices.show', $invoice->id)
+                ->with('error', 'Invoice yang sudah dibayar tidak bisa dibatalkan.');
+        }
+
+        if ($invoice->status === Invoice::STATUS_CANCELLED) {
+            return redirect()
+                ->route('web.invoices.show', $invoice->id)
+                ->with('error', 'Invoice ini sudah berstatus dibatalkan.');
+        }
+
+        if ($invoice->payments()->exists()) {
+            return redirect()
+                ->route('web.invoices.show', $invoice->id)
+                ->with('error', 'Invoice dengan riwayat pembayaran tidak bisa dibatalkan.');
+        }
+
+        DB::transaction(function () use ($invoice) {
+            if ($invoice->serviceOrder) {
+                $invoice->serviceOrder->update(['status' => ServiceOrder::STATUS_DONE]);
+            }
+            $invoice->update(['status' => Invoice::STATUS_CANCELLED]);
+        });
+
+        return redirect()
+            ->route('web.invoices.show', $invoice->id)
+            ->with('success', 'Invoice berhasil dibatalkan dan akan tetap muncul sebagai arsip.');
     }
 }

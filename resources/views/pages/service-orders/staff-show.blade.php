@@ -159,7 +159,7 @@
                         <h3 class="card-title">Catatan</h3>
                     </div>
                     <div class="card-body">
-                        <h5>Catatan untuk Dikerjakan</h5>
+                        <h5>Catatan Invoice</h5>
                         <p class="text-muted">{{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
                         <h5 class="mt-3">Catatan Internal (untuk Staff)</h5>
                         <p class="text-muted">{{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>

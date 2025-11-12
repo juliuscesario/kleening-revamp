@@ -25,6 +25,16 @@
     </div>
 
     <div class="page-body">
+        @if (session('success'))
+            <div class="alert alert-success mb-3" role="alert">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger mb-3" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="row g-4">
             <div class="col-lg-8">
                 <div class="card">
@@ -38,6 +48,13 @@
                                 @if ($serviceOrder->customer->trashed())
                                     <span class="badge bg-danger text-bg-secondary">Archived</span>
                                 @endif
+                            @else
+                                N/A
+                            @endif
+                        </p>
+                        <p><strong>Nomor Handphone:</strong>
+                            @if ($serviceOrder->customer && $serviceOrder->customer->phone_number)
+                                <a href="tel:{{ $serviceOrder->customer->phone_number }}">{{ $serviceOrder->customer->phone_number }}</a>
                             @else
                                 N/A
                             @endif
@@ -204,7 +221,7 @@
                         <h3 class="card-title">Catatan</h3>
                     </div>
                     <div class="card-body">
-                        <h5>Catatan untuk Dikerjakan</h5>
+                        <h5>Catatan Invoice</h5>
                         <p class="text-muted">{{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
                         <h5 class="mt-3">Catatan Internal (untuk Staff)</h5>
                         <p class="text-muted">{{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>

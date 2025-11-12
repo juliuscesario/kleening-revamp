@@ -93,7 +93,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Catatan untuk Dikerjakan</label>
+                        <label class="form-label">Catatan Invoice</label>
                         <textarea name="work_notes" class="form-control" rows="3"></textarea>
                     </div>
 

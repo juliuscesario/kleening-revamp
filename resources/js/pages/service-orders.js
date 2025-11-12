@@ -16,6 +16,7 @@ $(function() {
         columns: [
             { data: 'so_number', name: 'so_number' },
             { data: 'customer_name', name: 'customer.name' },
+            { data: 'customer_phone', name: 'customer.phone_number', orderable: false },
             { data: 'work_date', name: 'work_date' },
             { data: 'status', name: 'status' },
             { data: 'action', name: 'action', orderable: false, searchable: false }

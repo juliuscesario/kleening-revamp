@@ -14,6 +14,7 @@ class Invoice extends Model
     const STATUS_SENT = 'sent';
     const STATUS_OVERDUE = 'overdue';
     const STATUS_PAID = 'paid';
+    const STATUS_CANCELLED = 'cancelled';
 
     protected $attributes = [
         'status' => self::STATUS_NEW,

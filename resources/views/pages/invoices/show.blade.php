@@ -19,6 +19,19 @@
                     @if($invoice->status === 'sent' || $invoice->status === 'overdue')
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#markAsPaidModal">Make Payment</button>
                     @endif
+                    @if(
+                        strtolower(auth()->user()->role) === 'owner'
+                        && $invoice->status !== \App\Models\Invoice::STATUS_PAID
+                        && $invoice->status !== \App\Models\Invoice::STATUS_CANCELLED
+                    )
+                        <form method="POST" action="{{ route('web.invoices.destroy', $invoice) }}" class="d-inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Yakin ingin membatalkan invoice ini?');">
+                                Cancel Invoice
+                            </button>
+                        </form>
+                    @endif
                     <a href="{{ route('web.invoices.download', $invoice) }}" class="btn btn-primary">Download PDF</a>
                     <a href="{{ route('web.invoices.index') }}" class="btn">Kembali</a>
                 </div>
@@ -28,6 +41,16 @@
 </div>
 <div class="page-body" id="invoice-show-page">
     <div class="container-xl">
+        @if (session('success'))
+            <div class="alert alert-success mb-3" role="alert">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger mb-3" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="card card-lg">
             <div class="card-body">
                 <div class="row">
@@ -39,11 +62,21 @@
                         </address>
                     </div>
                     <div class="col-6 text-end">
+                        @php
+                            $statusBadgeClass = match($invoice->status) {
+                                \App\Models\Invoice::STATUS_NEW => 'bg-primary',
+                                \App\Models\Invoice::STATUS_SENT => 'bg-info',
+                                \App\Models\Invoice::STATUS_OVERDUE => 'bg-warning',
+                                \App\Models\Invoice::STATUS_PAID => 'bg-success',
+                                \App\Models\Invoice::STATUS_CANCELLED => 'bg-secondary',
+                                default => 'bg-dark'
+                            };
+                        @endphp
                         <p class="h3">Invoice</p>
                         <p><strong>Invoice Number:</strong> {{ $invoice->invoice_number }}</p>
                         <p><strong>Issue Date:</strong> {{ $invoice->issue_date }}</p>
                         <p><strong>Due Date:</strong> {{ $invoice->due_date }}</p>
-                        <p><strong>Status:</strong> <span class="badge bg-{{ $invoice->status === 'paid' ? 'success' : 'danger' }} text-bg-secondary">{{ ucfirst($invoice->status) }}</span></p>
+                        <p><strong>Status:</strong> <span class="badge {{ $statusBadgeClass }} text-bg-secondary">{{ ucfirst($invoice->status) }}</span></p>
 
                     </div>
                 </div>

@@ -255,6 +255,11 @@ class DataTablesController extends Controller
                 }
                 return 'N/A';
             })
+            ->addColumn('customer_phone', function ($so) {
+                return $so->customer && $so->customer->phone_number
+                    ? $so->customer->phone_number
+                    : 'N/A';
+            })
             ->editColumn('work_date', function ($so) {
                 return \Carbon\Carbon::parse($so->work_date)->format('d M Y');
             })
@@ -319,11 +324,12 @@ class DataTablesController extends Controller
             ->editColumn('status', function ($invoice) {
                 $statusBadgeClass = '';
                 switch ($invoice->status) {
-                    case 'new': $statusBadgeClass = 'bg-primary'; break;
-                    case 'sent': $statusBadgeClass = 'bg-info'; break;
-                    case 'overdue': $statusBadgeClass = 'bg-warning'; break;
-                    case 'paid': $statusBadgeClass = 'bg-success'; break;
-                    default: $statusBadgeClass = 'bg-secondary'; break;
+                    case \App\Models\Invoice::STATUS_NEW: $statusBadgeClass = 'bg-primary'; break;
+                    case \App\Models\Invoice::STATUS_SENT: $statusBadgeClass = 'bg-info'; break;
+                    case \App\Models\Invoice::STATUS_OVERDUE: $statusBadgeClass = 'bg-warning'; break;
+                    case \App\Models\Invoice::STATUS_PAID: $statusBadgeClass = 'bg-success'; break;
+                    case \App\Models\Invoice::STATUS_CANCELLED: $statusBadgeClass = 'bg-secondary'; break;
+                    default: $statusBadgeClass = 'bg-dark'; break;
                 }
                 return '<span class="badge ' . $statusBadgeClass . ' text-bg-secondary">' . ucfirst($invoice->status) . '</span>';
             })

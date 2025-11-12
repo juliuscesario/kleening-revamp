@@ -49,9 +49,7 @@ class InvoicePolicy
     // Siapa yang boleh hapus invoice?
     public function delete(User $user, Invoice $invoice): bool
     {
-        if ($user->role === 'co_owner') {
-            return $invoice->serviceOrder->address->area_id === $user->area_id;
-        }
-        return in_array($user->role, ['admin']);
+        // Pembatalan invoice dibatasi untuk owner lewat metode before()
+        return false;
     }
 }
