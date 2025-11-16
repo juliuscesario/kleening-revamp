@@ -72,18 +72,16 @@
             border: 1px solid #eee;
             margin-bottom: 10px;
         }
-        .notice {
-            margin-top: 20px;
-            padding: 10px;
-            border-left: 4px solid #0b8043;
-            background-color: #f5f5f5;
-            font-size: 9pt;
-            color: #333;
-        }
-        .leaf-icon {
-            margin-right: 6px;
-            font-size: 12pt;
-            color: #0b8043;
+        .footer-note {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 8pt;
+            color: #555;
+            border-top: 1px solid #ddd;
+            padding-top: 8px;
+            background-color: #fff;
         }
     </style>
 </head>
@@ -209,12 +207,9 @@
             <div style="clear: both;"></div> <!-- Clear floats -->
         </div>
     </div>
-    <div class="notice">
-        <p><span class="leaf-icon">&#127793;</span><strong>Eco Reminder:</strong> This service order is issued digitally—please keep it electronic, avoid printing, and help PT Kilau Elok Indonesia minimize paper waste.</p>
-    </div>
-
-    <div style="position: fixed; bottom: 0; width: 100%; text-align: center;">
-        <p>PT Kilau Elok Indonesia</p>
+    <div class="footer-note">
+        <p><sup>*</sup> This service order is issued digitally—please keep it electronic, avoid printing, and help PT Kilau Elok Indonesia minimize paper waste.</p>
+        <p><strong>PT Kilau Elok Indonesia</strong></p>
     </div>
 </body>
 </html>

@@ -55,18 +55,16 @@
         .sent {
             color: rgba(128, 128, 128, 0.1);
         }
-        .notice {
-            margin-top: 20px;
-            padding: 10px;
-            border-left: 4px solid #0b8043;
-            background-color: #f5f5f5;
-            font-size: 9pt;
-            color: #333;
-        }
-        .leaf-icon {
-            margin-right: 6px;
-            font-size: 12pt;
-            color: #0b8043;
+        .footer-note {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 8pt;
+            color: #555;
+            border-top: 1px solid #ddd;
+            padding-top: 8px;
+            background-color: #fff;
         }
     </style>
 </head>
@@ -199,13 +197,10 @@
         </tfoot>
     </table>
 
-    <div class="notice">
-        <p><strong>Digital Notice:</strong> This invoice is generated automatically by the PT Kilau Elok Indonesia service platform, therefore no physical signature is required.</p>
-        <p><span class="leaf-icon">&#127793;</span><strong>Eco Reminder:</strong> Keep this invoice digital—please avoid printing it to reduce paper waste and help us protect the earth.</p>
-    </div>
-
-    <div style="position: fixed; bottom: 0; width: 100%; text-align: center;">
-        <p>PT Kilau Elok Indonesia</p>
+    <div class="footer-note">
+        <p><sup>*</sup> This invoice is generated automatically by the PT Kilau Elok Indonesia service platform, therefore no physical signature is required.</p>
+        <p><sup>**</sup> Keep this invoice digital—please avoid printing it to reduce paper waste and help us protect the earth.</p>
+        <p><strong>PT Kilau Elok Indonesia</strong></p>
     </div>
 </body>
 </html>
