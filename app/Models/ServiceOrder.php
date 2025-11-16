@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Scopes\AreaScope;
 use App\Models\User; // Import User model
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash; // Import Hash facade
 
 class ServiceOrder extends Model
@@ -32,6 +33,7 @@ class ServiceOrder extends Model
         'customer_id',
         'address_id',
         'work_date',
+        'work_time',
         'status',
         'work_notes',
         'staff_notes',
@@ -150,5 +152,19 @@ class ServiceOrder extends Model
         return $this->hasMany(WorkPhoto::class);
     }
 
-    
+    /**
+     * Format stored work_time into HH:MM (WIB) for display.
+     */
+    public function getWorkTimeFormattedAttribute(): ?string
+    {
+        if (!$this->work_time) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('H:i:s', $this->work_time)->format('H:i');
+        } catch (\Throwable $e) {
+            return $this->work_time;
+        }
+    }
 }

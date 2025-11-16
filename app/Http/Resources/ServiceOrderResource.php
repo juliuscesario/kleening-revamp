@@ -19,6 +19,8 @@ class ServiceOrderResource extends JsonResource
             'id' => $this->id,
             'so_number' => $this->so_number,
             'work_date' => $this->work_date,
+            'work_time' => $this->work_time,
+            'work_time_formatted' => $this->work_time_formatted,
             'status' => $this->status,
             'customer' => new CustomerResource($this->whenLoaded('customer')),
             'address' => new AddressResource($this->whenLoaded('address')),

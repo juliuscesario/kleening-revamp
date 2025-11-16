@@ -40,7 +40,7 @@
                                 <th>SO Number</th>
                                 <th>Customer</th>
                                 <th>Nomor HP</th>
-                                <th>Tanggal Kerja</th>
+                                <th>Tanggal & Waktu (WIB)</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
                             </tr>

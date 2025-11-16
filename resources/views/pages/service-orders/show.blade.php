@@ -80,6 +80,7 @@
                             @endif
                         </p>
                         <p><strong>Tanggal Pengerjaan:</strong> {{ \Carbon\Carbon::parse($serviceOrder->work_date)->format('d M Y') }}</p>
+                        <p><strong>Waktu Pengerjaan (WIB):</strong> {{ $serviceOrder->work_time_formatted ? $serviceOrder->work_time_formatted . ' WIB' : 'Tidak diatur' }}</p>
                         <p><strong>Status:</strong>
                             @php
                                 $statusBadgeClass = '';

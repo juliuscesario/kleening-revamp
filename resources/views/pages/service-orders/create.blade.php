@@ -91,6 +91,20 @@
                             <input type="date" name="work_date" class="form-control" required value="{{ date('Y-m-d') }}">
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Waktu Pengerjaan (WIB)</label>
+                            <input type="text"
+                                name="work_time"
+                                class="form-control js-work-time-input"
+                                inputmode="numeric"
+                                pattern="^([01]\d|2[0-3]):[0-5]\d$"
+                                placeholder="00:00"
+                                required
+                                value="{{ old('work_time', now()->setTimezone('Asia/Jakarta')->format('H:i')) }}">
+                            <small class="form-text text-muted">Masukkan 24 jam (00:00 - 23:59), contoh: 07:30 atau 16:45.</small>
+                        </div>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label">Catatan Invoice</label>

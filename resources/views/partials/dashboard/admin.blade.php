@@ -69,9 +69,14 @@
                     <div class="list-group">
                         @foreach($todaySchedule as $so)
                             <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
                                     <h5 class="mb-1">{{ $so->so_number }}</h5>
-                                    <small>{{ $so->work_date->format('d M Y') }}</small>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-dark">{{ $so->work_date->format('d M Y') }}</div>
+                                        @if($so->work_time_formatted)
+                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        @endif
+                                    </div>
                                 </div>
                                 <p class="mb-1">Pelanggan: {{ $so->customer->name }}</p>
                                 <small>Staff: {{ $so->staff->pluck('name')->join(', ') ?: 'Belum ada' }}</small>

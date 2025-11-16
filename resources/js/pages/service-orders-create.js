@@ -195,6 +195,39 @@ if (form) {
         }
     });
 
+    // --- Work Time Input Formatting ---
+    const formatWorkTime = (value) => {
+        const digits = value.replace(/\D/g, '').slice(0, 4);
+
+        if (digits.length <= 2) {
+            return digits;
+        }
+
+        const hours = digits.slice(0, 2);
+        const minutes = digits.slice(2);
+        return `${hours}:${minutes}`;
+    };
+
+    const enforceWorkTimeFormat = (input) => {
+        input.addEventListener('input', (event) => {
+            const formatted = formatWorkTime(event.target.value);
+            event.target.value = formatted;
+        });
+
+        input.addEventListener('blur', (event) => {
+            const digits = event.target.value.replace(/\D/g, '').slice(0, 4);
+            if (digits.length === 0) {
+                event.target.value = '';
+                return;
+            }
+            const hours = digits.slice(0, 2).padEnd(2, '0');
+            const minutes = digits.slice(2).padEnd(2, '0');
+            event.target.value = `${hours}:${minutes}`;
+        });
+    };
+
+    document.querySelectorAll('.js-work-time-input').forEach(enforceWorkTimeFormat);
+
     // --- Initial Data Fetch ---
     fetchServices();
 }

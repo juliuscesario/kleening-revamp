@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Address; // Add this line
+use Carbon\Carbon;
 
 class ServiceOrderController extends Controller
 {
@@ -79,6 +80,7 @@ class ServiceOrderController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'address_id' => 'required|exists:addresses,id',
             'work_date' => 'required|date',
+            'work_time' => 'required|date_format:H:i',
             'services' => 'required|array|min:1',
             'services.*.service_id' => 'required|exists:services,id',
             'services.*.quantity' => 'required|integer|min:1',
@@ -99,6 +101,7 @@ class ServiceOrderController extends Controller
                 'customer_id' => $request->customer_id,
                 'address_id' => $request->address_id,
                 'work_date' => $request->work_date,
+                'work_time' => Carbon::createFromFormat('H:i', $request->work_time, 'Asia/Jakarta')->format('H:i:s'),
                 'work_notes' => $request->work_notes,
                 'staff_notes' => $request->staff_notes,
                 'status' => 'booked',
@@ -176,6 +179,7 @@ class ServiceOrderController extends Controller
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
             'status' => 'required|in:booked,proses,done,cancelled,invoiced',
+            'work_time' => 'sometimes|required|date_format:H:i',
             'services' => 'sometimes|array|min:1',
             'services.*.service_id' => 'sometimes|exists:services,id',
             'services.*.quantity' => 'sometimes|integer|min:1',
@@ -199,6 +203,9 @@ class ServiceOrderController extends Controller
             $serviceOrder->work_notes = $request->work_notes;
             $serviceOrder->staff_notes = $request->staff_notes;
             $serviceOrder->status = $newStatus;
+            if ($request->has('work_time')) {
+                $serviceOrder->work_time = Carbon::createFromFormat('H:i', $request->work_time, 'Asia/Jakarta')->format('H:i:s');
+            }
 
             if ($newStatus === ServiceOrder::STATUS_DONE) {
                 $serviceOrder->work_proof_completed_at = now();

@@ -261,7 +261,12 @@ class DataTablesController extends Controller
                     : 'N/A';
             })
             ->editColumn('work_date', function ($so) {
-                return \Carbon\Carbon::parse($so->work_date)->format('d M Y');
+                $date = $so->work_date instanceof Carbon
+                    ? $so->work_date
+                    : Carbon::parse($so->work_date);
+                $timeLabel = $so->work_time_formatted ? $so->work_time_formatted . ' WIB' : null;
+
+                return trim($date->format('d M Y') . ($timeLabel ? ' • ' . $timeLabel : ''));
             })
             ->orderColumn('work_date', function ($query, $order) {
                 $query->orderBy('work_date', $order);

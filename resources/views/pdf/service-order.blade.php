@@ -111,6 +111,7 @@
             @endif
         </p>
         <p><strong>Work Date:</strong> {{ \Carbon\Carbon::parse($serviceOrder->work_date)->format('d M Y') }}</p>
+        <p><strong>Work Time (WIB):</strong> {{ $serviceOrder->work_time_formatted ? $serviceOrder->work_time_formatted . ' WIB' : 'N/A' }}</p>
         <p><strong>Status:</strong>
             @php
                 $statusBadgeClass = '';

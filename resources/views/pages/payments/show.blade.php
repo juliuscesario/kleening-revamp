@@ -108,7 +108,9 @@
                                     <span class="badge bg-primary text-bg-primary">{{ ucfirst($serviceOrder->status) }}</span>
                                 </dd>
                                 <dt class="col-5 col-sm-4">Work Date</dt>
-                                <dd class="col-7 col-sm-8">{{ $serviceOrder->work_date ?? '-' }}</dd>
+                                <dd class="col-7 col-sm-8">{{ $serviceOrder->work_date ? \Carbon\Carbon::parse($serviceOrder->work_date)->format('d M Y') : '-' }}</dd>
+                                <dt class="col-5 col-sm-4">Work Time (WIB)</dt>
+                                <dd class="col-7 col-sm-8">{{ $serviceOrder->work_time_formatted ? $serviceOrder->work_time_formatted . ' WIB' : '-' }}</dd>
                                 <dt class="col-5 col-sm-4">Customer</dt>
                                 <dd class="col-7 col-sm-8">{{ $serviceOrder->customer?->name ?? '-' }}</dd>
                                 <dt class="col-5 col-sm-4">Address</dt>

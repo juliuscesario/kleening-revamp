@@ -13,6 +13,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Staff; // Import Staff model
 use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Carbon\Carbon;
 
 class ServiceOrderController extends Controller
 {
@@ -41,6 +42,7 @@ class ServiceOrderController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'address_id' => 'required|exists:addresses,id',
             'work_date' => 'required|date',
+            'work_time' => 'required|date_format:H:i',
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
             'items' => 'sometimes|array|min:1',
@@ -58,6 +60,7 @@ class ServiceOrderController extends Controller
                 'customer_id' => $validated['customer_id'],
                 'address_id' => $validated['address_id'],
                 'work_date' => $validated['work_date'],
+                'work_time' => Carbon::createFromFormat('H:i', $validated['work_time'], 'Asia/Jakarta')->format('H:i:s'),
                 'work_notes' => $validated['work_notes'] ?? null,
                 'staff_notes' => $validated['staff_notes'] ?? null,
                 'so_number' => 'SO-' . time(), // Nanti bisa dibuat lebih canggih
@@ -113,6 +116,7 @@ class ServiceOrderController extends Controller
             'customer_id' => 'sometimes|required|exists:customers,id',
             'address_id' => 'sometimes|required|exists:addresses,id',
             'work_date' => 'sometimes|required|date',
+            'work_time' => 'sometimes|required|date_format:H:i',
             'status' => ['sometimes', 'required', 'string', Rule::in([ServiceOrder::STATUS_BOOKED, ServiceOrder::STATUS_PROSES, ServiceOrder::STATUS_CANCELLED, ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])],
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
@@ -140,6 +144,10 @@ class ServiceOrderController extends Controller
             }
         }
         // --- End Status Transition Logic ---
+
+        if (isset($validated['work_time'])) {
+            $validated['work_time'] = Carbon::createFromFormat('H:i', $validated['work_time'], 'Asia/Jakarta')->format('H:i:s');
+        }
 
         $updatedServiceOrder = DB::transaction(function () use ($validated, $serviceOrder, $newStatus) {
             // 1. Update data utama Service Order

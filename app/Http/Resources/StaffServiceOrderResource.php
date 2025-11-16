@@ -18,6 +18,8 @@ class StaffServiceOrderResource extends JsonResource
             'id' => $this->id,
             'so_number' => $this->so_number,
             'work_date' => $this->work_date,
+            'work_time' => $this->work_time,
+            'work_time_formatted' => $this->work_time_formatted,
             'status' => $this->status,
             'items' => ServiceOrderItemResource::collection($this->whenLoaded('items'))->map(function ($item) {
                 return [

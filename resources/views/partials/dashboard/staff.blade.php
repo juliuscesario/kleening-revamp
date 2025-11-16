@@ -97,15 +97,22 @@
                 @else
                     <div class="list-group">
                         @foreach($todayServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action flex-column align-items-start">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">{{ $so->so_number }}</h5>
-                                    <div>
-                                        <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white me-1">{{ ucfirst($so->status) }}</span>
-                                        <small class="text-muted">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</small>
+                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
+                                    <div class="flex-grow-1 order-2 order-sm-1">
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
+                                            <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
+                                        </div>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                    </div>
+                                    <div class="order-1 order-sm-2 text-sm-end">
+                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        @if($so->work_time_formatted)
+                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        @endif
                                     </div>
                                 </div>
-                                <p class="mb-1">Pelanggan: {{ $so->customer->name }}</p>
                             </a>
                         @endforeach
                     </div>
@@ -126,15 +133,22 @@
                 @else
                     <div class="list-group">
                         @foreach($tomorrowServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action flex-column align-items-start">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">{{ $so->so_number }}</h5>
-                                    <div>
-                                        <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white me-1">{{ ucfirst($so->status) }}</span>
-                                        <small class="text-muted">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</small>
+                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
+                                    <div class="flex-grow-1 order-2 order-sm-1">
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
+                                            <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
+                                        </div>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                    </div>
+                                    <div class="order-1 order-sm-2 text-sm-end">
+                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        @if($so->work_time_formatted)
+                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        @endif
                                     </div>
                                 </div>
-                                <p class="mb-1">Pelanggan: {{ $so->customer->name }}</p>
                             </a>
                         @endforeach
                     </div>
@@ -155,15 +169,22 @@
                 @else
                     <div class="list-group">
                         @foreach($pastServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action flex-column align-items-start">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">{{ $so->so_number }}</h5>
-                                    <div>
-                                        <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white me-1">{{ ucfirst($so->status) }}</span>
-                                        <small class="text-muted">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</small>
+                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
+                                    <div class="flex-grow-1 order-2 order-sm-1">
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
+                                            <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
+                                        </div>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                    </div>
+                                    <div class="order-1 order-sm-2 text-sm-end">
+                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        @if($so->work_time_formatted)
+                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        @endif
                                     </div>
                                 </div>
-                                <p class="mb-1">Pelanggan: {{ $so->customer->name }}</p>
                             </a>
                         @endforeach
                     </div>
@@ -187,12 +208,22 @@
                 @else
                     <div class="list-group">
                         @foreach($doneServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action flex-column align-items-start">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">{{ $so->so_number }}</h5>
-                                    <small class="text-muted">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</small>
+                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
+                                    <div class="flex-grow-1 order-2 order-sm-1">
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
+                                            <span class="badge bg-success text-white">Done</span>
+                                        </div>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                    </div>
+                                    <div class="order-1 order-sm-2 text-sm-end">
+                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        @if($so->work_time_formatted)
+                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        @endif
+                                    </div>
                                 </div>
-                                <p class="mb-1">Pelanggan: {{ $so->customer->name }}</p>
                             </a>
                         @endforeach
                     </div>
@@ -217,12 +248,22 @@
                 @else
                     <div class="list-group">
                         @foreach($cancelledServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action flex-column align-items-start">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">{{ $so->so_number }}</h5>
-                                    <small class="text-muted">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</small>
+                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
+                                    <div class="flex-grow-1 order-2 order-sm-1">
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
+                                            <span class="badge bg-secondary text-white">Cancelled</span>
+                                        </div>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                    </div>
+                                    <div class="order-1 order-sm-2 text-sm-end">
+                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        @if($so->work_time_formatted)
+                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        @endif
+                                    </div>
                                 </div>
-                                <p class="mb-1">Pelanggan: {{ $so->customer->name }}</p>
                             </a>
                         @endforeach
                     </div>

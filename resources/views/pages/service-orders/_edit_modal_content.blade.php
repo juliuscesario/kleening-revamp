@@ -31,6 +31,19 @@
         </div>
 
         <div class="mb-3">
+            <label class="form-label">Waktu Pengerjaan (WIB)</label>
+            <input type="text"
+                name="work_time"
+                class="form-control js-work-time-input"
+                inputmode="numeric"
+                pattern="^([01]\d|2[0-3]):[0-5]\d$"
+                placeholder="00:00"
+                required
+                value="{{ old('work_time', $serviceOrder->work_time_formatted) }}">
+            <small class="form-text text-muted">Gunakan format 24 jam, contoh 09:15 atau 18:30.</small>
+        </div>
+
+        <div class="mb-3">
             <label class="form-label">Ordered Services</label>
             <div id="service-items-container">
                 @foreach($serviceOrder->items as $item)
@@ -75,6 +88,33 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const formatWorkTime = (value) => {
+            const digits = value.replace(/\D/g, '').slice(0, 4);
+            if (digits.length <= 2) {
+                return digits;
+            }
+            return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+        };
+
+        const enforceWorkTimeFormat = (input) => {
+            input.addEventListener('input', (event) => {
+                event.target.value = formatWorkTime(event.target.value);
+            });
+
+            input.addEventListener('blur', (event) => {
+                const digits = event.target.value.replace(/\D/g, '').slice(0, 4);
+                if (!digits.length) {
+                    event.target.value = '';
+                    return;
+                }
+                const hours = digits.slice(0, 2).padEnd(2, '0');
+                const minutes = digits.slice(2).padEnd(2, '0');
+                event.target.value = `${hours}:${minutes}`;
+            });
+        };
+
+        document.querySelectorAll('.js-work-time-input').forEach(enforceWorkTimeFormat);
+
         const addServiceItemButton = document.getElementById('add-service-item');
         if (addServiceItemButton) {
             // Service Items
