@@ -116,7 +116,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Transport Fee</label>
-                                <input type="number" class="form-control" id="transport_fee" name="transport_fee" value="0" readonly>
+                                <input type="number" class="form-control" id="transport_fee" name="transport_fee" value="0">
                                 <div class="btn-group mt-2">
                                     <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn active" data-fee="0">No Fee</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn" data-fee="25000">25K</button>
@@ -283,6 +283,12 @@ document.addEventListener("DOMContentLoaded", function() {
             setActiveTransportFeeButton(selectedFee);
             calculateTotals();
         });
+    });
+
+    transportFeeElement.addEventListener('input', function() {
+        const manualFee = parseInt(this.value, 10) || 0;
+        setActiveTransportFeeButton(manualFee);
+        calculateTotals();
     });
 
     setActiveTransportFeeButton(parseInt(transportFeeElement.value, 10) || 0);
