@@ -7,9 +7,12 @@ use App\Models\Area;
 use App\Models\Customer;
 use App\Models\Service;
 use App\Models\Staff;
+use App\Models\ServiceOrder;
+use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\DataTables; // Add this import
+use Carbon\Carbon;
 
 class JsonDataController extends Controller
 {
@@ -41,5 +44,61 @@ class JsonDataController extends Controller
         }
 
         return $query->get();
+    }
+
+    public function customerPendingServiceOrders(Customer $customer)
+    {
+        $activeStatuses = [
+            ServiceOrder::STATUS_BOOKED,
+            ServiceOrder::STATUS_PROSES,
+        ];
+
+        $pendingOrders = $customer->serviceOrders()
+            ->whereIn('status', $activeStatuses)
+            ->select(['id', 'so_number', 'status', 'work_date'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'so_number' => $order->so_number,
+                    'status' => $order->status,
+                    'work_date' => optional($order->work_date)->toDateString(),
+                ];
+            });
+
+        $now = Carbon::now();
+
+        $overdueInvoices = $customer->invoices()
+            ->whereNotIn('invoices.status', [Invoice::STATUS_PAID, Invoice::STATUS_CANCELLED])
+            ->whereDate('invoices.due_date', '<', $now)
+            ->select([
+                'invoices.id',
+                'invoices.invoice_number',
+                'invoices.status',
+                'invoices.due_date',
+            ])
+            ->orderBy('invoices.due_date', 'asc')
+            ->get()
+            ->map(function ($invoice) use ($now) {
+                $dueDate = $invoice->due_date ? Carbon::parse($invoice->due_date) : null;
+
+                return [
+                    'id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'status' => $invoice->status,
+                    'due_date' => optional($dueDate)->toDateString(),
+                    'overdue_days' => $dueDate ? $dueDate->diffInDays($now) : null,
+                ];
+            });
+
+        return response()->json([
+            'has_pending' => $pendingOrders->isNotEmpty(),
+            'pending_count' => $pendingOrders->count(),
+            'orders' => $pendingOrders,
+            'has_overdue_invoices' => $overdueInvoices->isNotEmpty(),
+            'overdue_invoice_count' => $overdueInvoices->count(),
+            'overdue_invoices' => $overdueInvoices,
+        ]);
     }
 }

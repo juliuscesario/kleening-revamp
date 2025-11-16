@@ -18,18 +18,67 @@ if (form) {
     const addStaffBtn = document.getElementById('add-staff-member');
     const staffContainer = document.getElementById('staff-container');
 
+    // --- URLs ---
+    const customersUrl = form.dataset.customersUrl;
+    const servicesUrl = form.dataset.servicesUrl;
+    const addressesUrlTemplate = form.dataset.addressesUrlTemplate;
+    const staffByAreaUrlTemplate = form.dataset.staffByAreaUrlTemplate;
+    const pendingCheckUrlTemplate = form.dataset.pendingCheckUrlTemplate;
+
     // --- State ---
     let allServices = [];
     let availableStaff = [];
     let serviceItemCount = 0;
     let staffMemberCount = 0;
     let debounceTimer;
+    let isSubmitting = false;
 
-    // --- URLs ---
-    const customersUrl = form.dataset.customersUrl;
-    const servicesUrl = form.dataset.servicesUrl;
-    const addressesUrlTemplate = form.dataset.addressesUrlTemplate;
-    const staffByAreaUrlTemplate = form.dataset.staffByAreaUrlTemplate;
+    const showWarning = (messageOrOptions) => {
+        const options = typeof messageOrOptions === 'string'
+            ? { text: messageOrOptions }
+            : (messageOrOptions || {});
+
+        const {
+            title = 'Peringatan',
+            text = '',
+            html = '',
+        } = options;
+
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            Swal.fire({
+                icon: 'warning',
+                title,
+                ...(html ? { html } : { text: text || 'Terjadi peringatan.' }),
+            });
+        } else {
+            const fallbackMessage = text || (html ? html.replace(/<[^>]+>/g, '') : 'Terjadi peringatan.');
+            alert(fallbackMessage);
+        }
+    };
+
+    const buildBlockingHtml = (status) => {
+        if (!status) {
+            return '';
+        }
+
+        const sections = [];
+
+        if (status.has_pending && Array.isArray(status.orders) && status.orders.length > 0) {
+            const items = status.orders.map((order) => `<li><strong>${order.so_number}</strong> &mdash; status: ${order.status}</li>`).join('');
+            sections.push(`<p>Customer masih memiliki Service Order aktif:</p><ul>${items}</ul>`);
+        }
+
+        if (status.has_overdue_invoices && Array.isArray(status.overdue_invoices) && status.overdue_invoices.length > 0) {
+            const invoices = status.overdue_invoices.map((invoice) => {
+                const overdueDays = typeof invoice.overdue_days === 'number' ? `${invoice.overdue_days} hari` : '-';
+                const dueDateLabel = invoice.due_date || '-';
+                return `<li><strong>${invoice.invoice_number}</strong> &mdash; jatuh tempo ${dueDateLabel} (${overdueDays} terlambat)</li>`;
+            }).join('');
+            sections.push(`<p>Customer memiliki Invoice tertunggak:</p><ul>${invoices}</ul>`);
+        }
+
+        return sections.join('<hr>');
+    };
 
     // --- Debounce Utility ---
     const debounce = (func, delay) => {
@@ -227,6 +276,59 @@ if (form) {
     };
 
     document.querySelectorAll('.js-work-time-input').forEach(enforceWorkTimeFormat);
+
+    const checkPendingServiceOrder = async (customerId) => {
+        if (!pendingCheckUrlTemplate || !customerId) {
+            return { has_pending: false };
+        }
+
+        const url = pendingCheckUrlTemplate.replace('__CUSTOMER_ID__', customerId);
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch pending Service Order status');
+        }
+
+        return response.json();
+    };
+
+    form.addEventListener('submit', async (event) => {
+        if (isSubmitting) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const customerId = customerIdInput.value;
+
+        if (!customerId) {
+            showWarning('Silakan pilih customer terlebih dahulu.');
+            return;
+        }
+
+        try {
+            const pendingStatus = await checkPendingServiceOrder(customerId);
+            const hasBlockingIssues = pendingStatus.has_pending || pendingStatus.has_overdue_invoices;
+
+            if (hasBlockingIssues) {
+                const html = buildBlockingHtml(pendingStatus);
+                showWarning({
+                    html: html || 'Customer masih memiliki kewajiban yang harus diselesaikan sebelum membuat pesanan baru.',
+                });
+                return;
+            }
+
+            isSubmitting = true;
+            form.submit();
+        } catch (error) {
+            console.error('Pending Service Order validation failed', error);
+            showWarning('Gagal memvalidasi status Service Order customer. Silakan coba lagi.');
+        }
+    });
 
     // --- Initial Data Fetch ---
     fetchServices();

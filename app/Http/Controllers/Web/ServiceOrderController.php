@@ -8,6 +8,7 @@ use App\Models\Service;
 use App\Models\Staff;
 use App\Models\ServiceOrder;
 use App\Models\ServiceOrderItem;
+use App\Models\Invoice;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -94,6 +95,38 @@ class ServiceOrderController extends Controller
         $address = Address::findOrFail($request->address_id);
         if ($user->role === 'co_owner' && $user->area_id !== $address->area_id) {
             abort(403, 'Anda tidak diizinkan membuat pesanan untuk area ini.');
+        }
+
+        $hasPendingServiceOrder = ServiceOrder::where('customer_id', $request->customer_id)
+            ->whereNotIn('status', [
+                ServiceOrder::STATUS_DONE,
+                ServiceOrder::STATUS_CANCELLED,
+                ServiceOrder::STATUS_INVOICED,
+            ])
+            ->exists();
+
+        $hasOverdueInvoice = Invoice::whereHas('serviceOrder', function ($query) use ($request) {
+                $query->where('customer_id', $request->customer_id);
+            })
+            ->whereNotIn('status', [Invoice::STATUS_PAID, Invoice::STATUS_CANCELLED])
+            ->whereDate('due_date', '<', now())
+            ->exists();
+
+        $blockingMessages = [];
+
+        if ($hasPendingServiceOrder) {
+            $blockingMessages[] = 'Customer masih memiliki Service Order yang harus diselesaikan terlebih dahulu.';
+        }
+
+        if ($hasOverdueInvoice) {
+            $blockingMessages[] = 'Customer memiliki invoice tertunggak yang harus dibayar terlebih dahulu.';
+        }
+
+        if (!empty($blockingMessages)) {
+            return redirect()
+                ->back()
+                ->withErrors(['customer_id' => $blockingMessages])
+                ->withInput();
         }
 
         $serviceOrder = DB::transaction(function () use ($request, $user) {

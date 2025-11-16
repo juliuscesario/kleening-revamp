@@ -60,6 +60,7 @@
                 data-addresses-url-template="{{ route('data.customers.addresses', ['customer' => '__CUSTOMER_ID__']) }}"
                 data-services-url="{{ route('data.services') }}"
                 data-staff-by-area-url-template="{{ route('data.staff.by-area', ['area' => '__AREA_ID__']) }}"
+                data-pending-check-url-template="{{ route('data.customers.pending-service-orders', ['customer' => '__CUSTOMER_ID__']) }}"
             >
                 @csrf
                 <div class="card-body">
