@@ -55,6 +55,19 @@
         .sent {
             color: rgba(128, 128, 128, 0.1);
         }
+        .notice {
+            margin-top: 20px;
+            padding: 10px;
+            border-left: 4px solid #0b8043;
+            background-color: #f5f5f5;
+            font-size: 9pt;
+            color: #333;
+        }
+        .leaf-icon {
+            margin-right: 6px;
+            font-size: 12pt;
+            color: #0b8043;
+        }
     </style>
 </head>
 <body>
@@ -76,7 +89,7 @@
     <div class="info-block">
         <p><strong>Customer:</strong>
             @if ($invoice->serviceOrder->customer)
-                {{ $invoice->serviceOrder->customer->name }}
+                {{ \Illuminate\Support\Str::title($invoice->serviceOrder->customer->name) }}
                 @if ($invoice->serviceOrder->customer->trashed())
                     <span class="badge-danger">Archived</span>
                 @endif
@@ -86,7 +99,7 @@
         </p>
         <p><strong>Address:</strong>
             @if ($invoice->serviceOrder->address)
-                {{ $invoice->serviceOrder->address->full_address }}
+                {{ \Illuminate\Support\Str::title($invoice->serviceOrder->address->full_address) }}
                 @if ($invoice->serviceOrder->address->trashed())
                     <span class="badge-danger">Archived</span>
                 @endif
@@ -185,6 +198,11 @@
             </tr>
         </tfoot>
     </table>
+
+    <div class="notice">
+        <p><strong>Digital Notice:</strong> This invoice is generated automatically by the PT Kilau Elok Indonesia service platform, therefore no physical signature is required.</p>
+        <p><span class="leaf-icon">&#127793;</span><strong>Eco Reminder:</strong> Keep this invoice digital—please avoid printing it to reduce paper waste and help us protect the earth.</p>
+    </div>
 
     <div style="position: fixed; bottom: 0; width: 100%; text-align: center;">
         <p>PT Kilau Elok Indonesia</p>

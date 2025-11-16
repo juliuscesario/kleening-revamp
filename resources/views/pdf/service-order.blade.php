@@ -72,6 +72,19 @@
             border: 1px solid #eee;
             margin-bottom: 10px;
         }
+        .notice {
+            margin-top: 20px;
+            padding: 10px;
+            border-left: 4px solid #0b8043;
+            background-color: #f5f5f5;
+            font-size: 9pt;
+            color: #333;
+        }
+        .leaf-icon {
+            margin-right: 6px;
+            font-size: 12pt;
+            color: #0b8043;
+        }
     </style>
 </head>
 <body>
@@ -85,7 +98,7 @@
     <div class="info-block">
         <p><strong>Customer:</strong>
             @if ($serviceOrder->customer)
-                {{ $serviceOrder->customer->name }}
+                {{ \Illuminate\Support\Str::title($serviceOrder->customer->name) }}
                 @if ($serviceOrder->customer->trashed())
                     <span class="badge-danger">Archived</span>
                 @endif
@@ -95,7 +108,7 @@
         </p>
         <p><strong>Address:</strong>
             @if ($serviceOrder->address)
-                {{ $serviceOrder->address->full_address }}
+                {{ \Illuminate\Support\Str::title($serviceOrder->address->full_address) }}
                 @if ($serviceOrder->address->trashed())
                     <span class="badge-danger">Archived</span>
                 @endif
@@ -176,7 +189,7 @@
             @if($serviceOrder->customer_signature_image)
                 <div style="width: 30%; float: left; text-align: center; margin-bottom: 20px;">
                     <p>Customer Signature: <br/>
-                    {{ $serviceOrder->customer->name }}</p>
+                    {{ \Illuminate\Support\Str::title($serviceOrder->customer->name) }}</p>
                     <div class="signature-box">
                         <img src="{{ $serviceOrder->customer_signature_image }}" alt="Customer Signature" style="max-height: 80px;">
                     </div>
@@ -196,6 +209,10 @@
             <div style="clear: both;"></div> <!-- Clear floats -->
         </div>
     </div>
+    <div class="notice">
+        <p><span class="leaf-icon">&#127793;</span><strong>Eco Reminder:</strong> This service order is issued digitally—please keep it electronic, avoid printing, and help PT Kilau Elok Indonesia minimize paper waste.</p>
+    </div>
+
     <div style="position: fixed; bottom: 0; width: 100%; text-align: center;">
         <p>PT Kilau Elok Indonesia</p>
     </div>
