@@ -241,9 +241,31 @@ class DataTablesController extends Controller
             $query->where('status', $request->status);
         }
 
+        $startDate = $request->input('start_date');
+        $startTime = $request->input('start_time') ?: null;
+        $endDate = $request->input('end_date');
+        $endTime = $request->input('end_time') ?: null;
+
+        if ($startDate) {
+            $startDateTime = Carbon::parse($startDate . ' ' . ($startTime ?? '00:00'));
+            $query->whereRaw(
+                "(work_date + COALESCE(work_time, '00:00:00'::time)) >= ?",
+                [$startDateTime->format('Y-m-d H:i:s')]
+            );
+        }
+
+        if ($endDate) {
+            $endDateTime = Carbon::parse($endDate . ' ' . ($endTime ?? '23:59'));
+            $query->whereRaw(
+                "(work_date + COALESCE(work_time, '23:59:59'::time)) <= ?",
+                [$endDateTime->format('Y-m-d H:i:s')]
+            );
+        }
+
         return DataTables::of($query)
             ->order(function ($query) {
-                $query->orderBy('work_date', 'desc');
+                $query->orderBy('work_date', 'desc')
+                      ->orderByRaw("COALESCE(work_time, '23:59:59'::time) asc");
             })
             ->addColumn('customer_name', function ($so) {
                 if ($so->customer) {
@@ -269,7 +291,8 @@ class DataTablesController extends Controller
                 return trim($date->format('d M Y') . ($timeLabel ? ' • ' . $timeLabel : ''));
             })
             ->orderColumn('work_date', function ($query, $order) {
-                $query->orderBy('work_date', $order);
+                $query->orderBy('work_date', $order)
+                      ->orderByRaw("COALESCE(work_time, '23:59:59'::time) asc");
             })
             ->orderColumn('status', function ($query, $order) {
                 $query->orderBy('status', $order);
