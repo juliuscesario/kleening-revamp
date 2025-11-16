@@ -33,7 +33,7 @@
                         <tbody>
                             @foreach($invoices as $invoice)
                             <tr>
-                                <td><a href="http://kleening-revamp.test/invoices/{{ $invoice->id }}">{{ $invoice->invoice_number }}</a></td>
+                                <td><a href="{{ route('web.invoices.show', $invoice) }}">{{ $invoice->invoice_number }}</a></td>
                                 <td>{{ $invoice->serviceOrder->customer->name ?? 'N/A' }}</td>
                                 <td>Rp {{ number_format($invoice->grand_total, 0, ',', '.') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($invoice->due_date)->format('d M Y') }}</td>
