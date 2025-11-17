@@ -1,61 +1,120 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Kleening Revamp
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi internal untuk mengelola operasional bisnis jasa kebersihan Kleening.id. Seluruh alur — mulai dari pemesanan, penjadwalan tim, pembuktian kerja, sampai penagihan dan pelaporan — dipusatkan dalam satu platform berbasis Laravel 12 yang berjalan di atas PHP 8.3 (FPM), PostgreSQL, dan NGINX.
 
-## About Laravel
+## Gambaran Singkat
+- **Model operasional:** pelanggan memesan layanan, admin mengatur jadwal dan tim, staf di lapangan mengunggah bukti kedatangan & hasil kerja, lalu sistem menagih, memantau pembayaran, dan menyiapkan laporan kinerja.
+- **Audiens utama:** admin/owner, staf lapangan, serta pelanggan (melalui portal self-service yang sedang dipersiapkan).
+- **Tujuan bisnis:** meningkatkan transparansi pekerjaan, mempercepat proses penagihan, dan menyediakan data real-time untuk pengambilan keputusan.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Arsitektur & Teknologi
+| Lapisan | Detail |
+| --- | --- |
+| Server web | NGINX sebagai reverse proxy, meneruskan request ke PHP-FPM 8.3 |
+| Backend | Laravel 12 dengan struktur monolitik modular (Controllers, Services, Events, Notifications) |
+| Database | PostgreSQL sebagai sumber data tunggal (service order, invoice, attendance, laporan) |
+| Frontend | Blade + Tabler UI, Alpine.js untuk interaksi ringan, TailwindCSS melalui Vite |
+| Build tools | Vite untuk asset bundling, PostCSS, Tailwind config, Laravel Vite Plugin |
+| Background jobs | Laravel Scheduler + Queue (perintah artisan sudah disiapkan pada `composer.json`) |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fungsi Utama Aplikasi
+### 1. Manajemen Service Order
+- Mencatat booking layanan, alamat, tenant/owner, tim yang ditugaskan, serta status pekerjaan.
+- Otomatis membatalkan order dengan status `booked` yang lebih dari 7 hari (melalui scheduler `service-orders:auto-cancel-old`).
+- Menyimpan dokumentasi lapangan (foto sebelum/sesudah, bukti kedatangan) untuk kontrol kualitas.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 2. Penagihan, Pembayaran, dan Kolektabilitas
+- Membuat invoice berdasarkan service order, mengatur termin & due date, serta memantau status (`draft`, `sent`, `unpaid`, `paid`, `overdue`).
+- Scheduler `invoices:mark-overdue` secara otomatis mengubah status invoice yang melewati jatuh tempo.
+- Integrasi PDF (DOMPDF) untuk mencetak invoice dan rencana integrasi pembayaran Midtrans + pengiriman WhatsApp (lihat bagian “Rencana Integrasi”).
 
-## Learning Laravel
+### 3. Sistem Notifikasi & Komunikasi
+- Event-driven notification: perubahan status Service Order (`invoiced`, `done`) dan Invoice (`paid`, `overdue`) memicu notifikasi ke Customer, Owner, Co-owner, dan Admin.
+- API notifikasi (bell icon di header admin) untuk membaca/menghapus notifikasi secara real-time.
+- Rencana menambahkan push WhatsApp via Taptalk API dan reminder otomatis lainnya.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 4. Pelaporan & Analitik
+Didukung oleh rencana “Advanced Reports”:
+- **Profitability Report:** analisis revenue, cost, dan profit tiap layanan serta area.
+- **Staff Utilization Report:** menghitung durasi kerja aktual per staf berdasarkan foto `arrival` dan cap `work_proof_completed_at`.
+- **Invoice Aging Report:** membagi invoice berdasarkan bucket keterlambatan.
+- **Customer Retention & Cohort:** mengukur retensi dan repeat order antar cohort pelanggan.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 5. Operasional Lapangan & Absensi
+- Modul absensi internal: clock-in/out dengan pelacakan geolokasi (`lat`, `lng`, akurasi), fallback selfie + catatan bila GPS gagal.
+- Owner dapat menetapkan geofence, menyetujui entri di luar radius, melihat dashboard real-time, serta mengekspor rekap periode.
+- Notifikasi untuk clock-out yang terlewat dan antrean persetujuan.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 6. Portal Pelanggan & Customer Success (Dalam Proses)
+- Portal registrasi, manajemen alamat, dan pemilihan layanan mandiri.
+- Loyalty program, automated re-engagement, serta dashboard poin pelanggan (berdasarkan dokumen `future.md`).
 
-## Laravel Sponsors
+### 7. Integrasi & Automasi (Rencana)
+- **WhatsApp (Taptalk):** kirim invoice berbentuk PDF dan tandai status “Sent”.
+- **Payment Gateway Midtrans:** menghasilkan tombol bayar/VA dinamis lengkap dengan webhook update status invoice.
+- **Expense & Commission Module:** menghitung komisi otomatis per staf dan pencatatan beban operasional agar dashboard menunjukkan P&L riil.
+- **Scheduler tambahan:** reminder upload foto, kampanye re-engagement, dan fitur OTP lainnya mengikuti dokumen `addon.md` & `future.md`.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Dependensi & Paket
+### Backend (Composer)
+| Paket | Fungsi |
+| --- | --- |
+| `laravel/framework` ^12.0 | Kerangka backend utama |
+| `laravel/sanctum` ^4.2 | Autentikasi berbasis token/API untuk modul pelanggan & integrasi |
+| `laravel/tinker` ^2.10 | Konsol debugging |
+| `barryvdh/laravel-dompdf` ^3.1 | Render PDF invoice & laporan |
+| `spatie/image` ^3.8 | Optimasi & manipulasi gambar (bukti pekerjaan, selfie fallback) |
+| `yajra/laravel-datatables-oracle` ^12.4 | Server-side processing untuk tabel data besar |
 
-### Premium Partners
+**Dependensi pengembangan:** Breeze (starter auth), Sail (opsional dockerized), Pint (formatter), Pail (log viewer real-time), PHPUnit & Mockery untuk testing.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Frontend (Node/Vite)
+| Paket | Fungsi |
+| --- | --- |
+| `laravel-vite-plugin`, `vite`, `@tailwindcss/vite`, `postcss`, `autoprefixer` | Pipeline build asset |
+| `tailwindcss`, `@tailwindcss/forms` | Utility-first styling dan UI form |
+| `alpinejs` | Interaksi ringan di Blade |
+| `@tabler/core` | Komponen UI dashboard |
+| `axios` | HTTP client |
+| `apexcharts` | Visualisasi laporan |
+| `datatables.net-bs5`, `datatables.net-responsive-bs5`, `jquery` | Tabel interaktif |
+| `select2`, `sweetalert2`, `toastr` | Komponen UX tambahan (select, modal alert, toast) |
+| `concurrently` | Jalankan beberapa proses dev (`php artisan serve`, queue listener, Vite) lewat satu perintah |
 
-## Contributing
+## Kebutuhan Sistem
+- PHP 8.3 (FPM) + ekstensi standar Laravel (pgsql, mbstring, bcmath, intl, gd/imagemagick, redis bila dipakai queue).
+- Composer 2.x.
+- PostgreSQL 13+.
+- Node.js 20 LTS & npm 10+.
+- NGINX atau reverse proxy ekuivalen, dengan izin tulis ke direktori `storage/` & `bootstrap/cache/`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Setup Lokal
+1. **Salin konfigurasi:** `cp .env.example .env`, lalu set `APP_KEY`, `APP_URL`, kredensial PostgreSQL, storage driver, dan informasi mail.
+2. **Instal dependensi:** `composer install` dan `npm install`.
+3. **Siapkan database:** `php artisan migrate --seed` jika seed tersedia.
+4. **Bangun asset:** `npm run dev` (hot reload) atau `npm run build` untuk produksi.
+5. **Jalankan aplikasi:** `php artisan serve` atau gunakan NGINX -> PHP-FPM; jalankan queue listener `php artisan queue:listen --tries=1`.
+6. **Scheduler:** tambahkan cron `* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1`.
 
-## Code of Conduct
+## Konfigurasi Penting
+- **Database & Storage:** PostgreSQL sebagai DB utama; gunakan `FILESYSTEM_DISK=public` agar bukti kerja dapat diakses melalui `storage:link`.
+- **Mail & Notification:** Siapkan SMTP/Mail provider agar notifikasi invoice & reminder terkirim; untuk WhatsApp & Midtrans sediakan variabel `TAPTALK_*` dan `MIDTRANS_*`.
+- **Queue & Cache:** Gunakan driver `database` atau `redis` untuk eksekusi event/notification; selalu jalankan `php artisan queue:listen`.
+- **Security:** Gunakan HTTPS di NGINX, aktifkan rate limiting pada API attendance & portal pelanggan, dan jaga kredensial di `.env`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Operasional & Kualitas
+- **Testing:** `php artisan test` (menggunakan PHPUnit 11); tambahkan test feature/unit untuk modul baru.
+- **Linting:** `./vendor/bin/pint` untuk format PHP; gunakan `npm run lint` (jika ditambahkan) untuk JS/TS.
+- **Backup:** lakukan dump Postgres berkala dan sinkronisasi storage (foto bukti kerja, PDF invoice).
+- **Monitoring:** gunakan `laravel/pail` untuk log real-time saat proses dev; di produksi gunakan stack logging bawaan Laravel.
 
-## Security Vulnerabilities
+## Dokumentasi Pendukung
+- `addon.md` – detail scheduler & notifikasi V4.
+- `advanced-report.md` – blueprint laporan Profitability, Staff Utilization, Invoice Aging, Cohort.
+- `attendance-module.md` – requirement lengkap modul absensi.
+- `future.md` – proposal fitur strategis (loyalty, re-engagement, komisi, expense, foto reminder).
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Seluruh file ini bersama README bertindak sebagai *single source of truth* mengenai ruang lingkup fitur, paket yang dipakai, dan rencana pengembangan Kleening Revamp.
 
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Lisensi
+Basis kode mengikuti lisensi MIT dari Laravel kecuali disebutkan lain dalam repositori ini.
