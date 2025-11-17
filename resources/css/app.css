@@ -2,11 +2,65 @@
 @import '@tabler/core/dist/css/tabler.min.css';
 @import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
 @import 'datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css';
-
-/* Impor CSS untuk DataTables Bootstrap 5 */
-@import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
-
-/* --- ADD THIS LINE --- */
+@import 'select2/dist/css/select2.min.css';
 @import 'sweetalert2/dist/sweetalert2.min.css';
 
 /* CSS kustom Anda bisa ditambahkan di bawah sini */
+
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container .select2-selection--single {
+    height: calc(2.5rem + 2px);
+    padding: .375rem 2.25rem .375rem .75rem;
+    border: 1px solid #ced4da;
+    border-radius: .375rem;
+    display: flex;
+    align-items: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #212529;
+    line-height: 1.5;
+    padding-left: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+    right: .75rem;
+}
+
+.select2-container--default .select2-results__option--highlighted,
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    background-color: #206bc4;
+    color: #fff;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    border-color: #ced4da;
+    border-radius: .375rem;
+}
+
+#service-items-container .service-item {
+    border: 1px solid #e9ecef;
+    border-radius: .75rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    position: relative;
+}
+
+#service-items-container .service-item .form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+#service-items-container .service-item .remove-service-item {
+    min-height: 42px;
+}
+
+@media (max-width: 576px) {
+    #service-items-container .service-item {
+        padding: .75rem;
+    }
+}

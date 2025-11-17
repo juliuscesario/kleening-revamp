@@ -4,8 +4,21 @@ import './notifications';
 // 1. Import jQuery first and make it globally available.
 import jQuery from 'jquery';
 window.$ = window.jQuery = jQuery;
+globalThis.$ = jQuery;
+globalThis.jQuery = jQuery;
 
-
+window.__select2Ready = import('select2/dist/js/select2.full.min.js')
+    .then((module) => {
+        const select2Factory = module && module.default ? module.default : module;
+        if (typeof select2Factory === 'function') {
+            select2Factory(window, window.jQuery);
+        } else if (window.jQuery && !window.jQuery.fn.select2) {
+            console.warn('Select2 factory did not expose an initializer.');
+        }
+    })
+    .catch((error) => {
+        console.error('Failed to load Select2', error);
+    });
 
 import * as bootstrap from 'bootstrap';
 window.bootstrap = bootstrap;

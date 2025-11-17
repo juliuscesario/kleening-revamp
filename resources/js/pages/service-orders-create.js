@@ -188,33 +188,120 @@ if (form) {
         addStaffBtn.textContent = 'Add Staff';
     });
 
+    const select2Ready = window.__select2Ready || Promise.resolve();
+
+    const initServiceSelect = (selectElement) => {
+        if (!selectElement) {
+            return;
+        }
+
+        select2Ready.then(() => {
+            if (!(window.$ && $.fn && typeof $.fn.select2 === 'function')) {
+                return;
+            }
+
+            $(selectElement).select2({
+                placeholder: selectElement.dataset.placeholder || 'Pilih Layanan',
+                width: '100%',
+                dropdownParent: $(selectElement).closest('.service-item'),
+            });
+        });
+    };
+
+    const setServiceButtonState = (state) => {
+        if (!addServiceBtn) {
+            return;
+        }
+
+        switch (state) {
+            case 'loading':
+                addServiceBtn.disabled = true;
+                addServiceBtn.textContent = 'Memuat daftar layanan...';
+                break;
+            case 'ready':
+                addServiceBtn.disabled = false;
+                addServiceBtn.textContent = 'Add Service';
+                break;
+            case 'empty':
+                addServiceBtn.disabled = true;
+                addServiceBtn.textContent = 'Tidak ada layanan tersedia';
+                break;
+            default:
+                addServiceBtn.disabled = true;
+                addServiceBtn.textContent = 'Gagal memuat layanan';
+                break;
+        }
+    };
+
+    setServiceButtonState('loading');
+
     // --- Service Items Logic ---
     const fetchServices = async () => {
-        const response = await fetch(servicesUrl);
-        const result = await response.json();
-        allServices = Array.isArray(result) ? result : result.data;
+        try {
+            const response = await fetch(servicesUrl);
+            if (!response.ok) {
+                throw new Error('Failed to fetch services');
+            }
+            const result = await response.json();
+            const payload = Array.isArray(result) ? result : (
+                result && Array.isArray(result.data) ? result.data : []
+            );
+            allServices = Array.isArray(payload) ? payload : [];
+
+            if (allServices.length === 0) {
+                setServiceButtonState('empty');
+                return;
+            }
+
+            setServiceButtonState('ready');
+        } catch (error) {
+            console.error('Failed to fetch services data', error);
+            setServiceButtonState('error');
+        }
     };
 
     addServiceBtn.addEventListener('click', () => {
+        if (!allServices.length) {
+            showWarning('Daftar layanan belum tersedia. Silakan muat ulang halaman.');
+            return;
+        }
+
         serviceItemCount++;
         const serviceOptions = allServices.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         const newItem = document.createElement('div');
-        newItem.classList.add('input-group', 'mb-2', 'service-item');
+        newItem.classList.add('service-item', 'mb-3');
         newItem.innerHTML = `
-            <select name="services[new_${serviceItemCount}][service_id]" class="form-select service-select" required>
-                <option value="">Pilih Layanan</option>
-                ${serviceOptions}
-            </select>
-            <span class="input-group-text">Qty</span>
-            <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="1" required>
-            <button type="button" class="btn btn-danger remove-service-item">Remove</button>
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-6">
+                    <label class="form-label mb-1">Layanan</label>
+                    <select name="services[new_${serviceItemCount}][service_id]" class="form-select service-select" data-placeholder="Pilih Layanan" required>
+                        <option value=""></option>
+                        ${serviceOptions}
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label mb-1">Qty</label>
+                    <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="1" required>
+                </div>
+                <div class="col-6 col-md-3 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger w-100 remove-service-item">Remove</button>
+                </div>
+            </div>
         `;
         serviceItemsContainer.appendChild(newItem);
+        initServiceSelect(newItem.querySelector('.service-select'));
     });
 
     serviceItemsContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-service-item')) {
-            e.target.closest('.service-item').remove();
+            const item = e.target.closest('.service-item');
+            if (item) {
+                const select = item.querySelector('.service-select');
+                if (select && $(select).data('select2')) {
+                    $(select).select2('destroy');
+                }
+                item.remove();
+            }
         }
     });
 

@@ -47,15 +47,25 @@
             <label class="form-label">Ordered Services</label>
             <div id="service-items-container">
                 @foreach($serviceOrder->items as $item)
-                    <div class="input-group mb-2 service-item" data-item-id="{{ $item->id }}">
-                        <select name="services[{{ $item->id }}][service_id]" class="form-select service-select">
-                            @foreach($allServices as $service)
-                                <option value="{{ $service->id }}" {{ $item->service_id == $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
-                            @endforeach
-                        </select>
-                        <span class="input-group-text">Qty</span>
-                        <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="{{ $item->quantity ?? 1 }}" min="1">
-                        <button type="button" class="btn btn-danger remove-service-item">Remove</button>
+                    <div class="service-item mb-3" data-item-id="{{ $item->id }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label mb-1">Layanan</label>
+                                <select name="services[{{ $item->id }}][service_id]" class="form-select service-select" data-placeholder="Pilih Layanan" required>
+                                    <option value=""></option>
+                                    @foreach($allServices as $service)
+                                        <option value="{{ $service->id }}" {{ $item->service_id == $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label mb-1">Qty</label>
+                                <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="{{ $item->quantity ?? 1 }}" min="1" required>
+                            </div>
+                            <div class="col-6 col-md-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-danger w-100 remove-service-item">Remove</button>
+                            </div>
+                        </div>
                     </div>
                 @endforeach
             </div>
@@ -115,34 +125,80 @@
 
         document.querySelectorAll('.js-work-time-input').forEach(enforceWorkTimeFormat);
 
+        const serviceItemsContainer = document.getElementById('service-items-container');
+        const select2Ready = window.__select2Ready || Promise.resolve();
+
+        const initServiceSelect = (selectElement) => {
+            if (!selectElement) {
+                return;
+            }
+
+            select2Ready.then(() => {
+                if (!(window.$ && $.fn && typeof $.fn.select2 === 'function')) {
+                    return;
+                }
+
+                const $select = $(selectElement);
+                const options = {
+                    placeholder: selectElement.dataset.placeholder || 'Pilih Layanan',
+                    width: '100%',
+                    dropdownParent: $select.closest('.service-item'),
+                };
+                $select.select2(options);
+            });
+        };
+
+        const destroyServiceSelect = (selectElement) => {
+            if (selectElement && $(selectElement).data('select2')) {
+                $(selectElement).select2('destroy');
+            }
+        };
+
+        if (serviceItemsContainer) {
+            serviceItemsContainer.querySelectorAll('.service-select').forEach(initServiceSelect);
+        }
+
         const addServiceItemButton = document.getElementById('add-service-item');
-        if (addServiceItemButton) {
+        if (addServiceItemButton && serviceItemsContainer) {
             // Service Items
             let serviceItemCount = {{ count($serviceOrder->items) }};
             addServiceItemButton.addEventListener('click', function () {
                 serviceItemCount++;
-                const container = document.getElementById('service-items-container');
                 const newItem = document.createElement('div');
-                newItem.classList.add('input-group', 'mb-2', 'service-item');
+                newItem.classList.add('service-item', 'mb-3');
                 newItem.innerHTML = `
-                    <select name="services[new_${serviceItemCount}][service_id]" class="form-select service-select">
-                        @foreach($allServices as $service)
-                            <option value="{{ $service->id }}">{{ $service->name }}</option>
-                        @endforeach
-                    </select>
-                    <span class="input-group-text">Qty</span>
-                    <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="1">
-                    <button type="button" class="btn btn-danger remove-service-item">Remove</button>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label mb-1">Layanan</label>
+                            <select name="services[new_${serviceItemCount}][service_id]" class="form-select service-select" data-placeholder="Pilih Layanan" required>
+                                <option value=""></option>
+                                @foreach($allServices as $service)
+                                    <option value="{{ $service->id }}">{{ $service->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label mb-1">Qty</label>
+                            <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="1" required>
+                        </div>
+                        <div class="col-6 col-md-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-danger w-100 remove-service-item">Remove</button>
+                        </div>
+                    </div>
                 `;
-                container.appendChild(newItem);
+                serviceItemsContainer.appendChild(newItem);
+                initServiceSelect(newItem.querySelector('.service-select'));
             });
         }
 
-        const serviceItemsContainer = document.getElementById('service-items-container');
         if (serviceItemsContainer) {
             serviceItemsContainer.addEventListener('click', function (e) {
                 if (e.target.classList.contains('remove-service-item')) {
-                    e.target.closest('.service-item').remove();
+                    const item = e.target.closest('.service-item');
+                    if (item) {
+                        destroyServiceSelect(item.querySelector('.service-select'));
+                        item.remove();
+                    }
                 }
             });
         }
