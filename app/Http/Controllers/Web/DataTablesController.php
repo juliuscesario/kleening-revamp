@@ -159,7 +159,7 @@ class DataTablesController extends Controller
 
 
         if ($request->has('q')) {
-            $query->where('name', 'like', '%' . $request->q . '%');
+            $query->where('name', 'like', '%' . strtoupper($request->q) . '%');
         }
 
         return DataTables::of($query)
