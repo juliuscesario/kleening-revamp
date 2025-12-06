@@ -18,13 +18,18 @@ class CustomerController extends Controller
     // Pastikan semua 'use' statement yang dibutuhkan sudah ada
     // (Customer, CustomerResource, Request, Rule)
 
-    public function index()
+    public function index(Request $request)
     {
         // Cek izin: apakah user boleh melihat daftar Customer?
         $this->authorize('viewAny', Customer::class);
         
-        // Eager load relasi addresses untuk efisiensi
-        return CustomerResource::collection(Customer::with('addresses')->get());
+        $query = Customer::with('addresses');
+
+        if ($search = $request->query('q')) {
+            $query->where(DB::raw('LOWER(name)'), 'LIKE', '%' . strtolower($search) . '%');
+        }
+
+        return CustomerResource::collection($query->get());
     }
 
     public function store(Request $request)

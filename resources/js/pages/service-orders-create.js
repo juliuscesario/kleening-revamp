@@ -95,7 +95,8 @@ if (form) {
         }
 
         // The backend expects the parameter `q` for searching.
-        const response = await fetch(`${customersUrl}?q=${query}`);
+        // Convert the query to lowercase for case-insensitive search on the backend.
+        const response = await fetch(`${customersUrl}?q=${query.toLowerCase()}`);
         const result = await response.json();
         // The controller uses Yajra DataTables which returns data in a `data` property.
         const customers = Array.isArray(result.data) ? result.data : [];
