@@ -1,0 +1,151 @@
+Service Name,Category,Price,Cost,Description
+HV Single Bed,Hydrovacuum,70000,17500,Hydrovacuum
+HV Queen Bed,Hydrovacuum,80000,20000,Hydrovacuum
+HV King Bed,Hydrovacuum,90000,22500,Hydrovacuum
+HV Super King Bed,Hydrovacuum,100000,25000,Hydrovacuum
+HV Sisi Balik Single Bed,Hydrovacuum,30000,7500,Hydrovacuum
+HV Sisi Balik Queen Bed,Hydrovacuum,40000,10000,Hydrovacuum
+HV Sisi Balik King Bed,Hydrovacuum,50000,12500,Hydrovacuum
+HV Sisi Balik Super King Bed,Hydrovacuum,60000,15000,Hydrovacuum
+HV Divan Full Single Bed,Hydrovacuum,60000,15000,Hydrovacuum
+HV Divan Full Queen Bed,Hydrovacuum,70000,17500,Hydrovacuum
+HV Divan Full King Bed,Hydrovacuum,80000,20000,Hydrovacuum
+HV Divan Full Super King Bed,Hydrovacuum,90000,22500,Hydrovacuum
+HV Divan Full Kombinasi Single Bed,Hydrovacuum,30000,7500,Hydrovacuum
+HV Divan Full Kombinasi Queen Bed,Hydrovacuum,40000,10000,Hydrovacuum
+HV Divan Full Kombinasi King Bed,Hydrovacuum,50000,12500,Hydrovacuum
+HV Divan Full Kombinasi Super King Bed,Hydrovacuum,60000,15000,Hydrovacuum
+HV Headboard Single Bed,Hydrovacuum,30000,7500,Hydrovacuum
+HV Headboard Queen Bed,Hydrovacuum,40000,10000,Hydrovacuum
+HV Headboard King Bed,Hydrovacuum,50000,12500,Hydrovacuum
+HV Headboard Super King Bed,Hydrovacuum,60000,15000,Hydrovacuum
+HV Matras Tebal/Lipat Single,Hydrovacuum,50000,12500,Hydrovacuum
+HV Matras Tebal/Lipat Queen,Hydrovacuum,60000,15000,Hydrovacuum
+HV Matras Tipis,Hydrovacuum,30000,7500,Hydrovacuum
+HV Bantal / Guling,Hydrovacuum,10000,2500,Hydrovacuum
+HV Sofa Single Standard,Hydrovacuum,40000,10000,Hydrovacuum
+HV Sofa Single Jumbo,Hydrovacuum,50000,12500,Hydrovacuum
+HV Sofa Panjang / Seat Standard,Hydrovacuum,35000,8750,Hydrovacuum
+HV Sofa Panjang / Seat Jumbo,Hydrovacuum,40000,10000,Hydrovacuum
+HV Sofa Bed Standard,Hydrovacuum,80000,20000,Hydrovacuum
+HV Sofa Bed Jumbo,Hydrovacuum,90000,22500,Hydrovacuum
+HV Sofa Mini Single Standard,Hydrovacuum,25000,6250,Hydrovacuum
+HV Sofa Mini Single Jumbo,Hydrovacuum,30000,7500,Hydrovacuum
+HV Bantalan Sofa Standard,Hydrovacuum,10000,2500,Hydrovacuum
+HV Bantalan Sofa Jumbo,Hydrovacuum,15000,3750,Hydrovacuum
+HV Bantal Sofa S ,Hydrovacuum,5000,1250,Hydrovacuum
+HV Bantal Sofa L,Hydrovacuum,10000,2500,Hydrovacuum
+HV Kursi Makan Standard,Hydrovacuum,20000,5000,Hydrovacuum
+HV Kursi Makan Jumbo,Hydrovacuum,20000,5000,Hydrovacuum
+HV Kursi Kantor Standard,Hydrovacuum,30000,7500,Hydrovacuum
+HV Kursi Kantor Jumbo,Hydrovacuum,30000,7500,Hydrovacuum
+HV Carpet <1cm Standard <20m2,Hydrovacuum,20000,5000,Hydrovacuum
+HV Carpet <1cm Standard >20m2,Hydrovacuum,15000,3750,Hydrovacuum
+HV Carpet >1cm Bulu <20m2,Hydrovacuum,30000,7500,Hydrovacuum
+HV Carpet >1cm Bulu >20m2,Hydrovacuum,25000,6250,Hydrovacuum
+HV Gorden /M2 <50m2,Hydrovacuum,5000,1250,Hydrovacuum
+HV Gorden /M2 >50m2,Hydrovacuum,4000,1000,Hydrovacuum
+HV Vitrace/M2 <50m2,Hydrovacuum,4000,1000,Hydrovacuum
+HV Vitrace /M2 >50m2,Hydrovacuum,3000,750,Hydrovacuum
+HV Matras Small Newborn <1m,Hydrovacuum,30000,7500,Hydrovacuum
+HV Matras Medium >1m,Hydrovacuum,40000,10000,Hydrovacuum
+HV Baby Box / Crib,Hydrovacuum,50000,12500,Hydrovacuum
+HV Baby Box Full,Hydrovacuum,90000,22500,Hydrovacuum
+HV Bantal/boneka baby,Hydrovacuum,5000,1250,Hydrovacuum
+HV Playmat Gulung/lipat,Hydrovacuum,30000,7500,Hydrovacuum
+HV Playmat Medium Kulit <6 pad,Hydrovacuum,50000,12500,Hydrovacuum
+HV Playmat Large Kulit >6 pad,Hydrovacuum,75000,18750,Hydrovacuum
+HV Bouncer,Hydrovacuum,25000,6250,Hydrovacuum
+HV Stroller,Hydrovacuum,25000,6250,Hydrovacuum
+HV Carseat,Hydrovacuum,25000,6250,Hydrovacuum
+HV Hipseat / Baby Carrier,Hydrovacuum,15000,3750,Hydrovacuum
+PW Single Bed,Premium Wash,260000,91000,Premium Wash
+PW Queen Bed,Premium Wash,340000,119000,Premium Wash
+PW King Bed,Premium Wash,380000,133000,Premium Wash
+PW Super King Bed,Premium Wash,420000,147000,Premium Wash
+PW Sisi Balik Single Bed,Premium Wash,130000,45500,Premium Wash
+PW Sisi Balik Queen Bed,Premium Wash,170000,59500,Premium Wash
+PW Sisi Balik King Bed,Premium Wash,190000,66500,Premium Wash
+PW Sisi Balik Super King Bed,Premium Wash,210000,73500,Premium Wash
+PW Divan Full Single Bed,Premium Wash,260000,91000,Premium Wash
+PW Divan Full Queen Bed,Premium Wash,340000,119000,Premium Wash
+PW Divan Full King Bed,Premium Wash,380000,133000,Premium Wash
+PW Divan Full Super King Bed,Premium Wash,420000,147000,Premium Wash
+PW Divan Kombinasi Single Bed,Premium Wash,130000,45500,Premium Wash
+PW Divan Kombinasi Queen Bed,Premium Wash,170000,59500,Premium Wash
+PW Divan Kombinasi King Bed,Premium Wash,190000,66500,Premium Wash
+PW Divan Kombinasi Super King Bed,Premium Wash,210000,73500,Premium Wash
+PW Headboard Single Bed,Premium Wash,100000,35000,Premium Wash
+PW Headboard Queen Bed,Premium Wash,140000,49000,Premium Wash
+PW Headboard King Bed,Premium Wash,160000,56000,Premium Wash
+PW Headboard Super King Bed,Premium Wash,180000,63000,Premium Wash
+PW Matras Tebal/Lipat Single,Premium Wash,100000,35000,Premium Wash
+PW Matras Tebal/Lipat Queen,Premium Wash,140000,49000,Premium Wash
+PW Matras Tebal/Lipat King,Premium Wash,160000,56000,Premium Wash
+PW Matras Tebal/Lipat Super King,Premium Wash,180000,63000,Premium Wash
+PW Matras Tipis,Premium Wash,100000,35000,Premium Wash
+PW Bantal / Guling,Premium Wash,30000,10500,Premium Wash
+PW Sofa Single Standard,Premium Wash,95000,33250,Premium Wash
+PW Sofa Single Jumbo,Premium Wash,100000,35000,Premium Wash
+PW Sofa Panjang / Seat Standard,Premium Wash,90000,31500,Premium Wash
+PW Sofa Panjang / Seat Jumbo,Premium Wash,95000,33250,Premium Wash
+PW Sofa Bed Standard,Premium Wash,260000,91000,Premium Wash
+PW Sofa Bed Jumbo,Premium Wash,300000,105000,Premium Wash
+PW Sofa Mini Single Standard,Premium Wash,60000,21000,Premium Wash
+PW Sofa Mini Single Jumbo,Premium Wash,70000,24500,Premium Wash
+PW Bantalan Sofa Standard,Premium Wash,30000,10500,Premium Wash
+PW Bantalan Sofa Jumbo,Premium Wash,50000,17500,Premium Wash
+PW Bantal Sofa S,Premium Wash,20000,7000,Premium Wash
+PW Bantal Sofa M,Premium Wash,30000,10500,Premium Wash
+PW Bantal Sofa L,Premium Wash,50000,17500,Premium Wash
+PW Kursi Makan Standard,Premium Wash,40000,14000,Premium Wash
+PW Kursi Makan Jumbo,Premium Wash,50000,17500,Premium Wash
+PW Kursi Kantor Standard,Premium Wash,50000,17500,Premium Wash
+PW Kursi Kantor Jumbo,Premium Wash,60000,21000,Premium Wash
+PW Carpet <1cm Standard <20m2,Premium Wash,60000,21000,Premium Wash
+PW Carpet <1cm Standard >20m2,Premium Wash,50000,17500,Premium Wash
+PW Carpet >1cm Bulu <20m2,Premium Wash,90000,31500,Premium Wash
+PW Carpet >1cm Bulu >20m2,Premium Wash,80000,28000,Premium Wash
+PW Gorden /M2 <50m2,Premium Wash,15000,5250,Premium Wash
+PW Gorden /M2 >50m2,Premium Wash,12000,4200,Premium Wash
+PW Vitrace/M2 <50m2,Premium Wash,12000,4200,Premium Wash
+PW Vitrace /M2 >50m2,Premium Wash,8000,2800,Premium Wash
+PW Matras Small Newborn <1m,Premium Wash,100000,35000,Premium Wash
+PW Matras Medium >1m,Premium Wash,200000,70000,Premium Wash
+PW Baby Box / Crib,Premium Wash,150000,52500,Premium Wash
+PW Baby Box Full,Premium Wash,350000,122500,Premium Wash
+PW Bantal/boneka baby,Premium Wash,25000,8750,Premium Wash
+PW Playmat Gulung/lipat,Premium Wash,100000,35000,Premium Wash
+PW Playmat Medium Kulit <6 pad,Premium Wash,200000,70000,Premium Wash
+PW Playmat Large Kulit >6 pad,Premium Wash,300000,105000,Premium Wash
+PW Bouncer,Premium Wash,150000,52500,Premium Wash
+PW Stroller,Premium Wash,250000,87500,Premium Wash
+PW Carseat,Premium Wash,250000,87500,Premium Wash
+PW Hipseat / Baby Carrier,Premium Wash,100000,35000,Premium Wash
+CID Small,Car Interior Detailing,500000,175000,Car Interior Detailing
+CID Sedan,Car Interior Detailing,700000,245000,Car Interior Detailing
+CID Medium,Car Interior Detailing,700000,245000,Car Interior Detailing
+CID Large,Car Interior Detailing,850000,297500,Car Interior Detailing
+CID Luxury,Car Interior Detailing,950000,332500,Car Interior Detailing
+General Cleaning,General Cleaning,85000,42500,General Cleaning
+Deep Cleaning,General Cleaning,20000,10000,General Cleaning
+Deep Cleaning WC /m2,General Cleaning,100000,50000,General Cleaning
+Deep Cleaning Kaca /m2,General Cleaning,100000,50000,General Cleaning
+Paket Kosan,Package,175000,61250,Package
+Paket Studio,Package,200000,70000,Package
+Paket Family,Package,400000,140000,Package
+Paket Big Home,Package,590000,206500,Package
+Poles Marmer /m2,Poles,40000,12000,Poles Lantai
+Poles Granit /m2,Poles,50000,15000,Poles Lantai
+Poles keramik /m2,Poles,20000,6000,Poles Lantai
+Cairan Kutu Kasur,Add On,80000,40000,Cairan Kutu
+Fogging Disinfectant /m2,Add On,4000,1200,Fogging
+Kipas Blower,Add On,100000,10000,Blower Pengering
+Free Kipas Blower,Add On,0,0,Blower Pengering
+Free Transport,Add On,0,0,Transport
+Transport Standard,Add On,50000,50000,Transport
+Transport Sedang,Add On,100000,100000,Transport
+Transport Jauh,Add On,150000,150000,Transport
+Ongkos Kirim,Add On,100,100,Ongkos Kirim
+Biaya Lembur Malam,Add On,50000,50000,Lemburan
+Biaya Cancel,Add On,100000,100000,Biaya Pembatalan
