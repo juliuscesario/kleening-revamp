@@ -96,14 +96,14 @@ class DummyMaster2025Seeder extends Seeder
         // Seed Customers and Addresses
         foreach ($customerAddressData as $customerAddressDatum) {
             $customerName = $customerAddressDatum['Customer Name'];
-            $camelCaseName = $this->convertToTitleCase($customerName);
+            // $camelCaseName = $this->convertToTitleCase($customerName);
 
             // --- CHANGED HERE: Use firstOrCreate to prevent Unique Violation ---
             // The first array is the "Search" criteria (Unique Key)
             // The second array is the data to insert if not found
             $customer = Customer::firstOrCreate(
                 ['phone_number' => $customerAddressDatum['Customer Phone Number']],
-                ['name' => $camelCaseName]
+                ['name' => $customerName]
             );
 
             $areaId = null;
