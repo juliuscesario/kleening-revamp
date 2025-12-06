@@ -26,7 +26,8 @@ class CustomerController extends Controller
         $query = Customer::with('addresses');
 
         if ($search = $request->query('q')) {
-            $query->where(DB::raw('LOWER(name)'), 'LIKE', '%' . strtolower($search) . '%');
+            // Convert both the database column and the search query to uppercase for case-insensitive matching
+            $query->where(DB::raw('UPPER(name)'), 'LIKE', '%' . strtoupper($search) . '%');
         }
 
         return CustomerResource::collection($query->get());
