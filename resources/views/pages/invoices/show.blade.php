@@ -11,8 +11,8 @@
                     Invoice #{{ $invoice->invoice_number }}
                 </h2>
             </div>
-            <div class="col-auto ms-auto d-print-none">
-                <div class="btn-list">
+            <div class="col-auto d-print-none">
+                <div class="btn-list d-flex flex-wrap justify-content-end">
                     @if($invoice->status === 'new')
                         <button class="btn btn-info change-status-btn" data-id="{{ $invoice->id }}" data-new-status="sent">Mark as Sent</button>
                     @endif
@@ -52,7 +52,7 @@
             </div>
         @endif
         <div class="card card-lg">
-            <div class="card-body">
+            <div class="card-body table-responsive">
                 <div class="row">
                     <div class="col-6">
                         <p class="h3">{{ $invoice->serviceOrder->customer->name }}</p>
@@ -86,7 +86,7 @@
 
                     </div>
                 </div>
-                <table class="table table-transparent table-responsive">
+                <table class="table table-transparent">
                     <thead>
                         <tr>
                             <th class="text-center">#</th>

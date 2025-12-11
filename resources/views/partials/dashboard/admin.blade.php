@@ -45,6 +45,15 @@
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <a href="{{ route('web.service-orders.unassigned') }}" class="btn btn-warning w-100">
+                            Service Order Belum Ada Staff
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
                  <div class="card card-sm">
                     <div class="card-body">
                         <a href="{{ route('web.service-orders.create') }}" class="btn btn-primary w-100">

@@ -38,7 +38,8 @@
                         <h3 class="card-title">Service Items</h3>
                     </div>
                     <div class="card-body">
-                        <table class="table table-striped">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
                             <thead>
                                 <tr>
                                     <th>Service</th>

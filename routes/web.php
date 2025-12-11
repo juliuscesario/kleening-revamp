@@ -82,6 +82,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('services', ServiceController::class)->names('web.services');
     Route::resource('customers', CustomerController::class)->names('web.customers');
     Route::resource('addresses', AddressController::class)->names('web.addresses');
+    Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');
     Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
     Route::resource('invoices', InvoiceController::class)->names('web.invoices');
     Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');

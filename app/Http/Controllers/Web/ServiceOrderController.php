@@ -297,4 +297,17 @@ class ServiceOrderController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Service Order updated successfully.']);
     }
+
+    public function unassigned()
+    {
+        $this->authorize('viewAny', ServiceOrder::class);
+
+        $unassignedServiceOrders = ServiceOrder::whereDoesntHave('staff')
+            ->where('status', 'booked') // Assuming 'booked' is the status for unassigned jobs
+            ->orderBy('work_date', 'asc')
+            ->orderBy('work_time', 'asc')
+            ->get();
+
+        return view('pages.service-orders.index', ['serviceOrders' => $unassignedServiceOrders]);
+    }
 }
