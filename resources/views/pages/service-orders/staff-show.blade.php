@@ -98,7 +98,7 @@
                                 @php
                                     $normalizedPhone = preg_replace('/\D+/', '', $serviceOrder->customer->phone_number);
                                 @endphp
-                                <a href="tel:{{ $serviceOrder->customer->phone_number }}">{{ $serviceOrder->customer->phone_number }}</a>
+                                <a href="https://wa.me/send?phone={{ $serviceOrder->customer->phone_number }}">{{ $serviceOrder->customer->phone_number }}</a>
                                 @if ($normalizedPhone)
                                     <a href="https://wa.me/{{ $normalizedPhone }}" class="btn btn-sm btn-outline-success ms-2" target="_blank" rel="noopener">
                                         Hubungi via WhatsApp
