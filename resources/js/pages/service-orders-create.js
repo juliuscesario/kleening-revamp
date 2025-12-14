@@ -117,7 +117,16 @@ if (form) {
         }
     };
 
-    customerSearchInput.addEventListener('input', () => debounce(fetchAndRenderCustomers, 300));
+    customerSearchInput.addEventListener('input', () => {
+        debounce(fetchAndRenderCustomers, 300);
+    });
+
+    customerSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Prevent form submission
+            fetchAndRenderCustomers();
+        }
+    });
 
     customerResultsContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('result-item')) {
