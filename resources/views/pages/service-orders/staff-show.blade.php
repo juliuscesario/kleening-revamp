@@ -100,7 +100,7 @@
                                 @endphp
                                 <a href="https://wa.me/send?phone={{ $serviceOrder->customer->phone_number }}">{{ $serviceOrder->customer->phone_number }}</a>
                                 @if ($normalizedPhone)
-                                    <a href="https://wa.me/{{ $normalizedPhone }}" class="btn btn-sm btn-outline-success ms-2" target="_blank" rel="noopener">
+                                    <a href="https://wa.me/send?phone={{ $normalizedPhone }}" class="btn btn-sm btn-outline-success ms-2" target="_blank" rel="noopener">
                                         Hubungi via WhatsApp
                                     </a>
                                 @endif

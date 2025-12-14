@@ -54,7 +54,7 @@
                         </p>
                         <p><strong>Nomor Handphone:</strong>
                             @if ($serviceOrder->customer && $serviceOrder->customer->phone_number)
-                                <a href="tel:{{ $serviceOrder->customer->phone_number }}">{{ $serviceOrder->customer->phone_number }}</a>
+                                <a href="https://wa.me/send?phone={{ $serviceOrder->customer->phone_number }}">{{ $serviceOrder->customer->phone_number }}</a>
                             @else
                                 N/A
                             @endif
