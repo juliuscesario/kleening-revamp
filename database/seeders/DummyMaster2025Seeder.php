@@ -126,7 +126,7 @@ class DummyMaster2025Seeder extends Seeder
             // If you want to avoid duplicate addresses too, consider using firstOrCreate here as well.
             Address::create([
                 'customer_id' => $customer->id,
-                'label' => $customerAddressDatum['Address Label'],
+                'label' => 'Rumah',
                 'contact_name' => $customerAddressDatum['Contact Name'],
                 'contact_phone' => $customerAddressDatum['Contact Phone'],
                 'full_address' => $customerAddressDatum['Full Address'],
