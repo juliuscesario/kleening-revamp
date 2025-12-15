@@ -40,28 +40,29 @@
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Service</th>
-                                    <th>Price</th>
-                                    <th>Quantity</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($serviceOrder->items as $item)
-                                <tr>
-                                    <td>{{ $item->service->name }}</td>
-                                    <td>Rp {{ number_format($item->price, 2, ',', '.') }}</td>
-                                    <td>{{ $item->quantity }}</td>
-                                    <td class="item-total" data-total="{{ $item->price * $item->quantity }}">Rp {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                <thead>
+                                    <tr>
+                                        <th>Service</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($serviceOrder->items as $item)
+                                    <tr>
+                                        <td>{{ $item->service->name }}</td>
+                                        <td>Rp {{ number_format($item->price, 2, ',', '.') }}</td>
+                                        <td>{{ $item->quantity }}</td>
+                                        <td class="item-total" data-total="{{ $item->price * $item->quantity }}">Rp {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                 <div class="card mt-3">
+                <div class="card mt-3">
                     <div class="card-header">
                         <h3 class="card-title">Work Photos</h3>
                     </div>
