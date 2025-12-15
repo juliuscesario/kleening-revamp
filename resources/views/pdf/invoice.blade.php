@@ -149,7 +149,7 @@
             $dpAmount = $invoice->dp_type === 'percentage'
                 ? ($invoice->grand_total * ($invoice->dp_value ?? 0)) / 100
                 : ($invoice->dp_value ?? 0);
-            $amountDue = max(($invoice->total_after_dp ?? 0) - ($invoice->paid_amount ?? 0), 0);
+            $amountDue = max($invoice->grand_total - $invoice->paid_amount, 0);
         @endphp
         <tfoot>
             <tr>
@@ -185,10 +185,6 @@
             <tr>
                 <th colspan="3" class="text-right">Total After DP</th>
                 <th class="text-right">Rp {{ number_format($invoice->total_after_dp, 0, ',', '.') }}</th>
-            </tr>
-            <tr>
-                <th colspan="3" class="text-right">Paid Amount</th>
-                <th class="text-right">Rp {{ number_format($invoice->paid_amount, 0, ',', '.') }}</th>
             </tr>
             <tr>
                 <th colspan="3" class="text-right">Amount Due</th>
