@@ -234,7 +234,7 @@ class DataTablesController extends Controller
 
         $query = \App\Models\ServiceOrder::with(['customer' => function ($query) {
             $query->withoutGlobalScope(AreaScope::class)->withTrashed();
-        }, 'address.area']);
+        }, 'address.area', 'invoice']);
 
         // Apply status filter if present in the request
         if ($request->has('status') && $request->status !== 'all') {
@@ -316,10 +316,10 @@ class DataTablesController extends Controller
                     // For CANCELLED, DONE, and INVOICED, no further status transitions are allowed from the UI
                 }
 
-                if ($so->invoice) {
+                if ($so->invoice && $so->invoice->status !== \App\Models\Invoice::STATUS_CANCELLED) {
                     $actions .= '<a href="' . route('web.invoices.show', $so->invoice->id) . '" class="btn btn-sm btn-success">Invoice</a> ';
                 } else if ($so->status === \App\Models\ServiceOrder::STATUS_DONE) {
-                    $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Create Invoice</button> ';
+                    $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Buat Invoice</button> ';
                 }
 
                 return $actions;
