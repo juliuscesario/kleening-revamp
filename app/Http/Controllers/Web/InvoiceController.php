@@ -46,7 +46,7 @@ class InvoiceController extends Controller
 
         $request->validate([
             'service_order_id' => 'required|exists:service_orders,id',
-            'invoice_number' => 'required|unique:invoices',
+            'invoice_number' => 'required|unique:invoices,invoice_number,NULL,id,service_order_id,' . $request->service_order_id,
             'issue_date' => 'required|date',
             'due_date' => 'required|date',
             'subtotal' => 'required|numeric',
@@ -88,8 +88,16 @@ class InvoiceController extends Controller
 
         $totalAfterDp = $grandTotal - $dpAmount;
 
-        $invoice = Invoice::create([
-            'service_order_id' => $request->service_order_id,
+        // Find an existing invoice for the service order, or create a new one
+        $invoice = Invoice::firstOrNew(['service_order_id' => $request->service_order_id]);
+
+        // If the invoice exists and was cancelled, we can reuse it.
+        // Otherwise, if it's not new and not cancelled, we should prevent creating a new one.
+        if ($invoice->exists && $invoice->status !== Invoice::STATUS_CANCELLED) {
+            return redirect()->back()->with('error', 'An active invoice for this service order already exists.');
+        }
+
+        $invoice->fill([
             'invoice_number' => $request->invoice_number,
             'issue_date' => $request->issue_date,
             'due_date' => $request->due_date,
@@ -104,6 +112,7 @@ class InvoiceController extends Controller
             'paid_amount' => $dpAmount, // Assuming DP is paid upon invoice creation
             'status' => 'new',
         ]);
+        $invoice->save();
 
         $serviceOrder->update(['status' => ServiceOrder::STATUS_INVOICED]);
 
