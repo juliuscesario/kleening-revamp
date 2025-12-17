@@ -58,12 +58,12 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        $invoiceGrandTotal = (float) $invoice->grand_total;
+        $invoiceBalance = (float) $invoice->grand_total - (float) $invoice->paid_amount;
         $paymentAmount = round((float) $request->amount, 2);
-        $expectedAmount = round($invoiceGrandTotal, 2);
+        $expectedAmount = round($invoiceBalance, 2);
 
         if ($paymentAmount !== $expectedAmount) {
-            $message = 'Payment amount must match the invoice grand total (partial payments are not allowed). Expected amount: Rp ' . number_format($invoiceGrandTotal, 2, ',', '.');
+            $message = 'Payment amount must match the invoice balance (partial payments are not allowed). Expected amount: Rp ' . number_format($invoiceBalance, 2, ',', '.');
 
             if ($request->ajax()) {
                 return response()->json([
@@ -79,7 +79,11 @@ class PaymentController extends Controller
 
         $payment = Payment::create($request->all());
 
-        $invoice->update(['status' => Invoice::STATUS_PAID]);
+        $newPaidAmount = $invoice->paid_amount + $payment->amount;
+        $invoice->update([
+            'paid_amount' => $newPaidAmount,
+            'status' => Invoice::STATUS_PAID,
+        ]);
 
         if ($request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Payment created successfully.']);

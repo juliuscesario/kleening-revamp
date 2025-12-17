@@ -85,7 +85,7 @@
                             <input type="hidden" name="service_order_id" value="{{ $serviceOrder->id }}">
                             <div class="mb-3">
                                 <label class="form-label">Invoice Number</label>
-                                <input type="text" class="form-control" name="invoice_number" value="{{ 'INV-' . date('Ymd') . '-' . $serviceOrder->id }}" readonly>
+                                <input type="text" class="form-control" name="invoice_number" value="{{ $invoice->invoice_number ?? 'INV-' . date('Ymd') . '-' . $serviceOrder->id }}" readonly>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Issue Date</label>
@@ -118,7 +118,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Transport Fee</label>
-                                <input type="number" class="form-control" id="transport_fee" name="transport_fee" value="0">
+                                <input type="number" class="form-control" id="transport_fee" name="transport_fee" value="{{ $invoice->transport_fee ?? 0 }}">
                                 <div class="btn-group mt-2">
                                     <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn active" data-fee="0">No Fee</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary transport-fee-btn" data-fee="25000">25K</button>
@@ -130,7 +130,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Down Payment (DP)</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" id="dp_value" name="dp_value" value="0">
+                                    <input type="number" class="form-control" id="dp_value" name="dp_value" value="{{ $invoice->dp_value ?? 0 }}">
                                     <select class="form-select" id="dp_type" name="dp_type">
                                         <option value="fixed">Fixed</option>
                                         <option value="percentage">Percentage</option>

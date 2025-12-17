@@ -359,6 +359,10 @@ class DataTablesController extends Controller
             ->editColumn('grand_total', function ($invoice) {
                 return 'Rp ' . number_format($invoice->grand_total, 2, ',', '.');
             })
+            ->addColumn('balance', function ($invoice) {
+                $balance = $invoice->grand_total - $invoice->paid_amount;
+                return 'Rp ' . number_format($balance, 2, ',', '.');
+            })
             ->editColumn('status', function ($invoice) {
                 $statusBadgeClass = '';
                 switch ($invoice->status) {
@@ -380,10 +384,12 @@ class DataTablesController extends Controller
                         $actions .= '<button class="btn btn-sm btn-info change-status-btn" data-id="' . $invoice->id . '" data-new-status="' . \App\Models\Invoice::STATUS_SENT . '">Mark as Sent</button> ';
                         break;
                     case 'sent':
-                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-grand-total="' . $invoice->grand_total . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
+                        $balance = $invoice->grand_total - $invoice->paid_amount;
+                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-balance="' . $balance . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
                         break;
                     case 'overdue':
-                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-grand-total="' . $invoice->grand_total . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
+                        $balance = $invoice->grand_total - $invoice->paid_amount;
+                        $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $invoice->id . '" data-balance="' . $balance . '" data-new-status="' . \App\Models\Invoice::STATUS_PAID . '">Mark as Paid</button> ';
                         break;
                 }
 

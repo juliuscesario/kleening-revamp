@@ -28,6 +28,7 @@
                             <th>Issue Date</th>
                             <th>Due Date</th>
                             <th>Grand Total</th>
+                            <th>Balance</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>

@@ -20,6 +20,7 @@ $(function() {
             { data: 'issue_date', name: 'issue_date' },
             { data: 'due_date', name: 'due_date' },
             { data: 'grand_total', name: 'grand_total' },
+            { data: 'balance', name: 'balance' },
             { data: 'status', name: 'status' },
             { data: 'action', name: 'action', orderable: false, searchable: false },
         ]
@@ -32,10 +33,10 @@ $(function() {
         if (newStatus === 'paid') {
             const form = $('#markAsPaidForm');
             const amountInput = form.find('input[name="amount"]');
-            const grandTotal = $(this).data('grand-total');
+            const balance = $(this).data('balance');
 
             form.find('#invoice_id').val(invoiceId);
-            amountInput.val(typeof grandTotal !== 'undefined' ? grandTotal : '');
+            amountInput.val(typeof balance !== 'undefined' ? balance : '');
             amountInput.prop('readonly', true);
 
             const modal = new bootstrap.Modal(document.getElementById('markAsPaidModal'));
