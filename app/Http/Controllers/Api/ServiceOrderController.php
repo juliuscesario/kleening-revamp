@@ -18,9 +18,9 @@ use Carbon\Carbon;
 class ServiceOrderController extends Controller
 {
     use AuthorizesRequests;
-    public function index(Request $request) 
+    public function index(Request $request)
     {
-        $user = $request->user(); 
+        $user = $request->user();
         $query = ServiceOrder::query();
 
         if ($user->role == 'staff' && $user->staff) {
@@ -30,7 +30,7 @@ class ServiceOrderController extends Controller
             $serviceOrders = $query->with(['customer', 'address', 'items.service', 'staff', 'creator'])->get();
             return StaffServiceOrderResource::collection($serviceOrders);
         }
-        
+
         $serviceOrders = $query->with(['customer', 'address', 'items.service', 'staff'])->get();
         return ServiceOrderResource::collection($serviceOrders);
     }
@@ -60,7 +60,7 @@ class ServiceOrderController extends Controller
                 'customer_id' => $validated['customer_id'],
                 'address_id' => $validated['address_id'],
                 'work_date' => $validated['work_date'],
-                'work_time' => Carbon::createFromFormat('H:i', $validated['work_time'], 'Asia/Jakarta')->format('H:i:s'),
+                'work_time' => Carbon::createFromFormat('H:i', $validated['work_time'], config('app.timezone'))->format('H:i:s'),
                 'work_notes' => $validated['work_notes'] ?? null,
                 'staff_notes' => $validated['staff_notes'] ?? null,
                 'so_number' => 'SO-' . time(), // Nanti bisa dibuat lebih canggih
@@ -146,7 +146,7 @@ class ServiceOrderController extends Controller
         // --- End Status Transition Logic ---
 
         if (isset($validated['work_time'])) {
-            $validated['work_time'] = Carbon::createFromFormat('H:i', $validated['work_time'], 'Asia/Jakarta')->format('H:i:s');
+            $validated['work_time'] = Carbon::createFromFormat('H:i', $validated['work_time'], config('app.timezone'))->format('H:i:s');
         }
 
         $updatedServiceOrder = DB::transaction(function () use ($validated, $serviceOrder, $newStatus) {
@@ -179,7 +179,7 @@ class ServiceOrderController extends Controller
 
         return new ServiceOrderResource($updatedServiceOrder->load(['customer', 'address', 'items.service', 'staff']));
     }
-    
+
     /**
      * Method khusus untuk staff mengubah status pekerjaan.
      */
@@ -188,13 +188,17 @@ class ServiceOrderController extends Controller
         $this->authorize('updateStatus', $serviceOrder);
 
         $validated = $request->validate([
-            'status' => ['required', 'string', Rule::in([
-                ServiceOrder::STATUS_BOOKED,
-                ServiceOrder::STATUS_PROSES,
-                ServiceOrder::STATUS_DONE,
-                ServiceOrder::STATUS_CANCELLED,
-                ServiceOrder::STATUS_INVOICED,
-            ])],
+            'status' => [
+                'required',
+                'string',
+                Rule::in([
+                    ServiceOrder::STATUS_BOOKED,
+                    ServiceOrder::STATUS_PROSES,
+                    ServiceOrder::STATUS_DONE,
+                    ServiceOrder::STATUS_CANCELLED,
+                    ServiceOrder::STATUS_INVOICED,
+                ])
+            ],
         ]);
 
         $originalStatus = $serviceOrder->status;

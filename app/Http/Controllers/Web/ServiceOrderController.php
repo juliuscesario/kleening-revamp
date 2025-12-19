@@ -40,20 +40,28 @@ class ServiceOrderController extends Controller
         // Authorization for co_owner (existing logic)
         if ($user->role === 'co_owner') {
             // Load address with trashed to check area_id even if address is soft-deleted
-            $serviceOrder->load(['address' => function ($query) {
-                $query->withTrashed()->with('area'); // Ensure area is loaded
-            }]);
+            $serviceOrder->load([
+                'address' => function ($query) {
+                    $query->withTrashed()->with('area'); // Ensure area is loaded
+                }
+            ]);
 
             if ($serviceOrder->address && $user->area_id !== $serviceOrder->address->area->id) { // Changed $serviceOrder->address->area_id to $serviceOrder->address->area->id
                 abort(403, 'Anda tidak diizinkan melihat pesanan di luar area Anda.');
             }
         }
 
-        $relationsToLoad = ['customer' => function ($query) {
-            $query->withTrashed();
-        }, 'address' => function ($query) {
-            $query->withTrashed();
-        }, 'address.area', 'items.service', 'staff'];
+        $relationsToLoad = [
+            'customer' => function ($query) {
+                $query->withTrashed();
+            },
+            'address' => function ($query) {
+                $query->withTrashed();
+            },
+            'address.area',
+            'items.service',
+            'staff'
+        ];
 
         $isStaff = ($user->role === 'staff');
 
@@ -106,8 +114,8 @@ class ServiceOrderController extends Controller
             ->exists();
 
         $hasOverdueInvoice = Invoice::whereHas('serviceOrder', function ($query) use ($request) {
-                $query->where('customer_id', $request->customer_id);
-            })
+            $query->where('customer_id', $request->customer_id);
+        })
             ->whereNotIn('status', [Invoice::STATUS_PAID, Invoice::STATUS_CANCELLED])
             ->whereDate('due_date', '<', now())
             ->exists();
@@ -134,7 +142,7 @@ class ServiceOrderController extends Controller
                 'customer_id' => $request->customer_id,
                 'address_id' => $request->address_id,
                 'work_date' => $request->work_date,
-                'work_time' => Carbon::createFromFormat('H:i', $request->work_time, 'Asia/Jakarta')->format('H:i:s'),
+                'work_time' => Carbon::createFromFormat('H:i', $request->work_time, config('app.timezone'))->format('H:i:s'),
                 'work_notes' => $request->work_notes,
                 'staff_notes' => $request->staff_notes,
                 'status' => 'booked',
@@ -152,7 +160,7 @@ class ServiceOrderController extends Controller
                 if ($service) {
                     $quantity = $serviceData['quantity'];
                     $price = $service->price;
-                    
+
                     ServiceOrderItem::create([
                         'service_order_id' => $so->id,
                         'service_id' => $service->id,
@@ -237,7 +245,7 @@ class ServiceOrderController extends Controller
             $serviceOrder->staff_notes = $request->staff_notes;
             $serviceOrder->status = $newStatus;
             if ($request->has('work_time')) {
-                $serviceOrder->work_time = Carbon::createFromFormat('H:i', $request->work_time, 'Asia/Jakarta')->format('H:i:s');
+                $serviceOrder->work_time = Carbon::createFromFormat('H:i', $request->work_time, config('app.timezone'))->format('H:i:s');
             }
 
             if ($newStatus === ServiceOrder::STATUS_DONE) {
@@ -285,8 +293,8 @@ class ServiceOrderController extends Controller
 
                 // Delete removed service items
                 ServiceOrderItem::where('service_order_id', $serviceOrder->id)
-                                 ->whereNotIn('id', $newServiceItemIds)
-                                 ->delete();
+                    ->whereNotIn('id', $newServiceItemIds)
+                    ->delete();
             }
 
             // Sync staff
