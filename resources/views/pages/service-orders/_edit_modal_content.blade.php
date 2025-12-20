@@ -32,13 +32,8 @@
 
         <div class="mb-3">
             <label class="form-label">Waktu Pengerjaan (WIB)</label>
-            <input type="text"
-                name="work_time"
-                class="form-control js-work-time-input"
-                inputmode="numeric"
-                pattern="^([01]\d|2[0-3]):[0-5]\d$"
-                placeholder="00:00"
-                required
+            <input type="text" name="work_time" class="form-control js-work-time-input" inputmode="numeric"
+                pattern="^([01]\d|2[0-3]):[0-5]\d$" placeholder="00:00" required
                 value="{{ old('work_time', $serviceOrder->work_time_formatted) }}">
             <small class="form-text text-muted">Gunakan format 24 jam, contoh 09:15 atau 18:30.</small>
         </div>
@@ -51,7 +46,8 @@
                         <div class="row g-3 align-items-end">
                             <div class="col-12 col-md-6">
                                 <label class="form-label mb-1">Layanan</label>
-                                <select name="services[{{ $item->id }}][service_id]" class="form-select service-select" data-placeholder="Pilih Layanan" required>
+                                <select name="services[{{ $item->id }}][service_id]" class="form-select service-select"
+                                    data-placeholder="Pilih Layanan" required>
                                     <option value=""></option>
                                     @foreach($allServices as $service)
                                         <option value="{{ $service->id }}" {{ $item->service_id == $service->id ? 'selected' : '' }}>{{ $service->name }}</option>
@@ -60,10 +56,13 @@
                             </div>
                             <div class="col-6 col-md-3">
                                 <label class="form-label mb-1">Qty</label>
-                                <input type="number" name="services[{{ $item->id }}][quantity]" class="form-control service-quantity" value="{{ $item->quantity ?? 1 }}" min="1" required>
+                                <input type="number" name="services[{{ $item->id }}][quantity]"
+                                    class="form-control service-quantity" value="{{ $item->quantity ?? 1 }}" min="0.1"
+                                    step="0.1" required>
                             </div>
                             <div class="col-6 col-md-3 d-flex align-items-end">
-                                <button type="button" class="btn btn-outline-danger w-100 remove-service-item">Remove</button>
+                                <button type="button"
+                                    class="btn btn-outline-danger w-100 remove-service-item">Remove</button>
                             </div>
                         </div>
                     </div>
@@ -79,7 +78,8 @@
                     <div class="input-group mb-2 staff-member" data-staff-id="{{ $staffMember->id }}">
                         <select name="staff[]" class="form-select staff-select">
                             @foreach($allStaff as $staff)
-                                <option value="{{ $staff->id }}" {{ $staffMember->id == $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
+                                <option value="{{ $staff->id }}" {{ $staffMember->id == $staff->id ? 'selected' : '' }}>
+                                    {{ $staff->name }}</option>
                             @endforeach
                         </select>
                         <button type="button" class="btn btn-danger remove-staff-member">Remove</button>
@@ -179,7 +179,7 @@
                         </div>
                         <div class="col-6 col-md-3">
                             <label class="form-label mb-1">Qty</label>
-                            <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="1" required>
+                            <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="0.1" step="0.1" required>
                         </div>
                         <div class="col-6 col-md-3 d-flex align-items-end">
                             <button type="button" class="btn btn-outline-danger w-100 remove-service-item">Remove</button>
@@ -247,19 +247,19 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Service Order updated successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error updating Service Order: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while updating the Service Order.');
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Service Order updated successfully!');
+                            location.reload();
+                        } else {
+                            alert('Error updating Service Order: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating the Service Order.');
+                    });
             });
         }
 

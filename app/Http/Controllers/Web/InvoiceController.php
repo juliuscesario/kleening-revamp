@@ -107,10 +107,10 @@ class InvoiceController extends Controller
 
         // Check if the new invoice number is unique, ignoring the current invoice if it exists
         $uniqueInvoice = Invoice::where('invoice_number', $request->invoice_number)
-                                ->when($invoice, function ($query) use ($invoice) {
-                                    return $query->where('id', '!=', $invoice->id);
-                                })
-                                ->exists();
+            ->when($invoice, function ($query) use ($invoice) {
+                return $query->where('id', '!=', $invoice->id);
+            })
+            ->exists();
 
         if ($uniqueInvoice) {
             return redirect()->back()->withErrors(['invoice_number' => 'The invoice number has already been taken.'])->withInput();
@@ -120,20 +120,21 @@ class InvoiceController extends Controller
         $invoice = Invoice::updateOrCreate(
             ['service_order_id' => $request->service_order_id],
             [
-            'invoice_number' => $request->invoice_number,
-            'issue_date' => $request->issue_date,
-            'due_date' => $request->due_date,
-            'subtotal' => $subtotal,
-            'discount' => $discount,
-            'discount_type' => $discountType,
-            'transport_fee' => $transportFee,
-            'grand_total' => $grandTotal,
-            'dp_type' => $dpType,
-            'dp_value' => $dpValue,
-            'total_after_dp' => $totalAfterDp,
-            'paid_amount' => $dpAmount, // Assuming DP is paid upon invoice creation
-            'status' => Invoice::STATUS_NEW,
-        ]);
+                'invoice_number' => $request->invoice_number,
+                'issue_date' => $request->issue_date,
+                'due_date' => $request->due_date,
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'discount_type' => $discountType,
+                'transport_fee' => $transportFee,
+                'grand_total' => $grandTotal,
+                'dp_type' => $dpType,
+                'dp_value' => $dpValue,
+                'total_after_dp' => $totalAfterDp,
+                'paid_amount' => $dpAmount, // Assuming DP is paid upon invoice creation
+                'status' => Invoice::STATUS_NEW,
+            ]
+        );
 
         $serviceOrder->update(['status' => ServiceOrder::STATUS_INVOICED]);
 
@@ -158,7 +159,7 @@ class InvoiceController extends Controller
      */
     public function show(string $id)
     {
-        $invoice = Invoice::with(['serviceOrder.customer', 'serviceOrder.address.area', 'serviceOrder.staff', 'serviceOrder.items.service', 'serviceOrder.workPhotos'])->findOrFail($id);
+        $invoice = Invoice::with(['serviceOrder.customer', 'serviceOrder.address.area', 'serviceOrder.staff', 'serviceOrder.items.service', 'serviceOrder.workPhotos', 'payments'])->findOrFail($id);
         $this->authorize('view', $invoice);
         return view('pages.invoices.show', compact('invoice'));
     }

@@ -20,8 +20,18 @@ class Customer extends Model
     {
         static::addGlobalScope(new AreaScope);
     }
-    
+
     protected $fillable = ['name', 'phone_number'];
+
+    /**
+     * Mutator untuk nama customer (auto upper case).
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn(string $value) => strtoupper($value),
+        );
+    }
 
     /**
      * Satu Customer bisa memiliki banyak Address.
@@ -58,8 +68,8 @@ class Customer extends Model
     protected function lastOrderDate(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->serviceOrders()->latest('work_date')->first()?->work_date,
+            get: fn() => $this->serviceOrders()->latest('work_date')->first()?->work_date,
         );
     }
-    
+
 }

@@ -92,7 +92,7 @@ class ServiceOrderController extends Controller
             'work_time' => 'required|date_format:H:i',
             'services' => 'required|array|min:1',
             'services.*.service_id' => 'required|exists:services,id',
-            'services.*.quantity' => 'required|integer|min:1',
+            'services.*.quantity' => 'required|numeric|min:0.1',
             'staff' => 'nullable|array',
             'staff.*' => 'exists:staff,id',
         ]);
@@ -220,10 +220,11 @@ class ServiceOrderController extends Controller
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
             'status' => 'required|in:booked,proses,done,cancelled,invoiced',
+            'work_date' => 'sometimes|required|date',
             'work_time' => 'sometimes|required|date_format:H:i',
             'services' => 'sometimes|array|min:1',
             'services.*.service_id' => 'sometimes|exists:services,id',
-            'services.*.quantity' => 'sometimes|integer|min:1',
+            'services.*.quantity' => 'sometimes|numeric|min:0.1',
             'staff' => 'nullable|array',
             'staff.*' => 'exists:staff,id',
         ];
@@ -244,6 +245,9 @@ class ServiceOrderController extends Controller
             $serviceOrder->work_notes = $request->work_notes;
             $serviceOrder->staff_notes = $request->staff_notes;
             $serviceOrder->status = $newStatus;
+            if ($request->has('work_date')) {
+                $serviceOrder->work_date = $request->work_date;
+            }
             if ($request->has('work_time')) {
                 $serviceOrder->work_time = Carbon::createFromFormat('H:i', $request->work_time, config('app.timezone'))->format('H:i:s');
             }

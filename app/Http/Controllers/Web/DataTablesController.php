@@ -126,8 +126,8 @@ class DataTablesController extends Controller
         }
 
         $dataTable->addColumn('category_name', function ($service) {
-                return $service->category ? $service->category->name : 'N/A';
-            })
+            return $service->category ? $service->category->name : 'N/A';
+        })
             ->editColumn('created_at', function ($service) {
                 return \Carbon\Carbon::parse($service->created_at)->format('d M Y H:i');
             })
@@ -232,9 +232,13 @@ class DataTablesController extends Controller
     {
         $this->authorize('viewAny', \App\Models\ServiceOrder::class);
 
-        $query = \App\Models\ServiceOrder::with(['customer' => function ($query) {
-            $query->withoutGlobalScope(AreaScope::class)->withTrashed();
-        }, 'address.area', 'invoice']);
+        $query = \App\Models\ServiceOrder::with([
+            'customer' => function ($query) {
+                $query->withoutGlobalScope(AreaScope::class)->withTrashed();
+            },
+            'address.area',
+            'invoice'
+        ]);
 
         // Apply status filter if present in the request
         if ($request->has('status') && $request->status !== 'all') {
@@ -265,7 +269,7 @@ class DataTablesController extends Controller
         return DataTables::of($query)
             ->order(function ($query) {
                 $query->orderBy('work_date', 'desc')
-                      ->orderByRaw("COALESCE(work_time, '23:59:59'::time) asc");
+                    ->orderByRaw("COALESCE(work_time, '23:59:59'::time) asc");
             })
             ->addColumn('customer_name', function ($so) {
                 if ($so->customer) {
@@ -292,7 +296,7 @@ class DataTablesController extends Controller
             })
             ->orderColumn('work_date', function ($query, $order) {
                 $query->orderBy('work_date', $order)
-                      ->orderByRaw("COALESCE(work_time, '23:59:59'::time) asc");
+                    ->orderByRaw("COALESCE(work_time, '23:59:59'::time) asc");
             })
             ->orderColumn('status', function ($query, $order) {
                 $query->orderBy('status', $order);
@@ -300,7 +304,7 @@ class DataTablesController extends Controller
             ->addColumn('action', function ($so) {
                 $detailUrl = route('web.service-orders.show', $so->id);
                 $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a> ';
-                
+
                 // Conditional buttons for status transitions
                 switch ($so->status) {
                     case \App\Models\ServiceOrder::STATUS_BOOKED:
@@ -334,8 +338,9 @@ class DataTablesController extends Controller
 
         $query = \App\Models\Invoice::with('serviceOrder.customer');
 
-
-
+        if (request()->has('status') && request()->status !== 'all') {
+            $query->where('status', request()->status);
+        }
         return DataTables::of($query)
             ->addColumn('so_number', function ($invoice) {
                 return $invoice->serviceOrder->so_number;
@@ -366,12 +371,24 @@ class DataTablesController extends Controller
             ->editColumn('status', function ($invoice) {
                 $statusBadgeClass = '';
                 switch ($invoice->status) {
-                    case \App\Models\Invoice::STATUS_NEW: $statusBadgeClass = 'bg-primary'; break;
-                    case \App\Models\Invoice::STATUS_SENT: $statusBadgeClass = 'bg-info'; break;
-                    case \App\Models\Invoice::STATUS_OVERDUE: $statusBadgeClass = 'bg-warning'; break;
-                    case \App\Models\Invoice::STATUS_PAID: $statusBadgeClass = 'bg-success'; break;
-                    case \App\Models\Invoice::STATUS_CANCELLED: $statusBadgeClass = 'bg-secondary'; break;
-                    default: $statusBadgeClass = 'bg-dark'; break;
+                    case \App\Models\Invoice::STATUS_NEW:
+                        $statusBadgeClass = 'bg-primary';
+                        break;
+                    case \App\Models\Invoice::STATUS_SENT:
+                        $statusBadgeClass = 'bg-info';
+                        break;
+                    case \App\Models\Invoice::STATUS_OVERDUE:
+                        $statusBadgeClass = 'bg-warning';
+                        break;
+                    case \App\Models\Invoice::STATUS_PAID:
+                        $statusBadgeClass = 'bg-success';
+                        break;
+                    case \App\Models\Invoice::STATUS_CANCELLED:
+                        $statusBadgeClass = 'bg-secondary';
+                        break;
+                    default:
+                        $statusBadgeClass = 'bg-dark';
+                        break;
                 }
                 return '<span class="badge ' . $statusBadgeClass . ' text-bg-secondary">' . ucfirst($invoice->status) . '</span>';
             })
@@ -399,17 +416,35 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
-    public function payments()
+    public function payments(Request $request)
     {
         $this->authorize('viewAny', \App\Models\Payment::class);
 
         $query = \App\Models\Payment::query()
-            ->select('payments.*', 'payments.id as payment_id')
+            ->select('payments.*')
             ->with('invoice.serviceOrder.customer');
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('payment_date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('payment_date', '<=', $request->end_date);
+        }
+
+        if ($request->filled('payment_method') && $request->payment_method !== 'all') {
+            $query->where('payment_method', $request->payment_method);
+        }
+
+        // Calculate summary metrics on the filtered query
+        $summaryQuery = $query->clone();
+        $totalRevenue = $summaryQuery->sum('amount');
+        $totalTransactions = $summaryQuery->count();
+        $avgTransaction = $totalTransactions > 0 ? $totalRevenue / $totalTransactions : 0;
 
         return DataTables::of($query)
             ->addColumn('invoice_number', function ($payment) {
-                return $payment->invoice->invoice_number;
+                return $payment->invoice ? $payment->invoice->invoice_number : 'N/A';
             })
             ->editColumn('payment_date', function ($payment) {
                 return Carbon::parse($payment->payment_date)->format('d M Y');
@@ -418,10 +453,14 @@ class DataTablesController extends Controller
                 return 'Rp ' . number_format($payment->amount, 0, ',', '.');
             })
             ->addColumn('action', function ($payment) {
-                $paymentId = $payment->payment_id ?? $payment->getKey();
-                $detailUrl = route('web.payments.show', $paymentId);
+                $detailUrl = route('web.payments.show', $payment->id);
                 return '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a>';
             })
+            ->with('summary', [
+                'total_revenue' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
+                'total_transactions' => number_format($totalTransactions, 0, ',', '.'),
+                'avg_transaction' => 'Rp ' . number_format($avgTransaction, 0, ',', '.'),
+            ])
             ->rawColumns(['action'])
             ->make(true);
     }
@@ -431,40 +470,44 @@ class DataTablesController extends Controller
         $this->authorize('viewAny', \App\Models\Invoice::class);
 
         $query = \App\Models\ServiceCategory::query()
-            ->withCount(['serviceOrderItems as total_orders' => function ($query) use ($request) {
-                $query->whereHas('serviceOrder.invoice', function ($q) use ($request) {
-                    $q->where('status', \App\Models\Invoice::STATUS_PAID);
-                    if ($request->filled('start_date') && $request->filled('end_date')) {
-                        $q->whereHas('payments', function ($paymentQuery) use ($request) {
-                            $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+            ->withCount([
+                'serviceOrderItems as total_orders' => function ($query) use ($request) {
+                    $query->whereHas('serviceOrder.invoice', function ($q) use ($request) {
+                        $q->where('status', \App\Models\Invoice::STATUS_PAID);
+                        if ($request->filled('start_date') && $request->filled('end_date')) {
+                            $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                                $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                            });
+                        }
+                    });
+
+                    if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
+                        $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
+                        $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                            $q->where('area_id', $areaId);
                         });
                     }
-                });
-
-                if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
-                    $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
-                    $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
-                        $q->where('area_id', $areaId);
-                    });
                 }
-            }])
-            ->withSum(['serviceOrderItems as total_revenue' => function ($query) use ($request) {
-                $query->whereHas('serviceOrder.invoice', function ($q) use ($request) {
-                    $q->where('status', \App\Models\Invoice::STATUS_PAID);
-                    if ($request->filled('start_date') && $request->filled('end_date')) {
-                        $q->whereHas('payments', function ($paymentQuery) use ($request) {
-                            $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+            ])
+            ->withSum([
+                'serviceOrderItems as total_revenue' => function ($query) use ($request) {
+                    $query->whereHas('serviceOrder.invoice', function ($q) use ($request) {
+                        $q->where('status', \App\Models\Invoice::STATUS_PAID);
+                        if ($request->filled('start_date') && $request->filled('end_date')) {
+                            $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                                $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                            });
+                        }
+                    });
+
+                    if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
+                        $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
+                        $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+                            $q->where('area_id', $areaId);
                         });
                     }
-                });
-
-                if (auth()->user()->role === 'co_owner' || ($request->filled('area_id') && $request->area_id !== 'all')) {
-                    $areaId = auth()->user()->role === 'co_owner' ? auth()->user()->area_id : $request->area_id;
-                    $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
-                        $q->where('area_id', $areaId);
-                    });
                 }
-            }], 'total');
+            ], 'total');
 
         $dataTable = DataTables::of($query)
             ->editColumn('total_revenue', function ($category) {
@@ -480,7 +523,7 @@ class DataTablesController extends Controller
         // Calculate summary data
         $summaryQuery = \App\Models\Invoice::query()
             ->where('status', \App\Models\Invoice::STATUS_PAID);
-        
+
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $summaryQuery->whereHas('payments', function ($paymentQuery) use ($request) {
                 $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
@@ -527,16 +570,16 @@ class DataTablesController extends Controller
         }
 
         $dataTable = DataTables::of($query)
-            ->addColumn('name', function($staff) {
+            ->addColumn('name', function ($staff) {
                 return $staff->name;
             })
-            ->addColumn('area_name', function($staff) {
+            ->addColumn('area_name', function ($staff) {
                 return $staff->area->name ?? 'N/A';
             })
             ->addColumn('jobs_completed', function ($staff) use ($request) {
                 $jobsQuery = \App\Models\Invoice::where('status', \App\Models\Invoice::STATUS_PAID)
-                    ->whereHas('serviceOrder', function($soQuery) use ($staff) {
-                        $soQuery->whereHas('staff', function($staffQuery) use ($staff) {
+                    ->whereHas('serviceOrder', function ($soQuery) use ($staff) {
+                        $soQuery->whereHas('staff', function ($staffQuery) use ($staff) {
                             $staffQuery->where('staff.id', $staff->id);
                         });
                     });
@@ -556,9 +599,9 @@ class DataTablesController extends Controller
             })
             ->addColumn('total_revenue', function ($staff) use ($request) {
                 $revenueQuery = \App\Models\Invoice::where('status', \App\Models\Invoice::STATUS_PAID)
-                    ->whereHas('serviceOrder', function($soQuery) use ($staff) {
+                    ->whereHas('serviceOrder', function ($soQuery) use ($staff) {
                         $soQuery->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
-                            ->whereHas('staff', function($staffQuery) use ($staff) {
+                            ->whereHas('staff', function ($staffQuery) use ($staff) {
                                 $staffQuery->where('staff.id', $staff->id);
                             });
                     });
@@ -599,36 +642,44 @@ class DataTablesController extends Controller
             });
         }
 
-        $subQuery = $subQuery->withSum(['invoices as total_revenue' => function ($q) use ($request) {
-            $q->where('invoices.status', \App\Models\Invoice::STATUS_PAID)
-                ->whereHas('serviceOrder', function ($so) {
-                    $so->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);
-                });
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $q->whereHas('payments', function ($paymentQuery) use ($request) {
-                    $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
-                });
+        $subQuery = $subQuery->withSum([
+            'invoices as total_revenue' => function ($q) use ($request) {
+                $q->where('invoices.status', \App\Models\Invoice::STATUS_PAID)
+                    ->whereHas('serviceOrder', function ($so) {
+                        $so->where('status', \App\Models\ServiceOrder::STATUS_INVOICED);
+                    });
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $q->whereHas('payments', function ($paymentQuery) use ($request) {
+                        $paymentQuery->whereBetween('payment_date', [$request->start_date, $request->end_date]);
+                    });
+                }
             }
-        }], 'grand_total')
-        ->withCount(['serviceOrders as total_orders' => function ($q) use ($request) {
-            $q->where('status', '!=', \App\Models\ServiceOrder::STATUS_CANCELLED);
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
-            }
-        }])
-        ->withSum(['invoices as total_invoice_overdue' => function ($q) use ($request) {
-            $q->where('invoices.status', \App\Models\Invoice::STATUS_OVERDUE);
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $q->whereBetween('due_date', [$request->start_date, $request->end_date]);
-            }
-        }], 'grand_total')
-        ->withSum(['invoices as total_invoice_unpaid' => function ($q) use ($request) {
-            $q->whereIn('invoices.status', ['new', 'sent']);
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $q->whereBetween('issue_date', [$request->start_date, $request->end_date]);
-            }
-        }], 'grand_total')
-        ->addSelect(DB::raw('(SELECT SUM(total) FROM service_order_items WHERE service_order_id IN (SELECT id FROM service_orders WHERE customer_id = customers.id AND status = \'cancelled\')) as total_cancelled_revenue_potential'));
+        ], 'grand_total')
+            ->withCount([
+                'serviceOrders as total_orders' => function ($q) use ($request) {
+                    $q->where('status', '!=', \App\Models\ServiceOrder::STATUS_CANCELLED);
+                    if ($request->filled('start_date') && $request->filled('end_date')) {
+                        $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                    }
+                }
+            ])
+            ->withSum([
+                'invoices as total_invoice_overdue' => function ($q) use ($request) {
+                    $q->where('invoices.status', \App\Models\Invoice::STATUS_OVERDUE);
+                    if ($request->filled('start_date') && $request->filled('end_date')) {
+                        $q->whereBetween('due_date', [$request->start_date, $request->end_date]);
+                    }
+                }
+            ], 'grand_total')
+            ->withSum([
+                'invoices as total_invoice_unpaid' => function ($q) use ($request) {
+                    $q->whereIn('invoices.status', ['new', 'sent']);
+                    if ($request->filled('start_date') && $request->filled('end_date')) {
+                        $q->whereBetween('issue_date', [$request->start_date, $request->end_date]);
+                    }
+                }
+            ], 'grand_total')
+            ->addSelect(DB::raw('(SELECT SUM(total) FROM service_order_items WHERE service_order_id IN (SELECT id FROM service_orders WHERE customer_id = customers.id AND status = \'cancelled\')) as total_cancelled_revenue_potential'));
 
         $potentialRevenueSubquery = \App\Models\ServiceOrderItem::selectRaw('sum(total)')
             ->join('service_orders', 'service_orders.id', '=', 'service_order_items.service_order_id')
@@ -645,7 +696,7 @@ class DataTablesController extends Controller
         $query = \App\Models\Customer::fromSub($subQuery, 'customers');
 
         return DataTables::of($query)
-            ->addColumn('name', function($customer) {
+            ->addColumn('name', function ($customer) {
                 $name = $customer->name;
                 // Manually check for soft delete, since we don't have an Eloquent model
                 if (!empty($customer->deleted_at)) {
@@ -695,7 +746,9 @@ class DataTablesController extends Controller
         $this->authorize('viewAny', \App\Models\Invoice::class);
 
         $query = \App\Models\ServiceOrderItem::query()
-            ->whereHas('service', function ($query) use ($serviceCategory) { $query->where('category_id', $serviceCategory->id); })
+            ->whereHas('service', function ($query) use ($serviceCategory) {
+                $query->where('category_id', $serviceCategory->id);
+            })
             ->whereHas('serviceOrder.invoice', function ($q) use ($request) {
                 $q->where('status', \App\Models\Invoice::STATUS_PAID);
                 if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -748,7 +801,9 @@ class DataTablesController extends Controller
         $this->authorize('viewAny', \App\Models\Invoice::class);
 
         $query = \App\Models\ServiceOrderItem::query()
-            ->whereHas('service', function ($query) use ($serviceCategory) { $query->where('category_id', $serviceCategory->id); })
+            ->whereHas('service', function ($query) use ($serviceCategory) {
+                $query->where('category_id', $serviceCategory->id);
+            })
             ->whereHas('serviceOrder.invoice', function ($q) use ($request) {
                 $q->where('status', \App\Models\Invoice::STATUS_PAID);
                 if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -759,8 +814,8 @@ class DataTablesController extends Controller
             });
 
         if (auth()->user()->role === 'owner' && $request->filled('area_id') && $request->area_id !== 'all') {
-             $areaId = $request->area_id;
-             $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
+            $areaId = $request->area_id;
+            $query->whereHas('serviceOrder.address', function ($q) use ($areaId) {
                 $q->where('area_id', $areaId);
             });
         } elseif (auth()->user()->role === 'co_owner') {
@@ -789,7 +844,9 @@ class DataTablesController extends Controller
         $this->authorize('viewAny', \App\Models\Invoice::class);
 
         $query = \App\Models\ServiceOrderItem::with(['serviceOrder', 'service', 'serviceOrder.customer'])
-            ->whereHas('service', function ($query) use ($serviceCategory) { $query->where('category_id', $serviceCategory->id); })
+            ->whereHas('service', function ($query) use ($serviceCategory) {
+                $query->where('category_id', $serviceCategory->id);
+            })
             ->whereHas('serviceOrder.invoice', function ($q) use ($request) {
                 $q->where('status', \App\Models\Invoice::STATUS_PAID);
                 if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -812,23 +869,23 @@ class DataTablesController extends Controller
         }
 
         return DataTables::of($query)
-            ->addColumn('so_number', function($item) {
+            ->addColumn('so_number', function ($item) {
                 return $item->serviceOrder->so_number;
             })
-            ->addColumn('customer_name', function($item) {
+            ->addColumn('customer_name', function ($item) {
                 return $item->serviceOrder->customer->name ?? 'N/A';
             })
-            ->editColumn('work_date', function($item) {
+            ->editColumn('work_date', function ($item) {
                 return Carbon::parse($item->serviceOrder->work_date)->format('d M Y');
             })
-            ->addColumn('service_name', function($item) {
+            ->addColumn('service_name', function ($item) {
                 return $item->service->name;
             })
-            ->editColumn('total', function($item) {
+            ->editColumn('total', function ($item) {
                 return 'Rp ' . number_format($item->total, 0, ',', '.');
             })
             ->orderColumn('work_date', function ($query, $order) {
-                $query->orderBy(function($q) {
+                $query->orderBy(function ($q) {
                     return $q->from('service_orders')->whereColumn('id', 'service_order_items.service_order_id')->select('work_date');
                 }, $order);
             })
@@ -860,15 +917,15 @@ class DataTablesController extends Controller
         }
 
         $workload = $query->select(
-                DB::raw('DATE_TRUNC(\'week\', work_date) as week_start'),
-                DB::raw('COUNT(service_orders.id) as jobs_count')
-            )
+            DB::raw('DATE_TRUNC(\'week\', work_date) as week_start'),
+            DB::raw('COUNT(service_orders.id) as jobs_count')
+        )
             ->groupBy('week_start')
             ->orderBy('week_start', 'asc')
             ->get();
 
         return response()->json([
-            'labels' => $workload->map(function($item) {
+            'labels' => $workload->map(function ($item) {
                 return 'Minggu ' . Carbon::parse($item->week_start)->format('W');
             }),
             'data' => $workload->pluck('jobs_count'),
@@ -888,12 +945,12 @@ class DataTablesController extends Controller
 
         $specialization = \App\Models\ServiceOrderItem::query()
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
-            ->whereHas('serviceOrder', function($q) use ($staff, $request) {
-                $q->whereHas('staff', function($sq) use ($staff) {
+            ->whereHas('serviceOrder', function ($q) use ($staff, $request) {
+                $q->whereHas('staff', function ($sq) use ($staff) {
                     $sq->where('staff.id', $staff->id);
                 })
-                ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
-                ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                    ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
+                    ->whereBetween('work_date', [$request->start_date, $request->end_date]);
 
                 if ($request->filled('area_id') && $request->area_id !== 'all') {
                     $q->whereHas('address', function ($a) use ($request) {
@@ -937,41 +994,51 @@ class DataTablesController extends Controller
                 $q->where('area_id', $request->area_id);
             });
         }
-        
+
         return DataTables::of($query)
-            ->addColumn('so_id', function($so) {
+            ->addColumn('so_id', function ($so) {
                 return $so->id;
             })
-            ->addColumn('so_number', function($so) {
+            ->addColumn('so_number', function ($so) {
                 return $so->so_number;
             })
-            ->addColumn('customer_name', function($so) {
+            ->addColumn('customer_name', function ($so) {
                 return $so->customer->name ?? 'N/A';
             })
-            ->addColumn('customer_address', function($so) {
+            ->addColumn('customer_address', function ($so) {
                 return $so->address->full_address ?? 'N/A';
             })
-            ->addColumn('invoice_id', function($so) {
+            ->addColumn('invoice_id', function ($so) {
                 return $so->invoice->id ?? 'N/A';
             })
-            ->addColumn('invoice_number', function($so) {
+            ->addColumn('invoice_number', function ($so) {
                 return $so->invoice->invoice_number ?? 'N/A';
             })
-            ->addColumn('invoice_status', function($so) {
+            ->addColumn('invoice_status', function ($so) {
                 if ($so->invoice) {
                     $statusBadgeClass = '';
                     switch ($so->invoice->status) {
-                        case 'new': $statusBadgeClass = 'bg-primary'; break;
-                        case 'sent': $statusBadgeClass = 'bg-info'; break;
-                        case 'overdue': $statusBadgeClass = 'bg-warning'; break;
-                        case 'paid': $statusBadgeClass = 'bg-success'; break;
-                        default: $statusBadgeClass = 'bg-secondary'; break;
+                        case 'new':
+                            $statusBadgeClass = 'bg-primary';
+                            break;
+                        case 'sent':
+                            $statusBadgeClass = 'bg-info';
+                            break;
+                        case 'overdue':
+                            $statusBadgeClass = 'bg-warning';
+                            break;
+                        case 'paid':
+                            $statusBadgeClass = 'bg-success';
+                            break;
+                        default:
+                            $statusBadgeClass = 'bg-secondary';
+                            break;
                     }
                     return '<span class="badge ' . $statusBadgeClass . ' text-bg-secondary">' . ucfirst($so->invoice->status) . '</span>';
                 }
                 return 'N/A';
             })
-            ->addColumn('invoice_total', function($so) {
+            ->addColumn('invoice_total', function ($so) {
                 if ($so->invoice) {
                     $total = 'Rp ' . number_format($so->invoice->grand_total, 0, ',', '.');
                     if ($so->invoice->status !== 'paid') {
@@ -981,10 +1048,10 @@ class DataTablesController extends Controller
                 }
                 return 'Rp 0';
             })
-            ->addColumn('invoice_show_url', function($so) {
+            ->addColumn('invoice_show_url', function ($so) {
                 return $so->invoice ? route('web.invoices.show', $so->invoice->id) : null;
             })
-            ->addColumn('status_badge_class', function($so) {
+            ->addColumn('status_badge_class', function ($so) {
                 switch ($so->status) {
                     case \App\Models\ServiceOrder::STATUS_BOOKED:
                         return 'bg-primary';
@@ -1000,10 +1067,10 @@ class DataTablesController extends Controller
                         return 'bg-secondary';
                 }
             })
-            ->editColumn('work_date', function($so) {
+            ->editColumn('work_date', function ($so) {
                 return Carbon::parse($so->work_date)->format('d M Y');
             })
-            ->editColumn('status', function($so) {
+            ->editColumn('status', function ($so) {
                 return ucfirst($so->status);
             })
             ->rawColumns(['invoice_status'])
@@ -1028,7 +1095,7 @@ class DataTablesController extends Controller
             ->get();
 
         return response()->json([
-            'labels' => $spending->map(function($item) {
+            'labels' => $spending->map(function ($item) {
                 return Carbon::createFromFormat('Y-m', $item->month)->format('M Y');
             }),
             'data' => $spending->pluck('total_spent'),
@@ -1048,7 +1115,7 @@ class DataTablesController extends Controller
         if ($orders->count() > 1) {
             $diffs = [];
             for ($i = 1; $i < $orders->count(); $i++) {
-                $date1 = Carbon::parse($orders[$i-1]->work_date);
+                $date1 = Carbon::parse($orders[$i - 1]->work_date);
                 $date2 = Carbon::parse($orders[$i]->work_date);
                 $diffs[] = $date2->diffInDays($date1);
             }
@@ -1099,13 +1166,13 @@ class DataTablesController extends Controller
         $query = $customer->serviceOrders()->with('address.area');
 
         return DataTables::of($query)
-            ->editColumn('work_date', function($so) {
+            ->editColumn('work_date', function ($so) {
                 return Carbon::parse($so->work_date)->format('d M Y');
             })
-            ->addColumn('area', function($so) {
+            ->addColumn('area', function ($so) {
                 return $so->address->area->name ?? 'N/A';
             })
-            ->editColumn('status', function($so) {
+            ->editColumn('status', function ($so) {
                 // Simple status badge
                 return '<span class="badge">' . ucfirst($so->status) . '</span>';
             })
@@ -1147,25 +1214,25 @@ class DataTablesController extends Controller
         })->select('services.*', 'items_summary.total_items', 'items_summary.total_revenue');
 
         return DataTables::of($query)
-            ->addColumn('total_cost', function($service) {
+            ->addColumn('total_cost', function ($service) {
                 return $service->cost * $service->total_items;
             })
-            ->addColumn('total_profit', function($service) {
+            ->addColumn('total_profit', function ($service) {
                 $revenue = $service->total_revenue ?? 0;
                 $cost = $service->cost * $service->total_items;
                 return $revenue - $cost;
             })
-            ->editColumn('total_revenue', function($service) {
+            ->editColumn('total_revenue', function ($service) {
                 return 'Rp ' . number_format($service->total_revenue ?? 0, 0, ',', '.');
             })
-            ->editColumn('total_cost', function($service) {
+            ->editColumn('total_cost', function ($service) {
                 return 'Rp ' . number_format($service->cost * $service->total_items, 0, ',', '.');
             })
-            ->editColumn('total_profit', function($service) {
+            ->editColumn('total_profit', function ($service) {
                 $profit = ($service->total_revenue ?? 0) - ($service->cost * $service->total_items);
                 return 'Rp ' . number_format($profit, 0, ',', '.');
             })
-            ->orderColumn('total_profit', function($query, $order) {
+            ->orderColumn('total_profit', function ($query, $order) {
                 $query->orderByRaw('(total_revenue - (cost * total_items)) ' . $order);
             })
             ->make(true);
@@ -1185,10 +1252,10 @@ class DataTablesController extends Controller
 
         $areas = $query->get();
 
-        $data = $areas->map(function($area) use ($request) {
-            $itemsQuery = \App\Models\ServiceOrderItem::whereHas('serviceOrder.address', function($q) use ($area) {
+        $data = $areas->map(function ($area) use ($request) {
+            $itemsQuery = \App\Models\ServiceOrderItem::whereHas('serviceOrder.address', function ($q) use ($area) {
                 $q->where('area_id', $area->id);
-            })->whereHas('serviceOrder.invoice', function($invoiceQuery) use ($request) {
+            })->whereHas('serviceOrder.invoice', function ($invoiceQuery) use ($request) {
                 $invoiceQuery->where('status', \App\Models\Invoice::STATUS_PAID);
                 if ($request->filled('start_date') && $request->filled('end_date')) {
                     $invoiceQuery->whereHas('payments', function ($paymentQuery) use ($request) {
@@ -1203,7 +1270,7 @@ class DataTablesController extends Controller
 
             return [
                 'name' => $area->name,
-                'total_profit' => (float)($totalProfit ?? 0)
+                'total_profit' => (float) ($totalProfit ?? 0)
             ];
         });
 
@@ -1214,12 +1281,15 @@ class DataTablesController extends Controller
     {
         $this->authorize('viewAny', \App\Models\Staff::class);
 
-        $query = \App\Models\Staff::with(['user', 'serviceOrders' => function ($query) use ($request) {
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $query->whereBetween('work_date', [$request->start_date, $request->end_date]);
+        $query = \App\Models\Staff::with([
+            'user',
+            'serviceOrders' => function ($query) use ($request) {
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $query->whereBetween('work_date', [$request->start_date, $request->end_date]);
+                }
+                $query->with('workPhotos'); // Eager load workPhotos for each service order
             }
-            $query->with('workPhotos'); // Eager load workPhotos for each service order
-        }])->select('staff.*');
+        ])->select('staff.*');
 
         if (auth()->user()->role === 'co_owner') {
             $query->where('area_id', auth()->user()->area_id);
@@ -1228,10 +1298,10 @@ class DataTablesController extends Controller
         }
 
         return DataTables::of($query)
-            ->addColumn('name', function($staff) {
+            ->addColumn('name', function ($staff) {
                 return $staff->user->name ?? $staff->name;
             })
-            ->addColumn('total_hours_worked', function($staff) {
+            ->addColumn('total_hours_worked', function ($staff) {
                 $totalDuration = 0;
 
                 $staff->serviceOrders->each(function ($order) use (&$totalDuration) {
@@ -1251,7 +1321,7 @@ class DataTablesController extends Controller
 
                 return round($totalDuration / 3600, 2);
             })
-            ->addColumn('utilization_rate', function($staff) {
+            ->addColumn('utilization_rate', function ($staff) {
                 $totalDuration = 0;
 
                 $staff->serviceOrders->each(function ($order) use (&$totalDuration) {

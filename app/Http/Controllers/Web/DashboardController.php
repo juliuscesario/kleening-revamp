@@ -108,6 +108,10 @@ class DashboardController extends Controller
                 ->where('status', ServiceOrder::STATUS_BOOKED)
                 ->get();
 
+            $viewData['doneNotInvoiced'] = ServiceOrder::where('status', ServiceOrder::STATUS_DONE)
+                ->whereDoesntHave('invoice')
+                ->get();
+
             $viewData['recentActivity'] = ServiceOrder::where('created_by', $user->id)
                 ->latest()
                 ->take(10)
@@ -161,13 +165,29 @@ class DashboardController extends Controller
 
         // Default empty values for keys not set in every role
         $collectionKeys = [
-            'dailyRevenue', 'areaPerformance', 'todaySchedule', 'unassignedJobs', 'recentActivity',
-            'todayServiceOrders', 'tomorrowServiceOrders', 'pastServiceOrders', 'cancelledServiceOrders', 'doneServiceOrders'
+            'dailyRevenue',
+            'areaPerformance',
+            'todaySchedule',
+            'unassignedJobs',
+            'recentActivity',
+            'todayServiceOrders',
+            'tomorrowServiceOrders',
+            'pastServiceOrders',
+            'cancelledServiceOrders',
+            'doneServiceOrders'
         ];
         $numericKeys = [
-            'monthlyRevenue', 'jobsCompletedThisMonth', 'outstandingInvoices', 'overdueInvoices', 'newCustomersThisMonth',
-            'funnelBooked', 'funnelProses', 'funnelInvoiced',
-            'totalDoneCount', 'todayDoneCount', 'bookedCount'
+            'monthlyRevenue',
+            'jobsCompletedThisMonth',
+            'outstandingInvoices',
+            'overdueInvoices',
+            'newCustomersThisMonth',
+            'funnelBooked',
+            'funnelProses',
+            'funnelInvoiced',
+            'totalDoneCount',
+            'todayDoneCount',
+            'bookedCount'
         ];
 
         foreach ($collectionKeys as $key) {

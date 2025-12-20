@@ -7,14 +7,14 @@ if (form) {
     const customerSearchInput = document.getElementById('customer-search');
     const customerIdInput = document.getElementById('customer_id');
     const customerResultsContainer = document.getElementById('customer-results');
-    
+
     const addressSelect = document.getElementById('address-select');
     const areaNameInput = document.getElementById('area-name');
     const areaIdInput = document.getElementById('area-id');
-    
+
     const addServiceBtn = document.getElementById('add-service-item');
     const serviceItemsContainer = document.getElementById('service-items-container');
-    
+
     const addStaffBtn = document.getElementById('add-staff-member');
     const staffContainer = document.getElementById('staff-container');
 
@@ -152,7 +152,7 @@ if (form) {
     const loadAddresses = async (customerId) => {
         addressSelect.innerHTML = '<option value="">Loading...</option>';
         addressSelect.disabled = true;
-        
+
         if (!customerId) {
             addressSelect.innerHTML = '<option value="">Pilih Customer terlebih dahulu</option>';
             return;
@@ -172,7 +172,7 @@ if (form) {
         addressSelect.disabled = false;
     };
 
-    addressSelect.addEventListener('change', async function() {
+    addressSelect.addEventListener('change', async function () {
         staffContainer.innerHTML = '';
         availableStaff = [];
         const selectedOption = this.options[this.selectedIndex];
@@ -184,13 +184,13 @@ if (form) {
             addStaffBtn.textContent = 'Pilih Alamat terlebih dahulu';
             return;
         }
-        
+
         const areaName = selectedOption.dataset.areaName;
         const areaId = selectedOption.dataset.areaId;
 
         areaNameInput.value = areaName;
         areaIdInput.value = areaId;
-        
+
         const url = staffByAreaUrlTemplate.replace('__AREA_ID__', areaId);
         const response = await fetch(url);
         availableStaff = await response.json();
@@ -291,7 +291,7 @@ if (form) {
                 </div>
                 <div class="col-6 col-md-3">
                     <label class="form-label mb-1">Qty</label>
-                    <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="1" required>
+                    <input type="number" name="services[new_${serviceItemCount}][quantity]" class="form-control service-quantity" value="1" min="0.1" step="0.1" required>
                 </div>
                 <div class="col-6 col-md-3 d-flex align-items-end">
                     <button type="button" class="btn btn-outline-danger w-100 remove-service-item">Remove</button>
