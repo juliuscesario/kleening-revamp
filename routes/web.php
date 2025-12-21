@@ -107,6 +107,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Authentication
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::get('/auth/get-token', [DashboardController::class, 'getToken'])->name('auth.get-token');
 });
 
 Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
@@ -114,4 +115,4 @@ Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
     Route::post('scheduler-logs/run', [SchedulerLogController::class, 'runCommand'])->name('scheduler-logs.run');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

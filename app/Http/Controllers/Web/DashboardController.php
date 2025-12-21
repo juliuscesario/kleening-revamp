@@ -203,4 +203,24 @@ class DashboardController extends Controller
 
         return view('dashboard', $viewData);
     }
+    /**
+     * Get a fresh API token for the authenticated user.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getToken(Request $request)
+    {
+        $user = Auth::user();
+
+        // Optional: delete old tokens to keep it clean, or just add a new one.
+        // For a single-page-app experience, we often just want *a* valid token.
+        // Let's sweep old tokens to avoid clutter.
+        $user->tokens()->delete();
+
+        $token = $user->createToken('spa_token')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+        ]);
+    }
 }
