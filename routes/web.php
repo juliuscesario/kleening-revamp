@@ -115,4 +115,9 @@ Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
     Route::post('scheduler-logs/run', [SchedulerLogController::class, 'runCommand'])->name('scheduler-logs.run');
 });
 
+Route::middleware(['auth', 'role:owner'])->group(function () {
+    Route::get('settings', [\App\Http\Controllers\Web\SettingController::class, 'index'])->name('web.settings.index');
+    Route::post('settings', [\App\Http\Controllers\Web\SettingController::class, 'update'])->name('web.settings.update');
+});
+
 require __DIR__ . '/auth.php';

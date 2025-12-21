@@ -1,6 +1,6 @@
-
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Invoice {{ $invoice->invoice_number }}</title>
     <style>
@@ -8,33 +8,42 @@
             font-family: sans-serif;
             font-size: 10pt;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 10px;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ccc;
             padding: 8px;
             text-align: left;
         }
+
         .header {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .header h1 {
             margin: 0;
             font-size: 18pt;
         }
+
         .info-block {
             margin-bottom: 15px;
         }
+
         .info-block p {
             margin: 0;
         }
+
         .text-right {
             text-align: right;
         }
+
         .watermark {
             position: fixed;
             top: 50%;
@@ -46,15 +55,19 @@
             text-transform: uppercase;
             z-index: -1000;
         }
+
         .paid {
             color: rgba(0, 128, 0, 0.1);
         }
+
         .overdue {
             color: rgba(255, 0, 0, 0.1);
         }
+
         .sent {
             color: rgba(128, 128, 128, 0.1);
         }
+
         .footer-note {
             position: fixed;
             bottom: 0;
@@ -68,6 +81,7 @@
         }
     </style>
 </head>
+
 <body>
     @if ($invoice->status === 'paid')
         <div class="watermark paid">Paid</div>
@@ -78,7 +92,12 @@
     @endif
 
     <div class="header">
-        <img src="{{ public_path('storage/logo_kleening.png') }}" style="width: 150px; float: left;">
+        @if(\App\Models\AppSetting::get('app_logo'))
+            <img src="{{ public_path('storage/' . \App\Models\AppSetting::get('app_logo')) }}"
+                style="width: 150px; float: left;">
+        @else
+            <img src="{{ public_path('storage/logo_kleening.png') }}" style="width: 150px; float: left;">
+        @endif
         <div style="clear: both;"></div>
         <h1>Invoice</h1>
         <h2>{{ $invoice->invoice_number }}</h2>
@@ -134,12 +153,12 @@
         </thead>
         <tbody>
             @foreach($invoice->serviceOrder->items as $item)
-            <tr>
-                <td>{{ $item->service->name }}</td>
-                <td>{{ $item->quantity }}</td>
-                <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
-            </tr>
+                <tr>
+                    <td>{{ $item->service->name }}</td>
+                    <td>{{ $item->quantity }}</td>
+                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                </tr>
             @endforeach
         </tbody>
         @php
@@ -194,9 +213,13 @@
     </table>
 
     <div class="footer-note">
-        <p><sup>*</sup> This invoice is generated automatically by the PT Kilau Elok Indonesia service platform, therefore no physical signature is required.</p>
-        <p><sup>**</sup> Keep this invoice digital—please avoid printing it to reduce paper waste and help us protect the earth.</p>
-        <p><strong>PT Kilau Elok Indonesia</strong></p>
+        <p><sup>*</sup> This invoice is generated automatically by the
+            {{ \App\Models\AppSetting::get('app_name', config('app.name')) }} service platform, therefore no physical
+            signature is required.</p>
+        <p><sup>**</sup> Keep this invoice digital—please avoid printing it to reduce paper waste and help us protect
+            the earth.</p>
+        <p><strong>{{ \App\Models\AppSetting::get('app_name', config('app.name')) }}</strong></p>
     </div>
 </body>
+
 </html>

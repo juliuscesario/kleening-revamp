@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Service Order {{ $serviceOrder->so_number }}</title>
     <style>
@@ -7,33 +8,42 @@
             font-family: sans-serif;
             font-size: 10pt;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 10px;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ccc;
             padding: 8px;
             text-align: left;
         }
+
         .header {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .header h1 {
             margin: 0;
             font-size: 18pt;
         }
+
         .info-block {
             margin-bottom: 15px;
         }
+
         .info-block p {
             margin: 0;
         }
+
         .text-right {
             text-align: right;
         }
+
         .badge-danger {
             color: #fff;
             background-color: #dc3545;
@@ -46,32 +56,39 @@
             vertical-align: baseline;
             border-radius: .25rem;
         }
+
         .signature-box {
             border: 1px solid #ccc;
             padding: 10px;
             text-align: center;
             margin-top: 20px;
-            min-height: 100px; /* Ensure some height even if no signature */
+            min-height: 100px;
+            /* Ensure some height even if no signature */
         }
+
         .signature-box img {
             max-width: 100%;
             height: auto;
             display: block;
             margin: 0 auto;
         }
+
         .page-break {
             page-break-before: always;
         }
+
         .work-photo-container {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .work-photo-container img {
             max-width: 100%;
             height: auto;
             border: 1px solid #eee;
             margin-bottom: 10px;
         }
+
         .footer-note {
             position: fixed;
             bottom: 0;
@@ -85,9 +102,15 @@
         }
     </style>
 </head>
+
 <body>
     <div class="header">
-        <img src="{{ public_path('storage/logo_kleening.png') }}" style="width: 150px; float: left;">
+        @if(\App\Models\AppSetting::get('app_logo'))
+            <img src="{{ public_path('storage/' . \App\Models\AppSetting::get('app_logo')) }}"
+                style="width: 150px; float: left;">
+        @else
+            <img src="{{ public_path('storage/logo_kleening.png') }}" style="width: 150px; float: left;">
+        @endif
         <div style="clear: both;"></div>
         <h1>Service Order</h1>
         <h2>{{ $serviceOrder->so_number }}</h2>
@@ -122,17 +145,30 @@
             @endif
         </p>
         <p><strong>Work Date:</strong> {{ \Carbon\Carbon::parse($serviceOrder->work_date)->format('d M Y') }}</p>
-        <p><strong>Work Time (WIB):</strong> {{ $serviceOrder->work_time_formatted ? $serviceOrder->work_time_formatted . ' WIB' : 'N/A' }}</p>
+        <p><strong>Work Time (WIB):</strong>
+            {{ $serviceOrder->work_time_formatted ? $serviceOrder->work_time_formatted . ' WIB' : 'N/A' }}</p>
         <p><strong>Status:</strong>
             @php
                 $statusBadgeClass = '';
                 switch ($serviceOrder->status) {
-                    case 'booked': $statusBadgeClass = 'badge-primary'; break;
-                    case 'proses': $statusBadgeClass = 'badge-warning'; break;
-                    case 'cancelled': $statusBadgeClass = 'badge-danger'; break;
-                    case 'done': $statusBadgeClass = 'badge-success'; break;
-                    case 'invoiced': $statusBadgeClass = 'badge-secondary'; break;
-                    default: $statusBadgeClass = 'badge-secondary'; break;
+                    case 'booked':
+                        $statusBadgeClass = 'badge-primary';
+                        break;
+                    case 'proses':
+                        $statusBadgeClass = 'badge-warning';
+                        break;
+                    case 'cancelled':
+                        $statusBadgeClass = 'badge-danger';
+                        break;
+                    case 'done':
+                        $statusBadgeClass = 'badge-success';
+                        break;
+                    case 'invoiced':
+                        $statusBadgeClass = 'badge-secondary';
+                        break;
+                    default:
+                        $statusBadgeClass = 'badge-secondary';
+                        break;
                 }
             @endphp
             <span class="badge {{ $statusBadgeClass }}">{{ ucfirst($serviceOrder->status) }}</span>
@@ -151,12 +187,12 @@
         </thead>
         <tbody>
             @foreach($serviceOrder->items as $item)
-            <tr>
-                <td>{{ $item->service->name }}</td>
-                <td>{{ $item->quantity }}</td>
-                <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
-            </tr>
+                <tr>
+                    <td>{{ $item->service->name }}</td>
+                    <td>{{ $item->quantity }}</td>
+                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                </tr>
             @endforeach
         </tbody>
         <tfoot>
@@ -186,10 +222,11 @@
         <div style="width: 100%;">
             @if($serviceOrder->customer_signature_image)
                 <div style="width: 30%; float: left; text-align: center; margin-bottom: 20px;">
-                    <p>Customer Signature: <br/>
-                    {{ \Illuminate\Support\Str::title($serviceOrder->customer->name) }}</p>
+                    <p>Customer Signature: <br />
+                        {{ \Illuminate\Support\Str::title($serviceOrder->customer->name) }}</p>
                     <div class="signature-box">
-                        <img src="{{ $serviceOrder->customer_signature_image }}" alt="Customer Signature" style="max-height: 80px;">
+                        <img src="{{ $serviceOrder->customer_signature_image }}" alt="Customer Signature"
+                            style="max-height: 80px;">
                     </div>
                 </div>
             @endif
@@ -197,7 +234,7 @@
             @foreach($serviceOrder->staff as $staff)
                 @if($staff->pivot->signature_image)
                     <div style="width: 30%; float: left; text-align: center; margin-bottom: 20px;">
-                        <p>Staff Signature: <br/>{{ $staff->name }}</p>
+                        <p>Staff Signature: <br />{{ $staff->name }}</p>
                         <div class="signature-box">
                             <img src="{{ $staff->pivot->signature_image }}" alt="Staff Signature" style="max-height: 80px;">
                         </div>
@@ -208,8 +245,10 @@
         </div>
     </div>
     <div class="footer-note">
-        <p><sup>*</sup> This service order is issued digitally—please keep it electronic, avoid printing, and help PT Kilau Elok Indonesia minimize paper waste.</p>
-        <p><strong>PT Kilau Elok Indonesia</strong></p>
+        <p><sup>*</sup> This service order is issued digitally—please keep it electronic, avoid printing, and help
+            {{ \App\Models\AppSetting::get('app_name', config('app.name')) }} minimize paper waste.</p>
+        <p><strong>{{ \App\Models\AppSetting::get('app_name', config('app.name')) }}</strong></p>
     </div>
 </body>
+
 </html>
