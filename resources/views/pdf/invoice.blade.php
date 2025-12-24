@@ -212,10 +212,23 @@
         </tfoot>
     </table>
 
+    <div class="info-block" style="margin-top: 30px; page-break-inside: avoid;">
+        <p><strong>PAYMENT:</strong></p>
+        <p>Utk pembayaran diutamakan secara transfer ke:</p>
+        <p><strong>BCA 5933068888</strong></p>
+        <p><strong>KILAU ELOK INDONESIA PT</strong></p>
+        <br>
+        <p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
+        <p>( diluar rekening diatas tidak berlaku )</p>
+        <br>
+        <p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>
+    </div>
+
     <div class="footer-note">
         <p><sup>*</sup> This invoice is generated automatically by the
             {{ \App\Models\AppSetting::get('app_name', config('app.name')) }} service platform, therefore no physical
-            signature is required.</p>
+            signature is required.
+        </p>
         <p><sup>**</sup> Keep this invoice digital—please avoid printing it to reduce paper waste and help us protect
             the earth.</p>
         <p><strong>{{ \App\Models\AppSetting::get('app_name', config('app.name')) }}</strong></p>
