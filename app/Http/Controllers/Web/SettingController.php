@@ -14,6 +14,16 @@ class SettingController extends Controller
         return view('settings.index', [
             'appName' => AppSetting::get('app_name', config('app.name')),
             'appLogo' => AppSetting::get('app_logo'),
+            'invoiceFooterText' => AppSetting::get('invoice_footer_text', '
+<p><strong>PAYMENT:</strong></p>
+<p>Utk pembayaran diutamakan secara transfer ke:</p>
+<p><strong>BCA 5933068888</strong></p>
+<p><strong>KILAU ELOK INDONESIA PT</strong></p>
+<br>
+<p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
+<p>( diluar rekening diatas tidak berlaku )</p>
+<br>
+<p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>'),
         ]);
     }
 
@@ -22,9 +32,14 @@ class SettingController extends Controller
         $request->validate([
             'app_name' => 'required|string|max:255',
             'app_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'invoice_footer_text' => 'nullable|string',
         ]);
 
         AppSetting::set('app_name', $request->app_name);
+
+        if ($request->has('invoice_footer_text')) {
+            AppSetting::set('invoice_footer_text', $request->invoice_footer_text);
+        }
 
         if ($request->hasFile('app_logo')) {
             // Delete old logo if it exists and is not the default

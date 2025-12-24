@@ -213,15 +213,16 @@
     </table>
 
     <div class="info-block" style="margin-top: 30px; page-break-inside: avoid;">
-        <p><strong>PAYMENT:</strong></p>
-        <p>Utk pembayaran diutamakan secara transfer ke:</p>
-        <p><strong>BCA 5933068888</strong></p>
-        <p><strong>KILAU ELOK INDONESIA PT</strong></p>
-        <br>
-        <p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
-        <p>( diluar rekening diatas tidak berlaku )</p>
-        <br>
-        <p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>
+        {!! \App\Models\AppSetting::get('invoice_footer_text', '
+<p><strong>PAYMENT:</strong></p>
+<p>Utk pembayaran diutamakan secara transfer ke:</p>
+<p><strong>BCA 5933068888</strong></p>
+<p><strong>KILAU ELOK INDONESIA PT</strong></p>
+<br>
+<p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
+<p>( diluar rekening diatas tidak berlaku )</p>
+<br>
+<p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>') !!}
     </div>
 
     <div class="footer-note">

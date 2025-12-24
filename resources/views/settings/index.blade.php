@@ -50,6 +50,18 @@
                                 </div>
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label">Invoice Payment Info & Footer</label>
+                                <textarea class="form-control @error('invoice_footer_text') is-invalid @enderror"
+                                    name="invoice_footer_text"
+                                    rows="10">{{ old('invoice_footer_text', $invoiceFooterText) }}</textarea>
+                                @error('invoice_footer_text')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-hint">You can use HTML tags (e.g., &lt;strong&gt;, &lt;p&gt;, &lt;br&gt;)
+                                    for formatting.</small>
+                            </div>
+
                             <div class="card-footer text-end">
                                 <button type="submit" class="btn btn-primary">Save Changes</button>
                             </div>
