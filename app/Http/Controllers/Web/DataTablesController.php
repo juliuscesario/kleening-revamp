@@ -342,20 +342,6 @@ class DataTablesController extends Controller
             $query->where('status', request()->status);
         }
 
-        // Add custom search for customer name and phone
-        if (request()->has('search') && !empty(request()->input('search')['value'])) {
-            $searchValue = request()->input('search')['value'];
-            $query->where(function ($q) use ($searchValue) {
-                // Search in invoice number
-                $q->where('invoice_number', 'ILIKE', "%{$searchValue}%")
-                    // Search in customer name via relationship
-                    ->orWhereHas('serviceOrder.customer', function ($subQ) use ($searchValue) {
-                        $subQ->where('name', 'ILIKE', "%{$searchValue}%")
-                            ->orWhere('phone_number', 'ILIKE', "%{$searchValue}%");
-                    });
-            });
-        }
-
         return DataTables::of($query)
             ->addColumn('so_number', function ($invoice) {
                 return $invoice->serviceOrder->so_number;
