@@ -1,6 +1,6 @@
 import ApexCharts from 'apexcharts';
 
-$(function() {
+$(function () {
     const page = $('#staff-drilldown-page');
     if (!page.length) {
         return;
@@ -24,7 +24,7 @@ $(function() {
     const ajaxParams = { start_date: startDate, end_date: endDate, area_id: areaId };
 
     // 2. Render Workload Chart
-    $.get(workloadUrl, ajaxParams, function(response) {
+    $.get(workloadUrl, ajaxParams, function (response) {
         const workloadChartOptions = {
             chart: {
                 type: 'bar',
@@ -41,7 +41,7 @@ $(function() {
                 text: `Beban Kerja Mingguan: ${staffName}`,
                 align: 'left'
             },
-             plotOptions: {
+            plotOptions: {
                 bar: {
                     horizontal: false,
                 }
@@ -53,7 +53,7 @@ $(function() {
     });
 
     // 3. Render Specialization Chart
-    $.get(specializationUrl, ajaxParams, function(response) {
+    $.get(specializationUrl, ajaxParams, function (response) {
         const specializationChartOptions = {
             chart: {
                 type: 'donut',
@@ -81,7 +81,7 @@ $(function() {
         serverSide: true,
         ajax: {
             url: tableUrl,
-            data: function(d) {
+            data: function (d) {
                 d.start_date = startDate;
                 d.end_date = endDate;
                 d.area_id = areaId;
@@ -90,14 +90,23 @@ $(function() {
         columns: [
             { data: 'so_number', name: 'so_number' },
             { data: 'customer_name', name: 'customer.name' },
-            { data: 'customer_address', name: 'address.full_address' },
+            {
+                data: 'customer_address',
+                name: 'address.full_address',
+                render: function (data, type, row) {
+                    if (type === 'display' && data && data.length > 40) {
+                        return `<span title="${data}" data-bs-toggle="tooltip" style="cursor: pointer;">${data.substring(0, 40)}...</span>`;
+                    }
+                    return data;
+                }
+            },
             { data: 'work_date', name: 'work_date' },
             { data: 'invoice_total', name: 'invoice.grand_total' },
             {
                 data: 'status',
                 name: 'status',
                 orderable: false,
-                render: function(data, type, row) {
+                render: function (data, type, row) {
                     const label = data || '-';
 
                     if (type !== 'display') {
@@ -115,6 +124,13 @@ $(function() {
                 }
             },
         ],
+
+        drawCallback: function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new window.bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        },
         order: [[2, 'desc']]
     });
 });
