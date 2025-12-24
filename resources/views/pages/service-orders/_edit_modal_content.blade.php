@@ -30,6 +30,15 @@
             <textarea name="staff_notes" class="form-control" rows="3">{{ $serviceOrder->staff_notes }}</textarea>
         </div>
 
+        @if(in_array(auth()->user()->role, ['admin', 'owner']) && in_array($serviceOrder->status, ['booked', 'proses']))
+            <div class="mb-3">
+                <label class="form-label">Tanggal Pengerjaan</label>
+                <input type="date" name="work_date" class="form-control"
+                    value="{{ $serviceOrder->work_date ? \Carbon\Carbon::parse($serviceOrder->work_date)->format('Y-m-d') : '' }}"
+                    min="{{ date('Y-m-d') }}">
+            </div>
+        @endif
+
         <div class="mb-3">
             <label class="form-label">Waktu Pengerjaan (WIB)</label>
             <input type="text" name="work_time" class="form-control js-work-time-input" inputmode="numeric"
@@ -79,7 +88,8 @@
                         <select name="staff[]" class="form-select staff-select">
                             @foreach($allStaff as $staff)
                                 <option value="{{ $staff->id }}" {{ $staffMember->id == $staff->id ? 'selected' : '' }}>
-                                    {{ $staff->name }}</option>
+                                    {{ $staff->name }}
+                                </option>
                             @endforeach
                         </select>
                         <button type="button" class="btn btn-danger remove-staff-member">Remove</button>

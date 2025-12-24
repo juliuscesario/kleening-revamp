@@ -240,6 +240,19 @@ class ServiceOrderController extends Controller
             }
         }
 
+        // --- Work Date Update Logic ---
+        if ($request->has('work_date') && $request->work_date != $serviceOrder->work_date) {
+            if (!in_array($user->role, ['admin', 'owner'])) {
+                return response()->json(['success' => false, 'message' => 'Hanya Admin dan Owner yang dapat mengubah tanggal pengerjaan.'], 403);
+            }
+            if (!in_array($serviceOrder->status, ['booked', 'proses'])) {
+                return response()->json(['success' => false, 'message' => 'Tanggal hanya dapat diubah saat status Booked atau Proses.'], 400);
+            }
+            if (Carbon::parse($request->work_date)->startOfDay()->lt(Carbon::now()->startOfDay())) {
+                return response()->json(['success' => false, 'message' => 'Tidak dapat mengubah tanggal ke masa lalu (backdate).'], 400);
+            }
+        }
+
         DB::transaction(function () use ($request, $serviceOrder, $newStatus) {
             // Update notes and status
             $serviceOrder->work_notes = $request->work_notes;
