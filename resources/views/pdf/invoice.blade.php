@@ -7,12 +7,19 @@
         body {
             font-family: sans-serif;
             font-size: 10pt;
+            /* Ensure content doesn't overlap with fixed footer */
+            padding-bottom: 220px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 10px;
+        }
+
+        /* Prevent table rows from breaking across pages awkwardly */
+        tr {
+            page-break-inside: avoid;
         }
 
         th,
@@ -71,7 +78,9 @@
         .footer-note {
             position: fixed;
             bottom: 0;
-            width: 100%;
+            left: 0;
+            right: 0;
+            height: 50px;
             text-align: center;
             font-size: 8pt;
             color: #555;
@@ -79,7 +88,27 @@
             padding-top: 8px;
             background-color: #fff;
         }
-    </style>
+
+        .billing-payment-section {
+             position: fixed;
+             bottom: 60px; /* Above the footer note */
+             left: 0;
+             right: 0;
+             padding: 10px 0;
+             background-color: #fff;
+        }
+
+        /* Borderless table for billing info */
+        .billing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
+        }
+        .billing-table td {
+            border: none;
+            padding: 2px 5px;
+            vertical-align: top;
+        }
 </head>
 
 <body>
@@ -212,17 +241,29 @@
         </tfoot>
     </table>
 
-    <div class="info-block" style="margin-top: 30px; page-break-inside: avoid;">
+    <div class="billing-payment-section">
         {!! \App\Models\AppSetting::get('invoice_footer_text', '
-<p><strong>PAYMENT:</strong></p>
-<p>Utk pembayaran diutamakan secara transfer ke:</p>
-<p><strong>BCA 5933068888</strong></p>
-<p><strong>KILAU ELOK INDONESIA PT</strong></p>
-<br>
-<p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
-<p>( diluar rekening diatas tidak berlaku )</p>
-<br>
-<p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>') !!}
+        <h3>Billing Information</h3>
+        <table class="billing-table">
+            <tr>
+                <td style="width: 120px; font-weight: bold;">Bank</td>
+                <td style="width: 10px;">:</td>
+                <td>BCA</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold;">Account No.</td>
+                <td>:</td>
+                <td>5933068888</td>
+            </tr>
+             <tr>
+                <td style="font-weight: bold;">Account Name</td>
+                <td>:</td>
+                <td>PT. Kilau Elok Indonesia</td>
+            </tr>
+        </table>
+        <br>
+        <p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
+        <p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>') !!}
     </div>
 
     <div class="footer-note">

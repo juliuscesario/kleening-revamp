@@ -15,15 +15,27 @@ class SettingController extends Controller
             'appName' => AppSetting::get('app_name', config('app.name')),
             'appLogo' => AppSetting::get('app_logo'),
             'invoiceFooterText' => AppSetting::get('invoice_footer_text', '
-<p><strong>PAYMENT:</strong></p>
-<p>Utk pembayaran diutamakan secara transfer ke:</p>
-<p><strong>BCA 5933068888</strong></p>
-<p><strong>KILAU ELOK INDONESIA PT</strong></p>
-<br>
-<p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
-<p>( diluar rekening diatas tidak berlaku )</p>
-<br>
-<p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>'),
+        <h3>Billing Information</h3>
+        <table class="billing-table" style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+            <tr>
+                <td style="width: 120px; font-weight: bold; border: none; padding: 2px 5px;">Bank</td>
+                <td style="width: 10px; border: none; padding: 2px 5px;">:</td>
+                <td style="border: none; padding: 2px 5px;">BCA</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; border: none; padding: 2px 5px;">Account No.</td>
+                <td style="border: none; padding: 2px 5px;">:</td>
+                <td style="border: none; padding: 2px 5px;">5933068888</td>
+            </tr>
+             <tr>
+                <td style="font-weight: bold; border: none; padding: 2px 5px;">Account Name</td>
+                <td style="border: none; padding: 2px 5px;">:</td>
+                <td style="border: none; padding: 2px 5px;">PT. Kilau Elok Indonesia</td>
+            </tr>
+        </table>
+        <br>
+        <p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
+        <p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>'),
         ]);
     }
 
