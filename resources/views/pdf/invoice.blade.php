@@ -7,8 +7,6 @@
         body {
             font-family: sans-serif;
             font-size: 10pt;
-            /* Ensure content doesn't overlap with fixed footer */
-            padding-bottom: 220px;
         }
 
         table {
@@ -90,11 +88,9 @@
         }
 
         .billing-payment-section {
-             position: fixed;
-             bottom: 60px; /* Above the footer note */
-             left: 0;
-             right: 0;
-             padding: 10px 0;
+             margin-top: 30px;
+             page-break-inside: avoid;
+             width: 100%;
              background-color: #fff;
         }
 
