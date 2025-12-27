@@ -199,7 +199,7 @@
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Service Orders Selesai</h5>
+                <h5 class="modal-title">Service Orders Selesai (10 Hari Terakhir)</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -215,7 +215,11 @@
                                             <h5 class="mb-0">{{ $so->so_number }}</h5>
                                             <span class="badge bg-success text-white">Done</span>
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                        <p class="mb-0 text-secondary">
+                                            <strong>Pelanggan:</strong> {{ $so->customer->name }}<br>
+                                            <strong>No. HP:</strong> {{ $so->customer->phone_number }}<br>
+                                            <strong>Alamat:</strong> {{ $so->address->full_address ?? '-' }}
+                                        </p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
                                         <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>

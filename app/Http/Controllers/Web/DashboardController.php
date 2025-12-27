@@ -154,7 +154,9 @@ class DashboardController extends Controller
 
             $viewData['doneServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
                 ->where('status', 'done')
-                ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+                // ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+                ->where('work_date', '>=', $today->copy()->subDays(10)) // Last 10 days
+                ->with(['customer', 'address']) // Eager load relations
                 ->orderBy('work_date', 'desc')
                 ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
                 ->get();
