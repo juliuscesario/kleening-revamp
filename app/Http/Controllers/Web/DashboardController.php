@@ -153,15 +153,15 @@ class DashboardController extends Controller
                 ->get();
 
             $viewData['doneServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
-                ->where('status', 'done')
+                ->whereNotIn('status', ['booked', 'proses', 'cancelled'])
                 // ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
                 ->where('work_date', '>=', $today->copy()->subDays(10)) // Last 10 days
                 ->with(['customer', 'address']) // Eager load relations
                 ->orderBy('work_date', 'desc')
                 ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
                 ->get();
-            $viewData['totalDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->count();
-            $viewData['todayDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->whereDate('work_date', $today)->count();
+            $viewData['totalDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereNotIn('status', ['booked', 'proses', 'cancelled'])->count();
+            $viewData['todayDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereNotIn('status', ['booked', 'proses', 'cancelled'])->whereDate('work_date', $today)->count();
             $viewData['bookedCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'booked')->whereDate('work_date', '>=', $today)->count();
         }
 

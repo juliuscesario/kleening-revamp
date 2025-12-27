@@ -213,7 +213,7 @@
                                     <div class="flex-grow-1 order-2 order-sm-1">
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                                             <h5 class="mb-0">{{ $so->so_number }}</h5>
-                                            <span class="badge bg-success text-white">Done</span>
+                                            <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'success' }} text-white">{{ ucfirst($so->status) }}</span>
                                         </div>
                                         <p class="mb-0 text-secondary">
                                             <strong>Pelanggan:</strong> {{ $so->customer->name }}<br>
