@@ -127,21 +127,21 @@ class DashboardController extends Controller
             $viewData['todayServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
                 ->whereDate('work_date', $today)
                 ->whereIn('status', ['booked', 'proses'])
-                ->orderBy('work_date', 'desc')
+                ->orderBy('work_date', 'asc')
                 ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
                 ->get();
 
             $viewData['tomorrowServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
                 ->whereDate('work_date', $tomorrow)
                 ->where('status', 'booked')
-                ->orderBy('work_date', 'desc')
+                ->orderBy('work_date', 'asc')
                 ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
                 ->get();
 
             $viewData['pastServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
                 ->whereBetween('work_date', [$today->copy()->subDays(6), $today->copy()->subDay()])
                 ->whereIn('status', ['booked', 'proses'])
-                ->orderBy('work_date', 'desc')
+                ->orderBy('work_date', 'asc')
                 ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
                 ->get();
 
