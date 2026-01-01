@@ -104,8 +104,8 @@
 <div class="row row-deck row-cards">
     {{-- Staff Stats Widgets --}}
     <div class="col-12">
-        <div class="row row-cards">
-            <div class="col-sm-4">
+        <div class="row row-cards flex-nowrap overflow-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
+            <div class="col-10 col-sm-4">
                 <div class="card card-sm">
                     <div class="card-body">
                         <div class="row align-items-center">
@@ -126,7 +126,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-4">
+            <div class="col-10 col-sm-4">
                 <div class="card card-sm">
                     <div class="card-body">
                         <div class="row align-items-center">
@@ -147,7 +147,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-4">
+            <div class="col-10 col-sm-4">
                 <div class="card card-sm">
                     <div class="card-body">
                         <div class="row align-items-center">
