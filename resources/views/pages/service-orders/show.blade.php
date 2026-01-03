@@ -9,17 +9,25 @@
                 <h2 class="page-title">Detail Service Order: {{ $serviceOrder->so_number }}</h2>
             </div>
             <div class="col-auto ms-auto d-print-none">
-                @if(auth()->user()->role !== 'staff')
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editServiceOrderModal">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" /><path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" /><line x1="16" y1="5" x2="19" y2="8" /></svg>
-                    Edit Service Order
-                </button>
-                @endif
-                <a href="{{ route('web.service-orders.print', $serviceOrder->id) }}" class="btn btn-success" target="_blank">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><rect x="7" y="13" width="10" height="8" rx="2" /></svg>
-                    Print Service Order
-                </a>
-                <a href="{{ route('web.service-orders.index') }}" class="btn">Kembali</a>
+                <div class="btn-list">
+                    @if($serviceOrder->status === 'done' && (!$serviceOrder->invoice || $serviceOrder->invoice->status === 'cancelled'))
+                    <a href="{{ route('web.invoices.create', ['service_order_id' => $serviceOrder->id]) }}" class="btn btn-teal">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-invoice" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 7l1 0" /><path d="M9 13l6 0" /><path d="M13 17l2 0" /></svg>
+                        Create Invoice
+                    </a>
+                    @endif
+                    @if(auth()->user()->role !== 'staff')
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editServiceOrderModal">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" /><path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" /><line x1="16" y1="5" x2="19" y2="8" /></svg>
+                        Edit Service Order
+                    </button>
+                    @endif
+                    <a href="{{ route('web.service-orders.print', $serviceOrder->id) }}" class="btn btn-success" target="_blank">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><rect x="7" y="13" width="10" height="8" rx="2" /></svg>
+                        Print Service Order
+                    </a>
+                    <a href="{{ route('web.service-orders.index') }}" class="btn">Kembali</a>
+                </div>
             </div>
         </div>
     </div>
