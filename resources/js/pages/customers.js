@@ -1,9 +1,9 @@
 // resources/js/pages/customers.js
 
-$(function() {
+$(function () {
     const ajaxUrl = $('#customers-table').data('url');
     const apiUrl = $('#customers-table').data('api-url');
-    
+
     const modalElement = document.getElementById('modal-customer');
     const modalInstance = new bootstrap.Modal(modalElement);
     const addressesModalElement = document.getElementById('modal-show-addresses');
@@ -26,7 +26,7 @@ $(function() {
     });
 
     // Show/hide address fields based on checkbox
-    $('#add-address-checkbox').on('change', function() {
+    $('#add-address-checkbox').on('change', function () {
         if ($(this).is(':checked')) {
             $('#address-fields').slideDown();
         } else {
@@ -38,6 +38,7 @@ $(function() {
         $('#customer-form').trigger("reset");
         $('#customer-id').val('');
         $('#add-address-checkbox').prop('checked', false);
+        $('#copy-customer-data').prop('checked', false); // Reset copy checkbox
         $('#address-fields').hide();
         $('#modal-title').html("Tambah Customer Baru");
         $('.form-control').removeClass('is-invalid');
@@ -46,20 +47,51 @@ $(function() {
         $('#add-address-checkbox').closest('.form-check').show();
     }
 
-    $('#add-customer-button').on('click', function() {
+    $('#add-customer-button').on('click', function () {
         resetForm();
         modalInstance.show();
     });
 
+    // Auto-copy customer data logic
+    $('#copy-customer-data').on('change', function () {
+        if ($(this).is(':checked')) {
+            $('#address-contact_name').val($('#customer-name').val());
+            $('#address-contact_phone').val($('#customer-phone_number').val());
+
+            // Make them readonly to indicate they are synced (optional, based on preference)
+            // $('#address-contact_name').prop('readonly', true);
+            // $('#address-contact_phone').prop('readonly', true);
+        } else {
+            $('#address-contact_name').val('');
+            $('#address-contact_phone').val('');
+
+            // $('#address-contact_name').prop('readonly', false);
+            // $('#address-contact_phone').prop('readonly', false);
+        }
+    });
+
+    // Real-time sync
+    $('#customer-name').on('input', function () {
+        if ($('#copy-customer-data').is(':checked')) {
+            $('#address-contact_name').val($(this).val());
+        }
+    });
+
+    $('#customer-phone_number').on('input', function () {
+        if ($('#copy-customer-data').is(':checked')) {
+            $('#address-contact_phone').val($(this).val());
+        }
+    });
+
     // Handle Show Addresses button
-    $('body').on('click', '.show-addresses', function() {
+    $('body').on('click', '.show-addresses', function () {
         const customer_id = $(this).data('id');
-        $.get(`${apiUrl}/${customer_id}/addresses`, function(response) {
+        $.get(`${apiUrl}/${customer_id}/addresses`, function (response) {
             const addresses = response.data;
             let content = '<p>Customer ini belum memiliki alamat.</p>';
             if (addresses && addresses.length > 0) {
                 content = '<ul class="list-group list-group-flush">';
-                addresses.forEach(function(address) {
+                addresses.forEach(function (address) {
                     let mapLink = '';
                     if (address.google_maps_link) {
                         mapLink = `<a href="${address.google_maps_link}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-ghost-secondary">
@@ -81,15 +113,15 @@ $(function() {
         });
     });
 
-    $('body').on('click', '.edit-customer', function() {
+    $('body').on('click', '.edit-customer', function () {
         const customer_id = $(this).data('id');
-        $.get(`${apiUrl}/${customer_id}`, function(data) {
+        $.get(`${apiUrl}/${customer_id}`, function (data) {
             resetForm();
             $('#modal-title').html("Edit Customer");
             $('#customer-id').val(data.data.id);
             $('#customer-name').val(data.data.name);
             $('#customer-phone_number').val(data.data.phone_number);
-            
+
             // Hide address section when editing customer
             $('#add-address-checkbox').closest('.form-check').hide();
             $('#address-fields').hide();
@@ -98,7 +130,7 @@ $(function() {
         });
     });
 
-    $('#customer-form').on('submit', function(e) {
+    $('#customer-form').on('submit', function (e) {
         e.preventDefault();
         $('.form-control').removeClass('is-invalid');
         $('.invalid-feedback').text('');
@@ -108,27 +140,27 @@ $(function() {
         const method = customer_id ? 'PUT' : 'POST';
 
         $.ajax({
-            url: url, 
-            type: method, 
+            url: url,
+            type: method,
             data: formData,
-            success: function() {
+            success: function () {
                 modalInstance.hide();
                 table.ajax.reload();
-                Swal.fire({ 
-                    icon: 'success', 
-                    title: 'Berhasil!', 
-                    text: 'Data customer berhasil disimpan.', 
-                    showConfirmButton: false, 
-                    timer: 1500 
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Data customer berhasil disimpan.',
+                    showConfirmButton: false,
+                    timer: 1500
                 });
             },
-            error: function(jqXHR) {
+            error: function (jqXHR) {
                 if (jqXHR.status === 403) {
                     modalInstance.hide();
                     Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak memiliki izin untuk menyimpan data ini.', 'error');
                 } else if (jqXHR.status === 422) {
                     const errors = jqXHR.responseJSON.errors;
-                    Object.keys(errors).forEach(function(key) {
+                    Object.keys(errors).forEach(function (key) {
                         $(`#${key}-error`).text(errors[key][0]).siblings('.form-control').addClass('is-invalid');
                     });
                 } else {
@@ -139,27 +171,27 @@ $(function() {
         });
     });
 
-    $('body').on('click', '.delete-customer', function() {
+    $('body').on('click', '.delete-customer', function () {
         const customer_id = $(this).data("id");
         Swal.fire({
-            title: 'Apakah Anda Yakin?', 
-            text: "Data customer ini akan dihapus!", 
+            title: 'Apakah Anda Yakin?',
+            text: "Data customer ini akan dihapus!",
             icon: 'warning',
-            showCancelButton: true, 
-            confirmButtonColor: '#d33', 
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, hapus!', 
+            confirmButtonText: 'Ya, hapus!',
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    type: "DELETE", 
+                    type: "DELETE",
                     url: `${apiUrl}/${customer_id}`,
-                    success: function() {
+                    success: function () {
                         table.ajax.reload();
                         Swal.fire('Dihapus!', 'Data customer berhasil dihapus.', 'success');
                     },
-                    error: function(jqXHR) {
+                    error: function (jqXHR) {
                         if (jqXHR.status === 403) {
                             Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak memiliki izin untuk menghapus data ini.', 'error');
                         } else {

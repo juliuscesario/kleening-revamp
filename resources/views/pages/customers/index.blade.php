@@ -103,6 +103,12 @@
                                     <div class="invalid-feedback" id="label-error"></div>
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="copy-customer-data">
+                                        <span class="form-check-label">Samakan dengan Data Customer</span>
+                                    </label>
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label">Nama Kontak</label>
                                     <input type="text" class="form-control" name="contact_name" id="address-contact_name" placeholder="Nama penerima di alamat">
                                     <div class="invalid-feedback" id="contact_name-error"></div>
