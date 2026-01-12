@@ -72,7 +72,7 @@
               <img src="{{ asset('storage/' . \App\Models\AppSetting::get('app_logo')) }}" alt="Logo"
                 class="navbar-brand-image">
             @else
-              <img src="{{ asset('storage/logo_kleening.png') }}" alt="Kleening Logo" class="navbar-brand-image">
+              {{ \App\Models\AppSetting::get('app_name', config('app.name')) }}
             @endif
           </a>
         </h1>

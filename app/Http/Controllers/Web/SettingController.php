@@ -15,27 +15,10 @@ class SettingController extends Controller
             'appName' => AppSetting::get('app_name', config('app.name')),
             'appLogo' => AppSetting::get('app_logo'),
             'invoiceFooterText' => AppSetting::get('invoice_footer_text', '
-        <h3>Billing Information</h3>
-        <table class="billing-table" style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
-            <tr>
-                <td style="width: 120px; font-weight: bold; border: none; padding: 2px 5px;">Bank</td>
-                <td style="width: 10px; border: none; padding: 2px 5px;">:</td>
-                <td style="border: none; padding: 2px 5px;">BCA</td>
-            </tr>
-            <tr>
-                <td style="font-weight: bold; border: none; padding: 2px 5px;">Account No.</td>
-                <td style="border: none; padding: 2px 5px;">:</td>
-                <td style="border: none; padding: 2px 5px;">5933068888</td>
-            </tr>
-             <tr>
-                <td style="font-weight: bold; border: none; padding: 2px 5px;">Account Name</td>
-                <td style="border: none; padding: 2px 5px;">:</td>
-                <td style="border: none; padding: 2px 5px;">PT. Kilau Elok Indonesia</td>
-            </tr>
-        </table>
-        <br>
-        <p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
-        <p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>'),
+        <p>Thank you for choosing ' . config('app.name') . '!</p>'),
+            'bankName' => AppSetting::get('bank_name'),
+            'bankAccountNo' => AppSetting::get('bank_account_no'),
+            'bankAccountName' => AppSetting::get('bank_account_name'),
         ]);
     }
 
@@ -45,9 +28,15 @@ class SettingController extends Controller
             'app_name' => 'required|string|max:255',
             'app_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'invoice_footer_text' => 'nullable|string',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account_no' => 'nullable|string|max:255',
+            'bank_account_name' => 'nullable|string|max:255',
         ]);
 
         AppSetting::set('app_name', $request->app_name);
+        AppSetting::set('bank_name', $request->bank_name);
+        AppSetting::set('bank_account_no', $request->bank_account_no);
+        AppSetting::set('bank_account_name', $request->bank_account_name);
 
         if ($request->has('invoice_footer_text')) {
             AppSetting::set('invoice_footer_text', $request->invoice_footer_text);

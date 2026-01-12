@@ -121,7 +121,7 @@
             <img src="{{ public_path('storage/' . \App\Models\AppSetting::get('app_logo')) }}"
                 style="width: 150px; float: left;">
         @else
-            <img src="{{ public_path('storage/logo_kleening.png') }}" style="width: 150px; float: left;">
+            <h1 style="float: left; margin: 0; font-size: 24px;">{{ \App\Models\AppSetting::get('app_name', config('app.name')) }}</h1>
         @endif
         <div style="clear: both;"></div>
         <h1>Invoice</h1>
@@ -238,28 +238,28 @@
     </table>
 
     <div class="billing-payment-section">
-        {!! \App\Models\AppSetting::get('invoice_footer_text', '
         <h3>Billing Information</h3>
         <table class="billing-table">
             <tr>
                 <td style="width: 120px; font-weight: bold;">Bank</td>
                 <td style="width: 10px;">:</td>
-                <td>BCA</td>
+                <td>{{ \App\Models\AppSetting::get('bank_name', '[Bank Name]') }}</td>
             </tr>
             <tr>
                 <td style="font-weight: bold;">Account No.</td>
                 <td>:</td>
-                <td>5933068888</td>
+                <td>{{ \App\Models\AppSetting::get('bank_account_no', '[Account Number]') }}</td>
             </tr>
-             <tr>
+            <tr>
                 <td style="font-weight: bold;">Account Name</td>
                 <td>:</td>
-                <td>PT. Kilau Elok Indonesia</td>
+                <td>{{ \App\Models\AppSetting::get('bank_account_name', '[Account Name]') }}</td>
             </tr>
         </table>
         <br>
-        <p>Jangan lupa konfirmasi dengan melampirkan bukti transfer 😊</p>
-        <p>Terima kasih telah memilih @kleening.id sebagai jasa cleaning kepercayaan Anda ✨🙏🏻</p>') !!}
+        <div class="footer-notes">
+            {!! \App\Models\AppSetting::get('invoice_footer_text') !!}
+        </div>
     </div>
 
     <div class="footer-note">
