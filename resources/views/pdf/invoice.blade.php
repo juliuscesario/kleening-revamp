@@ -8,6 +8,9 @@
             font-family: sans-serif;
             font-size: 10pt;
         }
+        @page {
+            margin: 20px 25px 80px 25px;
+        }
 
         table {
             width: 100%;
