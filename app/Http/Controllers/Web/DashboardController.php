@@ -124,26 +124,45 @@ class DashboardController extends Controller
             $startOfMonth = $today->copy()->subMonthNoOverflow()->startOfMonth();
             $endOfMonth = $today->copy()->endOfMonth();
 
-            $viewData['todayServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
+            $sortBy = $request->input('sort_by', 'work_date');
+            $sortDir = $request->input('sort_dir', 'asc');
+
+            if (!in_array($sortBy, ['work_date', 'created_at'])) {
+                $sortBy = 'work_date';
+            }
+            if (!in_array($sortDir, ['asc', 'desc'])) {
+                $sortDir = 'asc';
+            }
+
+            $viewData['currentSortBy'] = $sortBy;
+            $viewData['currentSortDir'] = $sortDir;
+
+            $applySort = function($query) use ($sortBy, $sortDir) {
+                if ($sortBy === 'work_date') {
+                    $query->orderBy('work_date', $sortDir)
+                          ->orderByRaw("COALESCE(work_time, '23:59:59') " . $sortDir);
+                } else {
+                    $query->orderBy('created_at', $sortDir);
+                }
+            };
+
+            $todayServiceOrdersQuery = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
                 ->whereDate('work_date', $today)
-                ->whereIn('status', ['booked', 'proses'])
-                ->orderBy('work_date', 'desc')
-                ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
-                ->get();
+                ->whereIn('status', ['booked', 'proses']);
+            $applySort($todayServiceOrdersQuery);
+            $viewData['todayServiceOrders'] = $todayServiceOrdersQuery->get();
 
-            $viewData['tomorrowServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
+            $tomorrowServiceOrdersQuery = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
                 ->whereDate('work_date', $tomorrow)
-                ->where('status', 'booked')
-                ->orderBy('work_date', 'desc')
-                ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
-                ->get();
+                ->where('status', 'booked');
+            $applySort($tomorrowServiceOrdersQuery);
+            $viewData['tomorrowServiceOrders'] = $tomorrowServiceOrdersQuery->get();
 
-            $viewData['pastServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
+            $pastServiceOrdersQuery = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
                 ->whereBetween('work_date', [$today->copy()->subDays(6), $today->copy()->subDay()])
-                ->whereIn('status', ['booked', 'proses'])
-                ->orderBy('work_date', 'desc')
-                ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
-                ->get();
+                ->whereIn('status', ['booked', 'proses']);
+            $applySort($pastServiceOrdersQuery);
+            $viewData['pastServiceOrders'] = $pastServiceOrdersQuery->get();
 
             $viewData['cancelledServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
                 ->where('status', 'cancelled')
@@ -153,13 +172,15 @@ class DashboardController extends Controller
                 ->get();
 
             $viewData['doneServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
-                ->where('status', 'done')
-                ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+                ->whereNotIn('status', ['booked', 'proses', 'cancelled'])
+                // ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+                ->where('work_date', '>=', $today->copy()->subDays(10)) // Last 10 days
+                ->with(['customer', 'address']) // Eager load relations
                 ->orderBy('work_date', 'desc')
                 ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
                 ->get();
-            $viewData['totalDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->count();
-            $viewData['todayDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'done')->whereDate('work_date', $today)->count();
+            $viewData['totalDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereNotIn('status', ['booked', 'proses', 'cancelled'])->count();
+            $viewData['todayDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereNotIn('status', ['booked', 'proses', 'cancelled'])->whereDate('work_date', $today)->count();
             $viewData['bookedCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'booked')->whereDate('work_date', '>=', $today)->count();
         }
 
