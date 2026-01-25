@@ -242,17 +242,17 @@
         <h3>Billing Information</h3>
         <table class="billing-table">
             <tr>
-                <td style="width: 120px; font-weight: bold;">Bank</td>
+                <td style="width: 120px;">Bank</td>
                 <td style="width: 10px;">:</td>
                 <td>BCA</td>
             </tr>
             <tr>
-                <td style="font-weight: bold;">Account No.</td>
+                <td>Account.No</td>
                 <td>:</td>
                 <td>5933068888</td>
             </tr>
              <tr>
-                <td style="font-weight: bold;">Account Name</td>
+                <td>Account.Name</td>
                 <td>:</td>
                 <td>PT. Kilau Elok Indonesia</td>
             </tr>
