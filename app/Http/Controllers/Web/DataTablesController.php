@@ -547,11 +547,110 @@ class DataTablesController extends Controller
         $totalOrders = $summaryQuery->count();
         $avgRevenue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
 
+        // Calculate Expenses
+        $expenseQuery = \App\Models\Expense::query();
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $expenseQuery->whereBetween('date', [$request->start_date, $request->end_date]);
+        }
+
+        if (auth()->user()->role === 'co_owner') {
+            $areaId = auth()->user()->area_id;
+            $expenseQuery->whereHas('user', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+            $areaId = $request->area_id;
+            $expenseQuery->whereHas('user', function ($q) use ($areaId) {
+                $q->where('area_id', $areaId);
+            });
+        }
+
+        $totalExpenses = $expenseQuery->sum('amount');
+        $netProfit = $totalRevenue - $totalExpenses;
+
         return $dataTable->with('summary', [
+
             'total_revenue' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
             'total_orders' => number_format($totalOrders, 0, ',', '.'),
             'avg_revenue' => 'Rp ' . number_format($avgRevenue, 0, ',', '.'),
+            'total_expenses' => 'Rp ' . number_format($totalExpenses, 0, ',', '.'),
+            'net_profit' => 'Rp ' . number_format($netProfit, 0, ',', '.'),
         ])->make(true);
+    }
+
+    public function expenseReportData(Request $request)
+    {
+        // Permission check
+        if (!in_array(auth()->user()->role, ['owner', 'admin', 'co_owner'])) {
+             abort(403);
+        }
+
+        $query = \App\Models\Expense::with(['category', 'user']);
+
+        // Date Filter
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+        }
+
+        // Area Filter
+        if (auth()->user()->role === 'co_owner') {
+             $areaId = auth()->user()->area_id;
+             $query->whereHas('user', function ($q) use ($areaId) {
+                 $q->where('area_id', $areaId);
+             });
+        } elseif ($request->filled('area_id') && $request->area_id !== 'all') {
+             $areaId = $request->area_id;
+             $query->whereHas('user', function ($q) use ($areaId) {
+                 $q->where('area_id', $areaId);
+             });
+        }
+
+        // Category Filter
+        if ($request->filled('category_id') && $request->category_id !== 'all') {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Calculate Summary
+        $summaryQuery = $query->clone();
+        $totalExpenses = $summaryQuery->sum('amount');
+        $expenseCount = $summaryQuery->count();
+        
+        // Initializing most expensive category as 'N/A'
+        $mostExpensiveCategory = 'N/A';
+        
+        // Only run the grouping query if there are expenses
+        if ($expenseCount > 0) {
+             $topCategory = \App\Models\Expense::select('category_id', DB::raw('SUM(amount) as total'))
+                ->whereIn('id', $summaryQuery->pluck('id')) // Filter by the same scope
+                ->groupBy('category_id')
+                ->orderByDesc('total')
+                ->first();
+             
+             if ($topCategory && $topCategory->category) {
+                 $mostExpensiveCategory = $topCategory->category->name;
+             }
+        }
+
+        return DataTables::of($query)
+            ->editColumn('date', function ($expense) {
+                return $expense->date->format('d M Y');
+            })
+            ->editColumn('amount', function ($expense) {
+                return 'Rp ' . number_format($expense->amount, 0, ',', '.');
+            })
+            ->addColumn('category_name', function ($expense) {
+                return $expense->category->name;
+            })
+            ->addColumn('user_name', function ($expense) {
+                return $expense->user->name;
+            })
+            ->with('summary', [
+                'total_expenses' => 'Rp ' . number_format($totalExpenses, 0, ',', '.'),
+                'expense_count' => number_format($expenseCount, 0, ',', '.'),
+                'most_expensive_category' => $mostExpensiveCategory,
+            ])
+            ->make(true);
     }
 
     public function staffPerformanceReportData(Request $request)

@@ -41,7 +41,7 @@ if (token) {
     });
 }
 
-$(document).ajaxError(function(event, jqxhr) {
+$(document).ajaxError(function (event, jqxhr) {
     if (jqxhr.status === 401) {
         if (!Swal.isVisible()) {
             Swal.fire({
@@ -60,7 +60,7 @@ $(document).ajaxError(function(event, jqxhr) {
 // --- End of Global Setup ---
 
 // 5. Conditionally load page-specific scripts after the DOM is ready.
-$(function() {
+$(function () {
     if (document.getElementById('areas-table')) {
         import('./pages/areas.js');
     }
@@ -105,6 +105,9 @@ $(function() {
     }
     if (document.getElementById('revenue-report-table')) {
         import('./pages/report-revenue.js');
+    }
+    if (document.getElementById('expense-report-table')) {
+        import('./pages/report-expenses.js');
     }
     if (document.getElementById('staff-performance-report-table')) {
         import('./pages/report-staff-performance.js');

@@ -57,6 +57,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/payments', [DataTablesController::class, 'payments'])->name('data.payments');
 
     // Report Data Routes
+    Route::get('data/reports/expenses', [DataTablesController::class, 'expenseReportData'])->name('data.reports.expenses');
     Route::get('data/reports/revenue', [DataTablesController::class, 'revenueReportData'])->name('data.reports.revenue');
     Route::get('data/reports/staff-performance', [DataTablesController::class, 'staffPerformanceReportData'])->name('data.reports.staff-performance');
     Route::get('data/reports/customer-growth', [DataTablesController::class, 'customerGrowthReportData'])->name('data.reports.customer-growth');
@@ -88,7 +89,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');
     Route::resource('payments', PaymentController::class)->names('web.payments');
 
+    Route::resource('expenses', \App\Http\Controllers\Web\ExpenseController::class)->only(['index', 'create', 'store'])->names('web.expenses');
+
     // Reports
+    Route::get('reports/expenses', [\App\Http\Controllers\Web\ReportController::class, 'expenses'])->name('web.reports.expenses');
     Route::get('reports/revenue', [\App\Http\Controllers\Web\ReportController::class, 'revenue'])->name('web.reports.revenue');
     Route::get('reports/staff-performance', [\App\Http\Controllers\Web\ReportController::class, 'staffPerformance'])->name('web.reports.staff-performance');
     Route::get('reports/customer-growth', [\App\Http\Controllers\Web\ReportController::class, 'customerGrowth'])->name('web.reports.customer-growth');
@@ -118,6 +122,11 @@ Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
 Route::middleware(['auth', 'role:owner'])->group(function () {
     Route::get('settings', [\App\Http\Controllers\Web\SettingController::class, 'index'])->name('web.settings.index');
     Route::post('settings', [\App\Http\Controllers\Web\SettingController::class, 'update'])->name('web.settings.update');
+
+    // Expense Categories (Owner Only)
+    Route::get('expenses/categories', [\App\Http\Controllers\Web\ExpenseController::class, 'categories'])->name('web.expenses.categories');
+    Route::post('expenses/categories', [\App\Http\Controllers\Web\ExpenseController::class, 'storeCategory'])->name('web.expenses.categories.store');
+    Route::delete('expenses/categories/{category}', [\App\Http\Controllers\Web\ExpenseController::class, 'destroyCategory'])->name('web.expenses.categories.destroy');
 });
 
 require __DIR__ . '/auth.php';

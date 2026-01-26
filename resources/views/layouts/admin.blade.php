@@ -94,9 +94,9 @@
             </li>
 
             {{-- NEW "MASTER" DROPDOWN MENU --}}
-            @if(Auth::user()->role === 'owner' || Auth::user()->role === 'admin' || Auth::user()->role === 'co_owner')
+            @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'admin', 'co_owner']))
               <li
-                class="nav-item dropdown {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') || request()->is('services*') ? 'active' : '' }}">
+                class="nav-item dropdown {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') || request()->is('services*') || request()->is('expenses/categories*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-master" data-bs-toggle="dropdown"
                   data-bs-auto-close="false" role="button" aria-expanded="false">
                   <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -130,6 +130,12 @@
                         href="{{ route('web.services.index') }}">
                         Manajemen Layanan
                       </a>
+                      @if(strtolower(trim(Auth::user()->role)) === 'owner')
+                        <a class="dropdown-item {{ request()->is('expenses/categories*') ? 'active' : '' }}"
+                          href="{{ route('web.expenses.categories') }}">
+                          Kategori Pengeluaran
+                        </a>
+                      @endif
                     </div>
                   </div>
                 </div>
@@ -138,7 +144,7 @@
             {{-- END OF "MASTER" DROPDOWN MENU --}}
 
             {{-- CUSTOMER DATA DROPDOWN --}}
-            @if(Auth::user()->role === 'owner' || Auth::user()->role === 'admin' || Auth::user()->role === 'co_owner')
+            @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'admin', 'co_owner']))
               <li
                 class="nav-item dropdown {{ request()->is('customers*') || request()->is('addresses*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-customer" data-bs-toggle="dropdown"
@@ -174,7 +180,7 @@
             {{-- END OF CUSTOMER DROPDOWN --}}
 
             {{-- ORDER DROPDOWN --}}
-            @if(Auth::user()->role === 'owner' || Auth::user()->role === 'admin' || Auth::user()->role === 'co_owner')
+            @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'admin', 'co_owner']))
               <li class="nav-item dropdown {{ request()->is('service-orders*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-transaction" data-bs-toggle="dropdown"
                   data-bs-auto-close="false" role="button" aria-expanded="false">
@@ -205,9 +211,9 @@
             @endif
 
             {{-- NEW TRANSACTION DROPDOWN --}}
-            @if(Auth::user()->role === 'owner' || Auth::user()->role === 'admin' || Auth::user()->role === 'co_owner')
+            @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'admin', 'co_owner']))
               <li
-                class="nav-item dropdown {{ request()->is('invoices*') || request()->is('payments*') ? 'active' : '' }}">
+                class="nav-item dropdown {{ request()->is('invoices*') || request()->is('payments*') || (request()->is('expenses*') && !request()->is('expenses/categories*')) ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-transaction-new" data-bs-toggle="dropdown"
                   data-bs-auto-close="false" role="button" aria-expanded="false">
                   <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -221,7 +227,8 @@
                   </span>
                   <span class="nav-link-title">Transaction</span>
                 </a>
-                <div class="dropdown-menu {{ request()->is('invoices*') || request()->is('payments*') ? 'show' : '' }}">
+                <div
+                  class="dropdown-menu {{ request()->is('invoices*') || request()->is('payments*') || (request()->is('expenses*') && !request()->is('expenses/categories*')) ? 'show' : '' }}">
                   <div class="dropdown-menu-columns">
                     <div class="dropdown-menu-column">
                       <a class="dropdown-item {{ request()->is('invoices*') ? 'active' : '' }}"
@@ -232,6 +239,10 @@
                         href="{{ route('web.payments.index') }}">
                         Payments
                       </a>
+                      <a class="dropdown-item {{ request()->is('expenses*') && !request()->is('expenses/categories*') ? 'active' : '' }}"
+                        href="{{ route('web.expenses.index') }}">
+                        Pengeluaran
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -239,7 +250,7 @@
             @endif
 
             {{-- REPORTS DROPDOWN --}}
-            @if(in_array(strtolower(Auth::user()->role), ['owner', 'co_owner', 'admin']))
+            @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'co_owner', 'admin']))
               <li class="nav-item dropdown {{ request()->is('reports*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-reports" data-bs-toggle="dropdown"
                   data-bs-auto-close="false" role="button"
@@ -263,6 +274,10 @@
                       <a class="dropdown-item {{ request()->is('reports/revenue*') ? 'active' : '' }}"
                         href="{{ route('web.reports.revenue') }}">
                         Laporan Pendapatan
+                      </a>
+                      <a class="dropdown-item {{ request()->is('reports/expenses*') ? 'active' : '' }}"
+                        href="{{ route('web.reports.expenses') }}">
+                        Laporan Pengeluaran
                       </a>
                       <a class="dropdown-item {{ request()->is('reports/staff-performance*') ? 'active' : '' }}"
                         href="{{ route('web.reports.staff-performance') }}">
@@ -291,7 +306,7 @@
             @endif
 
             {{-- SYSTEM DROPDOWN --}}
-            @if(in_array(strtolower(Auth::user()->role), ['owner', 'co_owner']))
+            @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'co_owner']))
               <li class="nav-item dropdown {{ request()->is('scheduler-logs*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-system" data-bs-toggle="dropdown"
                   data-bs-auto-close="false" role="button"

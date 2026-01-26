@@ -26,6 +26,13 @@ class ReportController extends Controller
         return view('pages.reports.revenue', compact('areas'));
     }
 
+    public function expenses()
+    {
+        $areas = Area::all();
+        $categories = \App\Models\ExpenseCategory::all();
+        return view('pages.reports.expenses', compact('areas', 'categories'));
+    }
+
     public function staffPerformance()
     {
         $areas = Area::all();
@@ -76,7 +83,7 @@ class ReportController extends Controller
                 $dueDate = \Carbon\Carbon::parse($invoice->due_date);
                 $now = \Carbon\Carbon::now();
                 $daysOverdue = $now->diffInDays($dueDate, false); // false to get negative for overdue
-
+    
                 $agingBucket = 'Current';
                 if ($daysOverdue < 0) { // If due date is in the past
                     $absDaysOverdue = abs($daysOverdue);

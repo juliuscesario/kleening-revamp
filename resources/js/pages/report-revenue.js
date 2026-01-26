@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     const table = $('#revenue-report-table');
     const ajaxUrl = table.data('url');
 
@@ -14,7 +14,7 @@ $(function() {
         responsive: true,
         ajax: {
             url: ajaxUrl,
-            data: function(d) {
+            data: function (d) {
                 d.start_date = $('#filter-start-date').val();
                 d.end_date = $('#filter-end-date').val();
                 d.area_id = $('#filter-area').val();
@@ -24,7 +24,7 @@ $(function() {
             {
                 data: 'name',
                 name: 'name',
-                render: function(data, type, row) {
+                render: function (data, type, row) {
                     if (type === 'display') {
                         const drilldownBaseUrl = table.data('drilldown-url');
                         if (!drilldownBaseUrl) return data;
@@ -33,10 +33,10 @@ $(function() {
                         drilldownUrl.searchParams.append('start_date', $('#filter-start-date').val());
                         drilldownUrl.searchParams.append('end_date', $('#filter-end-date').val());
                         drilldownUrl.searchParams.append('area_id', $('#filter-area').val() || 'all');
-                        
+
                         // Pass area name for display on drilldown page if a specific area is selected
                         if ($('#filter-area').val() && $('#filter-area').val() !== 'all') {
-                             drilldownUrl.searchParams.append('area_name', $('#filter-area option:selected').text());
+                            drilldownUrl.searchParams.append('area_name', $('#filter-area option:selected').text());
                         }
 
                         return `<a href="${drilldownUrl.toString()}">${data}</a>`;
@@ -47,17 +47,19 @@ $(function() {
             { data: 'total_orders', name: 'total_orders' },
             { data: 'total_revenue', name: 'total_revenue' },
         ],
-        drawCallback: function(settings) {
+        drawCallback: function (settings) {
             const summary = settings.json.summary;
             if (summary) {
                 $('#summary-total-revenue').text(summary.total_revenue);
                 $('#summary-total-orders').text(summary.total_orders);
                 $('#summary-avg-revenue').text(summary.avg_revenue);
+                $('#summary-total-expenses').text(summary.total_expenses);
+                $('#summary-net-profit').text(summary.net_profit);
             }
         }
     });
 
-    $('#apply-filters').on('click', function() {
+    $('#apply-filters').on('click', function () {
         dataTable.ajax.reload();
     });
 });
