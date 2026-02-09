@@ -76,9 +76,9 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label required">Bukti Foto</label>
+                                <label class="form-label">Bukti Foto</label>
                                 <input type="file" class="form-control @error('photo') is-invalid @enderror" name="photo"
-                                    accept="image/*" required>
+                                    accept="image/*">
                                 <small class="form-hint">Format: JPG, PNG. Maksimal 10MB.</small>
                                 @error('photo')
                                     <div class="invalid-feedback">{{ $message }}</div>
