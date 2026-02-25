@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     let table = $('#staff-performance-report-table');
 
     // Set default dates
@@ -24,7 +24,7 @@ $(function() {
             {
                 data: 'name',
                 name: 'name',
-                render: function(data, type, row) {
+                render: function (data, type, row) {
                     if (type === 'display') {
                         const drilldownBaseUrl = table.data('drilldown-url');
                         if (!drilldownBaseUrl) return data;
@@ -43,10 +43,11 @@ $(function() {
             { data: 'jobs_completed', name: 'jobs_completed', searchable: false, orderable: false },
             { data: 'total_revenue', name: 'total_revenue', searchable: false, orderable: false }
         ],
+        pageLength: 25,
         order: [[0, 'asc']] // Default order by name
     });
 
-    $('#apply-filters').on('click', function() {
+    $('#apply-filters').on('click', function () {
         dataTable.ajax.reload();
     });
 });

@@ -124,13 +124,13 @@ $(function () {
                 }
             },
         ],
-
         drawCallback: function () {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new window.bootstrap.Tooltip(tooltipTriggerEl);
             });
         },
-        order: [[2, 'desc']]
+        pageLength: 25,
+        order: [[3, 'asc']]
     });
 });
