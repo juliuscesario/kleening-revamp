@@ -190,7 +190,7 @@
                                             <h5 class="mb-0">{{ $so->so_number }}</h5>
                                             <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
                                         <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
@@ -226,7 +226,7 @@
                                             <h5 class="mb-0">{{ $so->so_number }}</h5>
                                             <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
                                         <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
@@ -262,7 +262,7 @@
                                             <h5 class="mb-0">{{ $so->so_number }}</h5>
                                             <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
                                         <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
@@ -302,8 +302,8 @@
                                             <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'success' }} text-white">{{ ucfirst($so->status) }}</span>
                                         </div>
                                         <p class="mb-0 text-secondary">
-                                            <strong>Pelanggan:</strong> {{ $so->customer->name }}<br>
-                                            <strong>No. HP:</strong> {{ $so->customer->phone_number }}<br>
+                                            <strong>Pelanggan:</strong> {{ $so->customer->name ?? '-' }}<br>
+                                            <strong>No. HP:</strong> {{ $so->customer->phone_number ?? '-' }}<br>
                                             <strong>Alamat:</strong> {{ $so->address->full_address ?? '-' }}
                                         </p>
                                     </div>
@@ -345,7 +345,7 @@
                                             <h5 class="mb-0">{{ $so->so_number }}</h5>
                                             <span class="badge bg-secondary text-white">Cancelled</span>
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name }}</p>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
                                         <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
