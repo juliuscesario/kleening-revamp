@@ -33,10 +33,13 @@ class ExpenseController extends Controller
             'date' => 'required|date',
             'category_id' => 'required|exists:expense_categories,id',
             'description' => 'nullable|string',
-            'photo' => 'required|image|max:10240', // Max 10MB
+            'photo' => 'nullable|image|max:10240', // Max 10MB
         ]);
 
-        $path = $request->file('photo')->store('expenses', 'public');
+        $path = null;
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('expenses', 'public');
+        }
 
         Expense::create([
             'user_id' => Auth::id(),

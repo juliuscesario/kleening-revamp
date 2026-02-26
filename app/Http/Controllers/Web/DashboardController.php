@@ -112,9 +112,10 @@ class DashboardController extends Controller
                 ->whereDoesntHave('invoice')
                 ->get();
 
-            $viewData['recentActivity'] = ServiceOrder::where('created_by', $user->id)
-                ->latest()
-                ->take(10)
+            $viewData['tomorrowSchedule'] = ServiceOrder::whereDate('work_date', $today->copy()->addDay())
+                ->whereIn('status', [ServiceOrder::STATUS_BOOKED, ServiceOrder::STATUS_PROSES])
+                ->with('customer', 'staff')
+                ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
                 ->get();
 
         } elseif ($user->role === 'staff') {
@@ -137,10 +138,10 @@ class DashboardController extends Controller
             $viewData['currentSortBy'] = $sortBy;
             $viewData['currentSortDir'] = $sortDir;
 
-            $applySort = function($query) use ($sortBy, $sortDir) {
+            $applySort = function ($query) use ($sortBy, $sortDir) {
                 if ($sortBy === 'work_date') {
                     $query->orderBy('work_date', $sortDir)
-                          ->orderByRaw("COALESCE(work_time, '23:59:59') " . $sortDir);
+                        ->orderByRaw("COALESCE(work_time, '23:59:59') " . $sortDir);
                 } else {
                     $query->orderBy('created_at', $sortDir);
                 }
@@ -190,7 +191,7 @@ class DashboardController extends Controller
             'areaPerformance',
             'todaySchedule',
             'unassignedJobs',
-            'recentActivity',
+            'tomorrowSchedule',
             'todayServiceOrders',
             'tomorrowServiceOrders',
             'pastServiceOrders',

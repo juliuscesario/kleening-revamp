@@ -138,27 +138,31 @@
         </div>
     </div>
 
-    {{-- Recent Activity --}}
+    {{-- Tomorrow's Schedule --}}
     <div class="col-lg-6">
         <div class="card h-100">
             <div class="card-header">
-                <h3 class="card-title">Aktivitas Terkini</h3>
+                <h3 class="card-title">Jadwal Besok</h3>
             </div>
             <div class="card-body card-body-scrollable card-body-scrollable-shadow">
-                @if($recentActivity->isEmpty())
-                    <p>Tidak ada aktivitas terkini.</p>
+                @if($tomorrowSchedule->isEmpty())
+                    <p>Tidak ada jadwal untuk besok.</p>
                 @else
                     <div class="list-group">
-                        @foreach($recentActivity as $so)
+                        @foreach($tomorrowSchedule as $so)
                             <a href="{{ route('web.service-orders.show', $so->id) }}"
                                 class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
                                     <h5 class="mb-1">{{ $so->so_number }}</h5>
-                                    <small>{{ $so->created_at->diffForHumans() }}</small>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-dark">{{ $so->work_date->format('d M Y') }}</div>
+                                        @if($so->work_time_formatted)
+                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        @endif
+                                    </div>
                                 </div>
-                                <p class="mb-1">Status: <span class="badge bg-info text-white">{{ ucfirst($so->status) }}</span>
-                                </p>
-                                <small>Pelanggan: {{ $so->customer->name }}</small>
+                                <p class="mb-1">Pelanggan: {{ $so->customer->name }}</p>
+                                <small>Staff: {{ $so->staff->pluck('name')->join(', ') ?: 'Belum ada' }}</small>
                             </a>
                         @endforeach
                     </div>
