@@ -52,7 +52,19 @@ Route::prefix('superadminpanel')->group(function () {
 });
 
 Route::prefix('{tenant_slug?}')->group(function () {
-    Route::redirect('/', '/login');
+    Route::get('/', function () {
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->role === 'superadmin') {
+                return redirect()->route('superadmin.tenants.index');
+            }
+            if ($user->tenant_id && $tenant = $user->tenant) {
+                return redirect()->route('dashboard', ['tenant_slug' => $tenant->slug]);
+            }
+            return redirect()->route('dashboard');
+        }
+        return redirect()->route('login');
+    });
 
     // Use the new DashboardController for the dashboard route
     Route::get('/dashboard', [DashboardController::class, 'index'])

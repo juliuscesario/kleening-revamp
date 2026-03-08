@@ -52,11 +52,30 @@ class TenantMiddleware
                 'tenant_slug' => $tenant->slug,
             ]);
         } else {
-            // If on central domain, allow null tenant
+            // If on central domain, check if user should be redirected to a tenant
             if ($host === $centralDomain) {
-                 return $next($request);
+                // If user is authenticated and not superadmin, redirect to their tenant
+                if (auth()->check()) {
+                    $user = auth()->user();
+                    if ($user->role !== 'superadmin' && $user->tenant_id) {
+                        $userTenant = \App\Models\Tenant::find($user->tenant_id);
+                        if ($userTenant) {
+                            // Redirect to current path but with tenant slug
+                            $currentPath = ltrim($request->path(), '/');
+                            if ($currentPath === '') $currentPath = 'dashboard';
+                            
+                            // Check if currentPath already starts with slug or is the slug itself
+                            $isPathCorrect = ($currentPath === $userTenant->slug) || 
+                                             str_starts_with($currentPath, $userTenant->slug . '/');
+                                             
+                            if (!$isPathCorrect) {
+                                return redirect('/' . $userTenant->slug . '/' . $currentPath);
+                            }
+                        }
+                    }
+                }
+                return $next($request);
             }
-
             // Fallback for local development
             if (config('app.env') === 'local' && !str_contains($host, '.')) {
                  return $next($request);

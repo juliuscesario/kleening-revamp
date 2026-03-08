@@ -38,6 +38,14 @@ class AuthenticatedSessionController extends Controller
         // Kirim token ke session agar bisa diambil di Blade
         $request->session()->put('api_token', $token);
 
+        // Path-based tenancy: Redirect to the tenant-specific dashboard
+        if ($user->tenant_id) {
+            $tenant = \App\Models\Tenant::find($user->tenant_id);
+            if ($tenant) {
+                 return redirect()->route('dashboard', ['tenant_slug' => $tenant->slug]);
+            }
+        }
+
         return redirect()->intended('/dashboard');
     }
 
@@ -46,11 +54,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $tenantSlug = $request->route('tenant_slug');
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+        if ($tenantSlug) {
+            return redirect()->route('login', ['tenant_slug' => $tenantSlug]);
+        }
 
         return redirect('/');
     }
