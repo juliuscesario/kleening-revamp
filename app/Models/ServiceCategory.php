@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory; // <-- INI KUNCINYA
 use Illuminate\Database\Eloquent\Model;
 
 class ServiceCategory extends Model
 {
-    use HasFactory; // <-- Baris ini butuh 'use' statement di atas
+    use HasFactory, BelongsToTenant; // <-- Baris ini butuh 'use' statement di atas
 
     /**
      * The attributes that are mass assignable.

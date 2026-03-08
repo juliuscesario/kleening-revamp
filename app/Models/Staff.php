@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
 
 class Staff extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
     
     /**
      * The "booted" method of the model.

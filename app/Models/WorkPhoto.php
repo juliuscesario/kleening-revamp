@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class WorkPhoto extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     public $timestamps = false; // Kita hanya pakai created_at
 

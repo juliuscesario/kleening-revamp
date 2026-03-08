@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 use App\Models\Scopes\AreaScope;
 use App\Models\User; // Import User model
 use Carbon\Carbon;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Hash; // Import Hash facade
 
 class ServiceOrder extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     // Define status constants
     public const STATUS_BOOKED = 'booked';

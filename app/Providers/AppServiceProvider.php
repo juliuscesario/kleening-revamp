@@ -21,5 +21,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        // Share current tenant with all views
+        \Illuminate\Support\Facades\View::composer('*', function ($view) {
+            if (app()->has('currentTenant')) {
+                $view->with('currentTenant', app('currentTenant'));
+            }
+        });
     }
 }

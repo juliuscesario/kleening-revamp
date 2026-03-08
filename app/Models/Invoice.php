@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Scopes\AreaScope; // <-- INI YANG BENAR
+use App\Traits\BelongsToTenant;
 
 class Invoice extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     const STATUS_NEW = 'new';
     const STATUS_SENT = 'sent';
