@@ -68,9 +68,8 @@ jobs:
           script: |
             cd ${{ secrets.SSH_TARGET }}
             
-            # 1. Update Permissions (Ensures web server can still read files)
-            # Use sudo if your user 'panjul' needs it to change owner to www-data
-            sudo chown -R www-data:www-data .
+            # 1. Ensure permissions are correct after file sync
+            sudo chown -R panjul:www-data .
             sudo chmod -R 775 storage bootstrap/cache
             
             # 2. Update PHP dependencies
