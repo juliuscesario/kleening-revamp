@@ -1,0 +1,69 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies & Build
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy to Server
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Removed --delete to be extra cautious and avoid deleting server-only files.
+          # -r: recursive, -l: preserve symlinks, -t: preserve times, -v: verbose, -z: compress
+          ARGS: "-rltvzc"
+          SOURCE: "./" # Copies everything from the built GitHub environment to the server
+          REMOTE_HOST: ${{ secrets.SSH_HOST }}
+          REMOTE_USER: ${{ secrets.SSH_USER }}
+          TARGET: ${{ secrets.SSH_TARGET }}
+          # Exclude all persistent and auto-generated server directories
+          # We build 'public/build' in GH Actions, so we sync it, but we EXCLUDE others.
+          EXCLUDE: |
+            /node_modules/
+            /vendor/
+            /storage/
+            /public/storage
+            /.git/
+            /.github/
+            /.env
+            /public/hot
+            /bootstrap/cache/
+
+      - name: Post-deployment Commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SSH_TARGET }}
+            # 1. Update PHP dependencies locally on server (safe & memory efficient)
+            composer install --no-dev --optimize-autoloader
+            
+            # 2. Run migrations (only if needed)
+            php artisan migrate --force
+            
+            # 3. Re-link storage if missing (safe, doesn't delete folders)
+            php artisan storage:link
+            
+            # 4. Clear/Optimize cache for new deployment
+            php artisan optimize:clear
+            php artisan optimize
