@@ -23,17 +23,30 @@ jobs:
           npm install
           npm run build
 
-      - name: Deploy to Server
-        uses: easingthemes/ssh-deploy@main
-        with:
+      - name: Deploy to Server via Rsync
+        env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ARGS: "-rltvzc"
-          SOURCE: "./"
-          REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          REMOTE_USER: ${{ secrets.SSH_USER }}
-          TARGET: ${{ secrets.SSH_TARGET }}
-          # Use a single line for EXCLUDE to prevent shell interpretation errors
-          EXCLUDE: "/node_modules/, /vendor/, /storage/, /public/storage, /.git/, /.github/, /.env, /public/hot, /bootstrap/cache/"
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_TARGET: ${{ secrets.SSH_TARGET }}
+        run: |
+          mkdir -p ~/.ssh
+          # Fix the private key formatting automatically
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          
+          # Run rsync manually for better reliability
+          rsync -rltvzc -e "ssh -i ~/.ssh/id_rsa" ./ "$SSH_USER@$SSH_HOST:$SSH_TARGET" \
+            --exclude=/node_modules/ \
+            --exclude=/vendor/ \
+            --exclude=/storage/ \
+            --exclude=/public/storage \
+            --exclude=/.git/ \
+            --exclude=/.github/ \
+            --exclude=/.env \
+            --exclude=/public/hot \
+            --exclude=/bootstrap/cache/
 
       - name: Post-deployment Commands
         uses: appleboy/ssh-action@master
@@ -44,9 +57,9 @@ jobs:
           script: |
             cd ${{ secrets.SSH_TARGET }}
             
-            # 1. Update Permissions (Ensures www-data can read/write)
-            chown -R www-data:www-data .
-            chmod -R 775 storage bootstrap/cache
+            # 1. Update Permissions (Ensures web server can still read files)
+            sudo chown -R www-data:www-data .
+            sudo chmod -R 775 storage bootstrap/cache
             
             # 2. Update PHP dependencies
             composer install --no-dev --optimize-autoloader
