@@ -47,8 +47,9 @@ jobs:
           
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           
-          # Run rsync
-          rsync -rltvzc -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ "$SSH_USER@$SSH_HOST:$SSH_TARGET" \
+          # -O: Omit directory times (prevents permission errors on the target folder itself)
+          # -rltvzc: recursive, links, times, verbose, compress, checksum
+          rsync -rltvzcO -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ "$SSH_USER@$SSH_HOST:$SSH_TARGET/" \
             --exclude=/node_modules/ \
             --exclude=/vendor/ \
             --exclude=/storage/ \
