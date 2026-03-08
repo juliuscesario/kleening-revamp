@@ -45,6 +45,8 @@ Route::prefix('superadminpanel')->group(function () {
         Route::get('tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('superadmin.tenants.index');
         Route::get('tenants/create', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'create'])->name('superadmin.tenants.create');
         Route::post('tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('superadmin.tenants.store');
+        Route::get('tenants/{tenant}/edit', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'edit'])->name('superadmin.tenants.edit');
+        Route::put('tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('superadmin.tenants.update');
         Route::delete('tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy'])->name('superadmin.tenants.destroy');
     });
 });

@@ -27,4 +27,15 @@ class Tenant extends Model
         }
 
         return 'https://' . $this->slug . '.' . config('app.central_domain');
-    }}
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
+
+    public function areas()
+    {
+        return $this->hasMany(Area::class);
+    }
+}
