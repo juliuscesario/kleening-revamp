@@ -74,6 +74,20 @@ class TenantMiddleware
                         }
                     }
                 }
+                
+                // If no tenant was matched, but a slug is present, abort unless it's a global route
+                $slug = $request->segment(1);
+                $allowedGlobalSegments = [
+                    'login', 'register', 'up', 'forgot-password', 'reset-password',
+                    'verify-email', 'email', 'confirm-password', 'password', 'logout',
+                    'auth', 'superadminpanel', 'api', 'sanctum', 'broadcasting',
+                    '_debugbar', 'livewire', 'storage', 'images', 'css', 'js', 'fonts', 'build'
+                ];
+
+                if ($slug && !in_array($slug, $allowedGlobalSegments)) {
+                    abort(404, "Business page not found. Please check your URL.");
+                }
+
                 return $next($request);
             }
             // Fallback for local development
