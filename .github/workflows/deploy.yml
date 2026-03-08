@@ -60,24 +60,26 @@ jobs:
             --exclude=/public/hot \
             --exclude=/bootstrap/cache/
 
-      - name: Post-deployment Commands
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.SSH_TARGET }}
+      - name: Run Post-deployment Commands
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_TARGET: ${{ secrets.SSH_TARGET }}
+        run: |
+          # Use the already working key to run the final commands
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa "$SSH_USER@$SSH_HOST" << 'EOF'
+            cd "$SSH_TARGET"
             
-            # 1. Ensure permissions are correct after file sync
+            # 1. Update Permissions
             sudo chown -R panjul:www-data .
             sudo chmod -R 775 storage bootstrap/cache
             
             # 2. Update PHP dependencies
             composer install --no-dev --optimize-autoloader
             
-            # 3. Housekeeping
-            php artisan migrate --force
-            php artisan storage:link
-            php artisan optimize:clear
-            php artisan optimize
+            # 3. Housekeeping (using sudo for artisan to ensure file creation works)
+            sudo php artisan migrate --force
+            sudo php artisan storage:link
+            sudo php artisan optimize:clear
+            sudo php artisan optimize
+          EOF
