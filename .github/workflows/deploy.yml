@@ -31,13 +31,16 @@ jobs:
           SSH_TARGET: ${{ secrets.SSH_TARGET }}
         run: |
           mkdir -p ~/.ssh
-          # Fix the private key formatting automatically
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          # Use printf to handle the multiline secret safely and ensure a trailing newline
+          printf "%s\n" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          
+          # Verify if the key is readable (this will show in logs if it fails)
+          ssh-keygen -l -f ~/.ssh/id_rsa || echo "ERROR: Key is still invalid!"
+          
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           
-          # Run rsync manually for better reliability
-          rsync -rltvzc -e "ssh -i ~/.ssh/id_rsa" ./ "$SSH_USER@$SSH_HOST:$SSH_TARGET" \
+          rsync -rltvzc -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ "$SSH_USER@$SSH_HOST:$SSH_TARGET" \
             --exclude=/node_modules/ \
             --exclude=/vendor/ \
             --exclude=/storage/ \
