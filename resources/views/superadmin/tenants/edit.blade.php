@@ -65,6 +65,28 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
                 </div>
+
+                <div class="hr-text">Reset Password</div>
+                
+                <div class="mb-3">
+                  <label class="form-label">New Password</label>
+                  <div class="input-group input-group-flat">
+                    <input type="text" name="password" id="password_input" class="form-control @error('password') is-invalid @enderror" placeholder="Leave blank to keep current password" autocomplete="off">
+                    <span class="input-group-text">
+                      <a href="#" id="generate_password" class="link-secondary" title="Auto-generate" data-bs-toggle="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                      </a>
+                    </span>
+                    @error('password')
+                      <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                  </div>
+                  <small class="form-hint">Type a new password or click the icon to generate one.</small>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Confirm New Password</label>
+                  <input type="text" name="password_confirmation" id="password_confirmation" class="form-control" placeholder="Confirm new password">
+                </div>
                 
                 <div class="mt-4">
                     <div class="alert alert-info">
@@ -90,9 +112,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const tenantNameInput = document.getElementById('tenant_name');
     const tenantSlugInput = document.getElementById('tenant_slug');
+    const generatePasswordBtn = document.getElementById('generate_password');
+    const passwordInput = document.getElementById('password_input');
+    const passwordConfirmationInput = document.getElementById('password_confirmation');
 
-    // Slug generation logic (only if empty or manually triggered?)
-    // For edit page, we probably don't want to auto-change slug unless the user clears it.
+    // Slug generation logic
     tenantNameInput.addEventListener('input', function() {
         if (tenantSlugInput.value === '') {
             const slug = this.value
@@ -103,6 +127,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 .replace(/^-+|-+$/g, '');
             tenantSlugInput.value = slug;
         }
+    });
+
+    // Password generation logic
+    function generateRandomPassword(length = 10) {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+        let retVal = "";
+        for (let i = 0, n = charset.length; i < length; ++i) {
+            retVal += charset.charAt(Math.floor(Math.random() * n));
+        }
+        return retVal;
+    }
+
+    generatePasswordBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const pwd = generateRandomPassword();
+        passwordInput.value = pwd;
+        passwordConfirmationInput.value = pwd;
     });
 });
 </script>

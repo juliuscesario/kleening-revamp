@@ -77,6 +77,7 @@ class TenantController extends Controller
             'domain' => 'nullable|string|max:255|unique:tenants,domain,' . $tenant->id,
             'owner_name' => 'nullable|string|max:255',
             'owner_phone' => 'nullable|string|max:255',
+            'password' => 'nullable|string|min:6|confirmed',
         ]);
 
         return DB::transaction(function () use ($validated, $tenant) {
@@ -87,17 +88,23 @@ class TenantController extends Controller
             ]);
 
             // Update owner if provided
-            if (!empty($validated['owner_name']) || !empty($validated['owner_phone'])) {
+            if (!empty($validated['owner_name']) || !empty($validated['owner_phone']) || !empty($validated['password'])) {
                 $owner = $tenant->users()->where('role', 'owner')->first();
                 if ($owner) {
                     $ownerData = [];
                     if (!empty($validated['owner_name'])) $ownerData['name'] = $validated['owner_name'];
                     if (!empty($validated['owner_phone'])) $ownerData['phone_number'] = $validated['owner_phone'];
+                    if (!empty($validated['password'])) $ownerData['password'] = $validated['password'];
                     $owner->update($ownerData);
                 }
             }
 
-            return redirect()->route('superadmin.tenants.index')->with('success', 'Tenant updated successfully.');
+            $msg = 'Tenant updated successfully.';
+            if (!empty($validated['password'])) {
+                $msg = 'Tenant updated and password reset successfully.';
+            }
+
+            return redirect()->route('superadmin.tenants.index')->with('success', $msg);
         });
     }
 

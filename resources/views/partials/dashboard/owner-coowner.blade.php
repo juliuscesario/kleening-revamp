@@ -5,15 +5,15 @@
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-auto">
-                        <span class="bg-green text-white avatar">
+                        <span class="bg-brand text-white avatar shadow-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16.7 8a3 3 0 0 0 -2.7 -2h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1 -2.7 -2" /><path d="M12 3v3m0 12v3" /></svg>
                         </span>
                     </div>
                     <div class="col">
-                        <div class="font-weight-medium">
+                        <div class="font-bold text-lg mb-0 text-brand-gradient">
                             Rp {{ number_format($monthlyRevenue, 0, ',', '.') }}
                         </div>
-                        <div class="text-muted">
+                        <div class="text-muted small font-medium uppercase tracking-wider">
                             Pendapatan Bulan Ini
                         </div>
                     </div>
@@ -26,15 +26,15 @@
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-auto">
-                        <span class="bg-blue text-white avatar">
+                        <span class="bg-blue text-white avatar shadow-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 12l5 5l10 -10" /><path d="M2 12l5 5m5 -5l5 -5" /></svg>
                         </span>
                     </div>
                     <div class="col">
-                        <div class="font-weight-medium">
+                        <div class="font-bold text-lg mb-0">
                             {{ $jobsCompletedThisMonth }} Pekerjaan
                         </div>
-                        <div class="text-muted">
+                        <div class="text-muted small font-medium uppercase tracking-wider">
                             Selesai Bulan Ini
                         </div>
                     </div>
@@ -47,15 +47,15 @@
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-auto">
-                        <span class="bg-orange text-white avatar">
+                        <span class="bg-orange text-white avatar shadow-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><line x1="9" y1="14" x2="15" y2="14" /></svg>
                         </span>
                     </div>
                     <div class="col">
-                        <div class="font-weight-medium">
+                        <div class="font-bold text-lg mb-0">
                             Rp {{ number_format($outstandingInvoices, 0, ',', '.') }}
                         </div>
-                        <div class="text-muted">
+                        <div class="text-muted small font-medium uppercase tracking-wider">
                             Invoice Belum Dibayar
                         </div>
                     </div>
@@ -68,15 +68,15 @@
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-auto">
-                        <span class="bg-red text-white avatar">
+                        <span class="bg-red text-white avatar shadow-sm">
                              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-alert" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M12 17v.01" /><path d="M12 11l0 3" /></svg>
                         </span>
                     </div>
                     <div class="col">
-                        <div class="font-weight-medium">
+                        <div class="font-bold text-lg mb-0">
                             Rp {{ number_format($overdueInvoices, 0, ',', '.') }}
                         </div>
-                        <div class="text-muted">
+                        <div class="text-muted small font-medium uppercase tracking-wider">
                             Invoice Jatuh Tempo
                         </div>
                     </div>

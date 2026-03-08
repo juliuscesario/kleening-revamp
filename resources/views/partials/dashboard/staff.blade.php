@@ -104,22 +104,22 @@
 <div class="row row-deck row-cards">
     {{-- Staff Stats Widgets --}}
     <div class="col-12">
-        <div class="row row-cards flex-nowrap overflow-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
+        <div class="row row-cards flex-nowrap overflow-auto pb-3" style="scrollbar-width: none; -ms-overflow-style: none;">
             <div class="col-10 col-sm-4">
-                <div class="card card-sm">
+                <div class="card card-sm shadow-sm border-0">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <span class="bg-success text-white avatar">
+                                <span class="bg-brand text-white avatar shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 12l5 5l10 -10" /><path d="M2 12l5 5m5 -5l5 -5" /></svg>
                                 </span>
                             </div>
                             <div class="col">
-                                <div class="font-weight-medium">
-                                    {{ $totalDoneCount }} Total Selesai
+                                <div class="font-bold text-lg mb-0 text-brand-gradient">
+                                    {{ $totalDoneCount }} Pekerjaan
                                 </div>
-                                <div class="text-muted">
-                                    Semua waktu
+                                <div class="text-muted small font-medium uppercase tracking-wider">
+                                    Total Selesai
                                 </div>
                             </div>
                         </div>
@@ -127,20 +127,20 @@
                 </div>
             </div>
             <div class="col-10 col-sm-4">
-                <div class="card card-sm">
+                <div class="card card-sm shadow-sm border-0">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <span class="bg-primary text-white avatar">
+                                <span class="bg-blue text-white avatar shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11.5 21h-5.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v6" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M19 16l-2 3h4l-2 3" /></svg>
                                 </span>
                             </div>
                             <div class="col">
-                                <div class="font-weight-medium">
-                                    {{ $todayDoneCount }} Selesai Hari Ini
+                                <div class="font-bold text-lg mb-0">
+                                    {{ $todayDoneCount }} Selesai
                                 </div>
-                                <div class="text-muted">
-                                    {{ \Carbon\Carbon::today()->format('d M Y') }}
+                                <div class="text-muted small font-medium uppercase tracking-wider">
+                                    Hari Ini
                                 </div>
                             </div>
                         </div>
@@ -148,20 +148,20 @@
                 </div>
             </div>
             <div class="col-10 col-sm-4">
-                <div class="card card-sm">
+                <div class="card card-sm shadow-sm border-0">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <span class="bg-warning text-white avatar">
+                                <span class="bg-orange text-white avatar shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 21h-9a3 3 0 0 1 -3 -3v-1h10v2a2 2 0 0 0 4 0v-2h-10v-6h4" /><path d="M11 7.5m-1 .5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M6.5 11.5m-1 .5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M6 15h2" /><path d="M5 18h2" /></svg>
                                 </span>
                             </div>
                             <div class="col">
-                                <div class="font-weight-medium">
-                                    {{ $bookedCount }} Dibooking
+                                <div class="font-bold text-lg mb-0 text-orange">
+                                    {{ $bookedCount }} Pekerjaan
                                 </div>
-                                <div class="text-muted">
-                                    Jadwal mendatang
+                                <div class="text-muted small font-medium uppercase tracking-wider">
+                                    Mendatang
                                 </div>
                             </div>
                         </div>

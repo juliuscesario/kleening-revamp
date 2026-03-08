@@ -8,6 +8,11 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{{ \App\Models\AppSetting::get('app_name', config('app.name')) }} - @yield('title')</title>
 
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
   @vite(['resources/css/app.css'])
 
   @auth
@@ -58,9 +63,9 @@
   </style>
 </head>
 
-<body>
+<body class="bg-gray-50/50">
   <div class="page">
-    <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+    <aside class="navbar navbar-vertical navbar-expand-lg border-r border-white/10" data-bs-theme="dark">
       <div class="container-fluid">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
           aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
@@ -432,7 +437,7 @@
             <div class="col-12 col-lg-auto mt-3 mt-lg-0">
               <ul class="list-inline list-inline-dots mb-0">
                 <li class="list-inline-item">
-                  Copyright &copy; {{ date('Y') }} {{ \App\Models\AppSetting::get('app_name', config('app.name')) }}
+                  <span class="text-muted">Powered by</span> <a href="https://pakeberes.id" class="text-brand font-semibold">Pakeberes</a> &copy; {{ date('Y') }}
                 </li>
               </ul>
             </div>

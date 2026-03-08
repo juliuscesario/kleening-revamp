@@ -7,7 +7,7 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <span class="bg-primary text-white avatar">
+                                <span class="bg-primary text-white avatar shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                         viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                         stroke-linecap="round" stroke-linejoin="round">
@@ -21,10 +21,10 @@
                                 </span>
                             </div>
                             <div class="col">
-                                <div class="font-weight-medium">
+                                <div class="font-bold text-lg mb-0">
                                     {{ $todaySchedule->count() }} Pekerjaan
                                 </div>
-                                <div class="text-muted">
+                                <div class="text-muted small font-medium uppercase tracking-wider">
                                     Jadwal Hari Ini
                                 </div>
                             </div>
@@ -37,7 +37,7 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <span class="bg-danger text-white avatar">
+                                <span class="bg-danger text-white avatar shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                         class="icon icon-tabler icon-tabler-user-exclamation" width="24" height="24"
                                         viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -51,10 +51,10 @@
                                 </span>
                             </div>
                             <div class="col">
-                                <div class="font-weight-medium">
+                                <div class="font-bold text-lg mb-0 text-danger">
                                     {{ $unassignedJobs->count() }} Pekerjaan
                                 </div>
-                                <div class="text-muted">
+                                <div class="text-muted small font-medium uppercase tracking-wider">
                                     Belum Ada Staff
                                 </div>
                             </div>
@@ -67,7 +67,7 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <span class="bg-warning text-white avatar">
+                                <span class="bg-warning text-white avatar shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                         class="icon icon-tabler icon-tabler-file-dollar" width="24" height="24"
                                         viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -82,10 +82,10 @@
                                 </span>
                             </div>
                             <div class="col">
-                                <div class="font-weight-medium">
+                                <div class="font-bold text-lg mb-0">
                                     {{ $doneNotInvoiced->count() }} Pekerjaan
                                 </div>
-                                <div class="text-muted">
+                                <div class="text-muted small font-medium uppercase tracking-wider">
                                     Done Belum Invoice
                                 </div>
                             </div>
@@ -94,9 +94,10 @@
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <a href="{{ route('web.service-orders.create') }}" class="btn btn-primary w-100">
+                <div class="card card-sm border-0 bg-brand text-white shadow-lg shadow-brand/20">
+                    <div class="card-body p-0">
+                        <a href="{{ route('web.service-orders.create') }}" class="btn btn-brand w-100 h-100 py-3 border-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                             Buat Service Order
                         </a>
                     </div>
