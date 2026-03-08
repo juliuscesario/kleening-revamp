@@ -22,7 +22,7 @@ trait BelongsToTenant
 
         static::addGlobalScope('tenant', function (Builder $builder) {
             if (app()->has('currentTenant')) {
-                $builder->where('tenant_id', app('currentTenant')->id);
+                $builder->where($builder->getModel()->getTable() . '.tenant_id', app('currentTenant')->id);
             }
         });
     }
