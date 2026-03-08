@@ -166,7 +166,7 @@
 
     <div class="info-block">
         <p><strong>Catatan Invoice:</strong></p>
-        <p>{{ $invoice->serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
+        <p>{{ $invoice->notes ?? 'Tidak ada catatan.' }}</p>
     </div>
 
     <h3>Ordered Services</h3>

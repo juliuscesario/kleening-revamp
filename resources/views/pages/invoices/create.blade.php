@@ -16,6 +16,7 @@
 </div>
 <div class="page-body" id="create-invoice-page">
     <div class="container-xl">
+        <form action="{{ route('web.invoices.store') }}" method="POST">
         <div class="row">
             <div class="col-md-8">
                 <div class="card mb-3">
@@ -28,7 +29,10 @@
                         <p><strong>Area:</strong> {{ $serviceOrder->address->area->name }}</p>
                         <p><strong>Staff:</strong> {{ $serviceOrder->staff->pluck('name')->join(', ') }}</p>
                         <div class="mt-3">
-                            <p><strong>Catatan Invoice:</strong> {{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold">Catatan Invoice (Akan muncul di PDF)</label>
+                                <textarea class="form-control" name="notes" rows="3" placeholder="Masukkan catatan untuk invoice...">{{ $invoice->notes ?? $serviceOrder->work_notes }}</textarea>
+                            </div>
                             <p><strong>Catatan Internal:</strong> {{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>
                         </div>
                     </div>
@@ -80,7 +84,6 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <form action="{{ route('web.invoices.store') }}" method="POST">
                             @csrf
                             <input type="hidden" name="service_order_id" value="{{ $serviceOrder->id }}">
                             <div class="mb-3">
@@ -153,11 +156,12 @@
                                 <input type="hidden" id="balance" name="balance" value="0">
                             </div>
                             <button type="submit" class="btn btn-primary">Create Invoice</button>
-                        </form>
+
                     </div>
                 </div>
             </div>
         </div>
+        </form>
     </div>
 </div>
 @endsection

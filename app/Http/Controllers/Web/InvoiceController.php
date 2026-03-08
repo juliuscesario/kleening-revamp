@@ -64,6 +64,7 @@ class InvoiceController extends Controller
             'transport_fee' => 'required|numeric',
             'dp_value' => 'nullable|numeric',
             'dp_type' => 'nullable|string|in:fixed,percentage',
+            'notes' => 'nullable|string',
         ]);
 
         $serviceOrder = ServiceOrder::findOrFail($request->service_order_id);
@@ -78,6 +79,7 @@ class InvoiceController extends Controller
         $transportFee = $request->transport_fee;
         $dpValue = $request->dp_value ?? 0;
         $dpType = $request->dp_type;
+        $notes = $request->notes;
 
         $discountAmount = 0;
         if ($discountType === 'percentage') {
@@ -133,6 +135,7 @@ class InvoiceController extends Controller
                 'total_after_dp' => $totalAfterDp,
                 'paid_amount' => $dpAmount, // Assuming DP is paid upon invoice creation
                 'status' => Invoice::STATUS_NEW,
+                'notes' => $notes,
             ]
         );
 

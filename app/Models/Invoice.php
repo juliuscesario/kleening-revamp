@@ -42,6 +42,7 @@ class Invoice extends Model
         'total_after_dp',
         'paid_amount',
         'status',
+        'notes',
         'signature',
     ];
 
