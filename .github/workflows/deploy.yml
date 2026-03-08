@@ -25,21 +25,29 @@ jobs:
 
       - name: Deploy to Server via Rsync
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_TARGET: ${{ secrets.SSH_TARGET }}
         run: |
           mkdir -p ~/.ssh
-          # Use printf to handle the multiline secret safely and ensure a trailing newline
-          printf "%s\n" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          
+          # Safely decode the Base64 key to avoid formatting issues
+          if echo "$SSH_PRIVATE_KEY_B64" | grep -q "BEGIN OPENSSH PRIVATE KEY"; then
+            echo "Warning: Key was not Base64 encoded. Attempting to fix line endings..."
+            echo "$SSH_PRIVATE_KEY_B64" | tr -d '\r' > ~/.ssh/id_rsa
+          else
+            echo "$SSH_PRIVATE_KEY_B64" | base64 -d > ~/.ssh/id_rsa
+          fi
+          
           chmod 600 ~/.ssh/id_rsa
           
-          # Verify if the key is readable (this will show in logs if it fails)
-          ssh-keygen -l -f ~/.ssh/id_rsa || echo "ERROR: Key is still invalid!"
+          # Verify key format
+          ssh-keygen -l -f ~/.ssh/id_rsa || (echo "ERROR: Key is still invalid! Check if you pasted the PRIVATE key (multiline) and not the PUBLIC key (one line)." && exit 1)
           
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           
+          # Run rsync
           rsync -rltvzc -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ "$SSH_USER@$SSH_HOST:$SSH_TARGET" \
             --exclude=/node_modules/ \
             --exclude=/vendor/ \
@@ -61,6 +69,7 @@ jobs:
             cd ${{ secrets.SSH_TARGET }}
             
             # 1. Update Permissions (Ensures web server can still read files)
+            # Use sudo if your user 'panjul' needs it to change owner to www-data
             sudo chown -R www-data:www-data .
             sudo chmod -R 775 storage bootstrap/cache
             
