@@ -35,98 +35,115 @@ use App\Http\Controllers\Web\SchedulerLogController;
 |
 */
 
-Route::redirect('/', '/login');
+// SuperAdmin Panel Routes (Central)
+Route::prefix('superadminpanel')->group(function () {
+    Route::get('login', [\App\Http\Controllers\SuperAdmin\AuthenticatedSessionController::class, 'create'])->name('superadmin.login');
+    Route::post('login', [\App\Http\Controllers\SuperAdmin\AuthenticatedSessionController::class, 'store'])->name('superadmin.login.store');
+    Route::post('logout', [\App\Http\Controllers\SuperAdmin\AuthenticatedSessionController::class, 'destroy'])->name('superadmin.logout');
 
-// Use the new DashboardController for the dashboard route
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware(['auth'])->group(function () {
-    // DataTables and JSON Data Routes
-    Route::get('data/areas', [DataTablesController::class, 'areas'])->name('data.areas');
-    Route::get('data/service-categories', [DataTablesController::class, 'serviceCategories'])->name('data.service-categories');
-    Route::get('data/staff', [DataTablesController::class, 'staff'])->name('data.staff');
-    Route::get('data/services', [DataTablesController::class, 'services'])->name('data.services');
-    Route::get('data/customers', [DataTablesController::class, 'customers'])->name('data.customers');
-    Route::get('data/customers/{customer}/addresses', [JsonDataController::class, 'customerAddresses'])->name('data.customers.addresses');
-    Route::get('data/customers/{customer}/pending-service-orders', [JsonDataController::class, 'customerPendingServiceOrders'])->name('data.customers.pending-service-orders');
-    Route::get('data/staff/by-area/{area}', [JsonDataController::class, 'staffByArea'])->name('data.staff.by-area');
-    Route::get('data/addresses', [DataTablesController::class, 'addresses'])->name('data.addresses');
-    Route::get('data/service-orders', [DataTablesController::class, 'serviceOrders'])->name('data.service-orders');
-    Route::get('data/invoices', [DataTablesController::class, 'invoices'])->name('data.invoices');
-    Route::get('data/payments', [DataTablesController::class, 'payments'])->name('data.payments');
-
-    // Report Data Routes
-    Route::get('data/reports/expenses', [DataTablesController::class, 'expenseReportData'])->name('data.reports.expenses');
-    Route::get('data/reports/revenue', [DataTablesController::class, 'revenueReportData'])->name('data.reports.revenue');
-    Route::get('data/reports/staff-performance', [DataTablesController::class, 'staffPerformanceReportData'])->name('data.reports.staff-performance');
-    Route::get('data/reports/customer-growth', [DataTablesController::class, 'customerGrowthReportData'])->name('data.reports.customer-growth');
-    Route::get('data/reports/profitability/services', [DataTablesController::class, 'profitabilityServiceData'])->name('data.reports.profitability.services');
-    Route::get('data/reports/profitability/areas', [DataTablesController::class, 'profitabilityAreaData'])->name('data.reports.profitability.areas');
-    Route::get('data/reports/staff-utilization', [DataTablesController::class, 'staffUtilizationReportData'])->name('data.reports.staff-utilization');
-    Route::get('data/reports/revenue/drilldown/{serviceCategory}/trend', [DataTablesController::class, 'revenueTrendChartData'])->name('data.reports.revenue.trend');
-    Route::get('data/reports/revenue/drilldown/{serviceCategory}/area', [DataTablesController::class, 'revenueAreaChartData'])->name('data.reports.revenue.area');
-    Route::get('data/reports/revenue/drilldown/{serviceCategory}/table', [DataTablesController::class, 'revenueDrilldownTableData'])->name('data.reports.revenue.table');
-    Route::get('data/reports/staff/drilldown/{staff}/workload', [DataTablesController::class, 'staffWorkloadChartData'])->name('data.reports.staff.workload');
-    Route::get('data/reports/staff/drilldown/{staff}/specialization', [DataTablesController::class, 'staffSpecializationChartData'])->name('data.reports.staff.specialization');
-    Route::get('data/reports/staff/drilldown/{staff}/table', [DataTablesController::class, 'staffDrilldownTableData'])->name('data.reports.staff.table');
-    Route::get('data/reports/customer/drilldown/{customer}/spending-timeline', [DataTablesController::class, 'customerSpendingTimelineData'])->name('data.reports.customer.spending-timeline');
-    Route::get('data/reports/customer/drilldown/{customer}/key-metrics', [DataTablesController::class, 'customerKeyMetricsData'])->name('data.reports.customer.key-metrics');
-    Route::get('data/reports/customer/drilldown/{customer}/service-frequency', [DataTablesController::class, 'customerServiceFrequencyData'])->name('data.reports.customer.service-frequency');
-    Route::get('data/reports/customer/drilldown/{customer}/order-history', [DataTablesController::class, 'customerOrderHistoryData'])->name('data.reports.customer.order-history');
-
-
-    // Resource Routes
-    Route::resource('areas', AreaController::class)->names('web.areas');
-    Route::resource('service-categories', ServiceCategoriesController::class)->names('web.service-categories');
-    Route::resource('staff', StaffController::class)->names('web.staff');
-    Route::resource('services', ServiceController::class)->names('web.services');
-    Route::resource('customers', CustomerController::class)->names('web.customers');
-    Route::resource('addresses', AddressController::class)->names('web.addresses');
-    Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');
-    Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
-    Route::resource('invoices', InvoiceController::class)->names('web.invoices');
-    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');
-    Route::resource('payments', PaymentController::class)->names('web.payments');
-
-    Route::resource('expenses', \App\Http\Controllers\Web\ExpenseController::class)->only(['index', 'create', 'store'])->names('web.expenses');
-
-    // Reports
-    Route::get('reports/expenses', [\App\Http\Controllers\Web\ReportController::class, 'expenses'])->name('web.reports.expenses');
-    Route::get('reports/revenue', [\App\Http\Controllers\Web\ReportController::class, 'revenue'])->name('web.reports.revenue');
-    Route::get('reports/staff-performance', [\App\Http\Controllers\Web\ReportController::class, 'staffPerformance'])->name('web.reports.staff-performance');
-    Route::get('reports/customer-growth', [\App\Http\Controllers\Web\ReportController::class, 'customerGrowth'])->name('web.reports.customer-growth');
-    Route::get('reports/revenue/drilldown/{serviceCategory}', [\App\Http\Controllers\Web\ReportController::class, 'revenueDrilldown'])->name('web.reports.revenue.drilldown');
-    Route::get('reports/staff/drilldown/{staff}', [\App\Http\Controllers\Web\ReportController::class, 'staffDrilldown'])->name('web.reports.staff.drilldown');
-    Route::get('reports/customer/drilldown/{customer}', [\App\Http\Controllers\Web\ReportController::class, 'customerDrilldown'])->name('web.reports.customer.drilldown');
-    Route::get('reports/profitability', [\App\Http\Controllers\Web\ReportController::class, 'profitability'])->name('web.reports.profitability');
-    Route::get('reports/staff-utilization', [\App\Http\Controllers\Web\ReportController::class, 'staffUtilization'])->name('web.reports.staff-utilization');
-    Route::get('reports/invoice-aging', [\App\Http\Controllers\Web\ReportController::class, 'invoiceAging'])->name('web.reports.invoice-aging');
-
-
-    // Custom Resource Routes
-    Route::put('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('web.invoices.update-status');
-    Route::get('service-orders/{serviceOrder}/print', [ServiceOrderController::class, 'printPdf'])->name('web.service-orders.print');
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('web.notifications.index');
-
-    // Authentication
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-    Route::get('/auth/get-token', [DashboardController::class, 'getToken'])->name('auth.get-token');
+    Route::middleware(['auth', 'role:superadmin'])->group(function () {
+        Route::get('tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('superadmin.tenants.index');
+        Route::get('tenants/create', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'create'])->name('superadmin.tenants.create');
+        Route::post('tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('superadmin.tenants.store');
+        Route::delete('tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy'])->name('superadmin.tenants.destroy');
+    });
 });
 
-Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
-    Route::get('scheduler-logs', [SchedulerLogController::class, 'index'])->name('scheduler-logs.index');
-    Route::post('scheduler-logs/run', [SchedulerLogController::class, 'runCommand'])->name('scheduler-logs.run');
+Route::prefix('{tenant_slug?}')->group(function () {
+    Route::redirect('/', '/login');
+
+    // Use the new DashboardController for the dashboard route
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware(['auth', 'verified'])->name('dashboard');
+
+    Route::middleware(['auth'])->group(function () {
+        // DataTables and JSON Data Routes
+        Route::get('data/areas', [DataTablesController::class, 'areas'])->name('data.areas');
+        Route::get('data/service-categories', [DataTablesController::class, 'serviceCategories'])->name('data.service-categories');
+        Route::get('data/staff', [DataTablesController::class, 'staff'])->name('data.staff');
+        Route::get('data/services', [DataTablesController::class, 'services'])->name('data.services');
+        Route::get('data/customers', [DataTablesController::class, 'customers'])->name('data.customers');
+        Route::get('data/customers/{customer}/addresses', [JsonDataController::class, 'customerAddresses'])->name('data.customers.addresses');
+        Route::get('data/customers/{customer}/pending-service-orders', [JsonDataController::class, 'customerPendingServiceOrders'])->name('data.customers.pending-service-orders');
+        Route::get('data/staff/by-area/{area}', [JsonDataController::class, 'staffByArea'])->name('data.staff.by-area');
+        Route::get('data/addresses', [DataTablesController::class, 'addresses'])->name('data.addresses');
+        Route::get('data/service-orders', [DataTablesController::class, 'serviceOrders'])->name('data.service-orders');
+        Route::get('data/invoices', [DataTablesController::class, 'invoices'])->name('data.invoices');
+        Route::get('data/payments', [DataTablesController::class, 'payments'])->name('data.payments');
+
+        // Report Data Routes
+        Route::get('data/reports/expenses', [DataTablesController::class, 'expenseReportData'])->name('data.reports.expenses');
+        Route::get('data/reports/revenue', [DataTablesController::class, 'revenueReportData'])->name('data.reports.revenue');
+        Route::get('data/reports/staff-performance', [DataTablesController::class, 'staffPerformanceReportData'])->name('data.reports.staff-performance');
+        Route::get('data/reports/customer-growth', [DataTablesController::class, 'customerGrowthReportData'])->name('data.reports.customer-growth');
+        Route::get('data/reports/profitability/services', [DataTablesController::class, 'profitabilityServiceData'])->name('data.reports.profitability.services');
+        Route::get('data/reports/profitability/areas', [DataTablesController::class, 'profitabilityAreaData'])->name('data.reports.profitability.areas');
+        Route::get('data/reports/staff-utilization', [DataTablesController::class, 'staffUtilizationReportData'])->name('data.reports.staff-utilization');
+        Route::get('data/reports/revenue/drilldown/{serviceCategory}/trend', [DataTablesController::class, 'revenueTrendChartData'])->name('data.reports.revenue.trend');
+        Route::get('data/reports/revenue/drilldown/{serviceCategory}/area', [DataTablesController::class, 'revenueAreaChartData'])->name('data.reports.revenue.area');
+        Route::get('data/reports/revenue/drilldown/{serviceCategory}/table', [DataTablesController::class, 'revenueDrilldownTableData'])->name('data.reports.revenue.table');
+        Route::get('data/reports/staff/drilldown/{staff}/workload', [DataTablesController::class, 'staffWorkloadChartData'])->name('data.reports.staff.workload');
+        Route::get('data/reports/staff/drilldown/{staff}/specialization', [DataTablesController::class, 'staffSpecializationChartData'])->name('data.reports.staff.specialization');
+        Route::get('data/reports/staff/drilldown/{staff}/table', [DataTablesController::class, 'staffDrilldownTableData'])->name('data.reports.staff.table');
+        Route::get('data/reports/customer/drilldown/{customer}/spending-timeline', [DataTablesController::class, 'customerSpendingTimelineData'])->name('data.reports.customer.spending-timeline');
+        Route::get('data/reports/customer/drilldown/{customer}/key-metrics', [DataTablesController::class, 'customerKeyMetricsData'])->name('data.reports.customer.key-metrics');
+        Route::get('data/reports/customer/drilldown/{customer}/service-frequency', [DataTablesController::class, 'customerServiceFrequencyData'])->name('data.reports.customer.service-frequency');
+        Route::get('data/reports/customer/drilldown/{customer}/order-history', [DataTablesController::class, 'customerOrderHistoryData'])->name('data.reports.customer.order-history');
+
+
+        // Resource Routes
+        Route::resource('areas', AreaController::class)->names('web.areas');
+        Route::resource('service-categories', ServiceCategoriesController::class)->names('web.service-categories');
+        Route::resource('staff', StaffController::class)->names('web.staff');
+        Route::resource('services', ServiceController::class)->names('web.services');
+        Route::resource('customers', CustomerController::class)->names('web.customers');
+        Route::resource('addresses', AddressController::class)->names('web.addresses');
+        Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');
+        Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
+        Route::resource('invoices', InvoiceController::class)->names('web.invoices');
+        Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');
+        Route::resource('payments', PaymentController::class)->names('web.payments');
+
+        Route::resource('expenses', \App\Http\Controllers\Web\ExpenseController::class)->only(['index', 'create', 'store'])->names('web.expenses');
+
+        // Reports
+        Route::get('reports/expenses', [\App\Http\Controllers\Web\ReportController::class, 'expenses'])->name('web.reports.expenses');
+        Route::get('reports/revenue', [\App\Http\Controllers\Web\ReportController::class, 'revenue'])->name('web.reports.revenue');
+        Route::get('reports/staff-performance', [\App\Http\Controllers\Web\ReportController::class, 'staffPerformance'])->name('web.reports.staff-performance');
+        Route::get('reports/customer-growth', [\App\Http\Controllers\Web\ReportController::class, 'customerGrowth'])->name('web.reports.customer-growth');
+        Route::get('reports/revenue/drilldown/{serviceCategory}', [\App\Http\Controllers\Web\ReportController::class, 'revenueDrilldown'])->name('web.reports.revenue.drilldown');
+        Route::get('reports/staff/drilldown/{staff}', [\App\Http\Controllers\Web\ReportController::class, 'staffDrilldown'])->name('web.reports.staff.drilldown');
+        Route::get('reports/customer/drilldown/{customer}', [\App\Http\Controllers\Web\ReportController::class, 'customerDrilldown'])->name('web.reports.customer.drilldown');
+        Route::get('reports/profitability', [\App\Http\Controllers\Web\ReportController::class, 'profitability'])->name('web.reports.profitability');
+        Route::get('reports/staff-utilization', [\App\Http\Controllers\Web\ReportController::class, 'staffUtilization'])->name('web.reports.staff-utilization');
+        Route::get('reports/invoice-aging', [\App\Http\Controllers\Web\ReportController::class, 'invoiceAging'])->name('web.reports.invoice-aging');
+
+
+        // Custom Resource Routes
+        Route::put('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('web.invoices.update-status');
+        Route::get('service-orders/{serviceOrder}/print', [ServiceOrderController::class, 'printPdf'])->name('web.service-orders.print');
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('web.notifications.index');
+
+        // Authentication
+        Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+        Route::get('/auth/get-token', [DashboardController::class, 'getToken'])->name('auth.get-token');
+    });
+
+    Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
+        Route::get('scheduler-logs', [SchedulerLogController::class, 'index'])->name('scheduler-logs.index');
+        Route::post('scheduler-logs/run', [SchedulerLogController::class, 'runCommand'])->name('scheduler-logs.run');
+    });
+
+    Route::middleware(['auth', 'role:owner'])->group(function () {
+        // Corrected path to SettingController
+        Route::get('settings', [\App\Http\Controllers\Web\SettingController::class, 'index'])->name('web.settings.index');
+        Route::post('settings', [\App\Http\Controllers\Web\SettingController::class, 'update'])->name('web.settings.update');
+
+        // Expense Categories (Owner Only)
+        Route::get('expenses/categories', [\App\Http\Controllers\Web\ExpenseController::class, 'categories'])->name('web.expenses.categories');
+        Route::post('expenses/categories', [\App\Http\Controllers\Web\ExpenseController::class, 'storeCategory'])->name('web.expenses.categories.store');
+        Route::delete('expenses/categories/{category}', [\App\Http\Controllers\Web\ExpenseController::class, 'destroyCategory'])->name('web.expenses.categories.destroy');
+    });
+
+    require __DIR__ . '/auth.php';
 });
-
-Route::middleware(['auth', 'role:owner'])->group(function () {
-    Route::get('settings', [\App\Http\Controllers\Web\SettingController::class, 'index'])->name('web.settings.index');
-    Route::post('settings', [\App\Http\Controllers\Web\SettingController::class, 'update'])->name('web.settings.update');
-
-    // Expense Categories (Owner Only)
-    Route::get('expenses/categories', [\App\Http\Controllers\Web\ExpenseController::class, 'categories'])->name('web.expenses.categories');
-    Route::post('expenses/categories', [\App\Http\Controllers\Web\ExpenseController::class, 'storeCategory'])->name('web.expenses.categories.store');
-    Route::delete('expenses/categories/{category}', [\App\Http\Controllers\Web\ExpenseController::class, 'destroyCategory'])->name('web.expenses.categories.destroy');
-});
-
-require __DIR__ . '/auth.php';

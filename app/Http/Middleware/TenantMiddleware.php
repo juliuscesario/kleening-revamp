@@ -18,42 +18,53 @@ class TenantMiddleware
         $host = $request->getHost();
         $centralDomain = config('app.central_domain', 'pakeberes.id');
 
-        // If it's the exact central domain (no subdomain)
-        if ($host === $centralDomain) {
-            // Central domain logic (landing page, tenant registration, etc.)
-            // For now, we just let it pass, but you can add a session/flag if needed
+        $tenant = null;
+
+        // 1. Check if this is the super admin panel (bypasses tenant identification)
+        if ($request->segment(1) === 'superadminpanel') {
             return $next($request);
         }
 
-        // Check if it's a subdomain of the central domain
-        if (str_ends_with($host, '.' . $centralDomain)) {
-            $subdomain = str_replace('.' . $centralDomain, '', $host);
-            
-            $tenant = \App\Models\Tenant::where('slug', $subdomain)->first();
-
-            if (!$tenant) {
-                // If subdomain exists but tenant not found, 404
-                abort(404, 'Business not found.');
+        // 2. Check if the first path segment is a tenant slug (Path-based tenancy)
+        if ($host === $centralDomain || str_ends_with($host, '.' . $centralDomain)) {
+            $slug = $request->segment(1);
+            if ($slug && $slug !== 'login' && $slug !== 'register' && $slug !== 'up') {
+                $tenant = \App\Models\Tenant::where('slug', $slug)->first();
             }
-
-            app()->instance('currentTenant', $tenant);
-            return $next($request);
         }
 
-        // Check for custom domains
-        $tenant = \App\Models\Tenant::where('domain', $host)->first();
-        
+        // 2. Subdomain-based tenancy (if not path-based)
+        if (!$tenant && str_ends_with($host, '.' . $centralDomain)) {
+            $subdomain = str_replace('.' . $centralDomain, '', $host);
+            $tenant = \App\Models\Tenant::where('slug', $subdomain)->first();
+        }
+
+        // 3. Custom domain support
+        if (!$tenant) {
+            $tenant = \App\Models\Tenant::where('domain', $host)->first();
+        }
+
         if ($tenant) {
             app()->instance('currentTenant', $tenant);
-            return $next($request);
+            
+            // Set global route defaults for the identified tenant
+            \Illuminate\Support\Facades\URL::defaults([
+                'tenant_slug' => $tenant->slug,
+            ]);
+        } else {
+            // If on central domain, allow null tenant
+            if ($host === $centralDomain) {
+                 return $next($request);
+            }
+
+            // Fallback for local development
+            if (config('app.env') === 'local' && !str_contains($host, '.')) {
+                 return $next($request);
+            }
+
+            abort(404, 'Page not found.');
         }
 
-        // Fallback for local development or other cases
-        if (config('app.env') === 'local' && !str_contains($host, '.')) {
-             // In local development without subdomains, you might want to auto-select a tenant or show central
-             return $next($request);
-        }
-
-        abort(404, 'Page not found.');
+        return $next($request);
     }
 }
