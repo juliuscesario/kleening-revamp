@@ -33,6 +33,7 @@ class StaffServiceOrderResource extends JsonResource
             'staff' => StaffResource::collection($this->whenLoaded('staff')),
             'work_notes' => $this->work_notes,
             'staff_notes' => $this->staff_notes,
+            'tenant_id' => $this->tenant_id,
             'created_at' => $this->created_at,
         ];
     }

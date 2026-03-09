@@ -10,7 +10,7 @@ class ExpenseCategory extends Model
 {
     use HasFactory, BelongsToTenant;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'tenant_id'];
 
     public function expenses()
     {

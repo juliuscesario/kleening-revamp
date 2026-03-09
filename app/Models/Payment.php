@@ -17,6 +17,7 @@ class Payment extends Model
         'payment_date',
         'payment_method',
         'notes',
+        'tenant_id',
     ];
 
     public function invoice()

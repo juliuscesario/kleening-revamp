@@ -21,6 +21,7 @@ class ServiceOrderItem extends Model
         'quantity',
         'price',
         'total',
+        'tenant_id',
     ];
 
     /**

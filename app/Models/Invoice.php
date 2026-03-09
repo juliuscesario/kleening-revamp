@@ -45,6 +45,7 @@ class Invoice extends Model
         'status',
         'notes',
         'signature',
+        'tenant_id',
     ];
 
     public function serviceOrder()

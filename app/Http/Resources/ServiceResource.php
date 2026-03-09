@@ -25,6 +25,7 @@ class ServiceResource extends JsonResource
                 'name' => $this->category->name,
             ],
             'created_at' => $this->created_at,
+            'tenant_id' => $this->tenant_id,
         ];
     }
 }

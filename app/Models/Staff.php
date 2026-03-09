@@ -25,6 +25,7 @@ class Staff extends Model
         'name',
         'phone_number',
         'is_active',
+        'tenant_id',
     ];
 
     public function area()

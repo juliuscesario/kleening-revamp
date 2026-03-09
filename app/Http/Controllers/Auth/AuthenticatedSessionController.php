@@ -54,7 +54,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $tenantSlug = $request->route('tenant_slug');
+        $tenant = app()->bound('currentTenant') ? app('currentTenant') : null;
+        $tenantSlug = $tenant ? $tenant->slug : null;
 
         Auth::guard('web')->logout();
 

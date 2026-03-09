@@ -28,5 +28,8 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('currentTenant', app('currentTenant'));
             }
         });
+
+        // Use custom PersonalAccessToken model for multi-tenancy
+        \Laravel\Sanctum\Sanctum::usePersonalAccessTokenModel(\App\Models\PersonalAccessToken::class);
     }
 }

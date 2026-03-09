@@ -51,6 +51,11 @@ class TenantMiddleware
             \Illuminate\Support\Facades\URL::defaults([
                 'tenant_slug' => $tenant->slug,
             ]);
+
+            // Remove tenant_slug from route parameters to prevent interference with controller parameters
+            if ($request->route() && $request->route()->hasParameter('tenant_slug')) {
+                $request->route()->forgetParameter('tenant_slug');
+            }
         } else {
             // If on central domain, check if user should be redirected to a tenant
             if ($host === $centralDomain) {

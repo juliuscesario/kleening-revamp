@@ -18,6 +18,7 @@ class Expense extends Model
         'date',
         'description',
         'photo_path',
+        'tenant_id',
     ];
 
     protected $casts = [

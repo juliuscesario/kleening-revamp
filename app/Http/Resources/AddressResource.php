@@ -22,6 +22,7 @@ class AddressResource extends JsonResource
             'full_address' => $this->full_address,
             'google_maps_link' => $this->google_maps_link,
             'customer_id' => $this->customer_id,
+            'tenant_id' => $this->tenant_id,
             'created_at' => $this->created_at,
         ];
     }

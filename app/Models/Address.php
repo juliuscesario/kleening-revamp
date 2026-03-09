@@ -29,6 +29,7 @@ class Address extends Model
         'contact_phone',
         'full_address',
         'google_maps_link',
+        'tenant_id',
     ];
 
     /**
