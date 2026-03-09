@@ -28,9 +28,15 @@ class ServiceController extends Controller
         // Cek izin: apakah user boleh melihat daftar Service?
         $this->authorize('create', Service::class);
 
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
             'category_id' => 'required|integer|exists:service_categories,id', // Memastikan category_id ada di tabel service_categories
-            'name' => 'required|string|unique:services|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('services')->where('tenant_id', $tenantId),
+            ],
             'price' => 'required|numeric|min:0',
             'cost' => 'required|numeric|min:0',
             'description' => 'nullable|string',
@@ -55,6 +61,7 @@ class ServiceController extends Controller
     {
         // Cek izin: apakah user boleh mengupdate Service ini?
         $this->authorize('update', $service);
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
             'category_id' => 'sometimes|required|integer|exists:service_categories,id',
             'name' => [
@@ -62,7 +69,7 @@ class ServiceController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('services')->ignore($service->id),
+                Rule::unique('services')->ignore($service->id)->where('tenant_id', $tenantId),
             ],
             'price' => 'sometimes|required|numeric|min:0',
             'cost' => 'sometimes|required|numeric|min:0',

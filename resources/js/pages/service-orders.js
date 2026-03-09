@@ -193,6 +193,7 @@ $(function() {
     // Handle create invoice button click
     $('#service-orders-table').on('click', '.create-invoice', function() {
         const serviceOrderId = $(this).data('id');
-        window.location.href = `/invoices/create?service_order_id=${serviceOrderId}`;
+        const url = $('#service-orders-table').data('create-invoice-url-template').replace('__SERVICE_ORDER_ID__', serviceOrderId);
+        window.location.href = url;
     });
 });

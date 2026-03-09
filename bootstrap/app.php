@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', [
             \App\Http\Middleware\TenantMiddleware::class,
         ]);
+
+        $middleware->appendToGroup('api', [
+            \App\Http\Middleware\TenantMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

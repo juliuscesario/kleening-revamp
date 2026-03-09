@@ -42,7 +42,9 @@
             </div>
         </div>
     </div>
-    <div class="page-body" id="invoice-show-page">
+    <div class="page-body" id="invoice-show-page" 
+        data-payments-url="{{ route('web.payments.store') }}"
+        data-status-url-template="{{ route('web.invoices.update-status', ['invoice' => '__INVOICE_ID__']) }}">
         <div class="container-xl">
             @if (session('success'))
                 <div class="alert alert-success mb-3" role="alert">

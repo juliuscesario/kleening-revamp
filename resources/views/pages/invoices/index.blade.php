@@ -64,7 +64,10 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <table class="table table-striped table-bordered" id="invoices-table" width="100%">
+                    <table class="table table-striped table-bordered" id="invoices-table" width="100%" 
+                        data-url="{{ route('data.invoices') }}" 
+                        data-status-url-template="{{ route('web.invoices.update-status', ['invoice' => '__INVOICE_ID__']) }}"
+                        data-payments-url="{{ route('web.payments.store') }}">
                         <thead>
                             <tr>
                                 <th>Invoice Number</th>

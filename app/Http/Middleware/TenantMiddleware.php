@@ -44,6 +44,14 @@ class TenantMiddleware
             $tenant = \App\Models\Tenant::where('domain', $host)->first();
         }
 
+        // 4. Fallback to authenticated user's tenant (especially for API calls)
+        if (!$tenant && auth()->check()) {
+            $user = auth()->user();
+            if ($user->tenant_id) {
+                $tenant = \App\Models\Tenant::find($user->tenant_id);
+            }
+        }
+
         if ($tenant) {
             app()->instance('currentTenant', $tenant);
             
@@ -74,7 +82,9 @@ class TenantMiddleware
                                              str_starts_with($currentPath, $userTenant->slug . '/');
                                              
                             if (!$isPathCorrect) {
-                                return redirect('/' . $userTenant->slug . '/' . $currentPath);
+                                $queryString = $request->getQueryString();
+                                $redirectUrl = '/' . $userTenant->slug . '/' . $currentPath . ($queryString ? '?' . $queryString : '');
+                                return redirect($redirectUrl);
                             }
                         }
                     }

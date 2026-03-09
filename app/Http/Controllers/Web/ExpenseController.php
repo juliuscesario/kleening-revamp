@@ -8,6 +8,7 @@ use App\Models\ExpenseCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ExpenseController extends Controller
 {
@@ -66,8 +67,14 @@ class ExpenseController extends Controller
     {
 
 
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $request->validate([
-            'name' => 'required|string|max:255|unique:expense_categories',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('expense_categories')->where('tenant_id', $tenantId),
+            ],
         ]);
 
         ExpenseCategory::create([

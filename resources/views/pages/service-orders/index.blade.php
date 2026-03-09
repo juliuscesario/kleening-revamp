@@ -97,7 +97,8 @@
                     <div class="table-responsive">
                         <table id="service-orders-table" class="table card-table table-vcenter text-nowrap datatable"
                             data-url="{{ route('data.service-orders') }}"
-                            data-update-url-template="{{ route('web.service-orders.update', ['service_order' => '__SERVICE_ORDER_ID__']) }}">
+                            data-update-url-template="{{ route('web.service-orders.update', ['service_order' => '__SERVICE_ORDER_ID__']) }}"
+                            data-create-invoice-url-template="{{ route('web.invoices.create', ['service_order_id' => '__SERVICE_ORDER_ID__']) }}">
                             <thead>
                                 <tr>
                                     <th>SO Number</th>

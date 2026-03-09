@@ -29,9 +29,14 @@ class ServiceCategoryController extends Controller
         // Cek izin: apakah user boleh melihat daftar Service Category?
         $this->authorize('create', ServiceCategory::class);
 
-        // 1. Validasi input
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
-            'name' => 'required|string|unique:service_categories|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('service_categories')->where('tenant_id', $tenantId),
+            ],
         ]);
 
         // 2. Buat data baru
@@ -65,12 +70,13 @@ class ServiceCategoryController extends Controller
         // Cek izin: apakah user boleh melihat Service Category ini?
         $this->authorize('update', $serviceCategory);
 
-        // Validasi, dengan aturan 'unique' yang mengabaikan ID serviceCategory saat ini
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
             'name' => [
                 'required',
                 'string',
-                'max:255',Rule::unique('service_categories')->ignore($serviceCategory->id),
+                'max:255',
+                Rule::unique('service_categories')->ignore($serviceCategory->id)->where('tenant_id', $tenantId),
             ],
         ]);
 

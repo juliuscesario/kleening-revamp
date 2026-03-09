@@ -32,8 +32,14 @@ class AreaController extends Controller
         $this->authorize('create', Area::class);
 
         // 1. Validasi input
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
-            'name' => 'required|string|unique:areas|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('areas')->where('tenant_id', $tenantId),
+            ],
         ]);
 
         // 2. Buat data baru
@@ -64,13 +70,14 @@ class AreaController extends Controller
         // Cek izin: apakah user boleh mengupdate Area ini?
         $this->authorize('update', $area);
 
-        // Validasi, dengan aturan 'unique' yang mengabaikan ID area saat ini
+        // Validasi, dengan aturan 'unique' yang mengabaikan ID area saat ini dan dibatasi tenant_id
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('areas')->ignore($area->id),
+                Rule::unique('areas')->ignore($area->id)->where('tenant_id', $tenantId),
             ],
         ]);
 
