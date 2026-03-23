@@ -21,6 +21,16 @@ use Illuminate\Validation\Rule;
 class OnboardingController extends Controller
 {
     private $steps = [
+        'area' => 'Service Areas',
+        'staff' => 'Our Team',
+        'service_category' => 'Categories',
+        'service' => 'Services List',
+        'customer' => 'My Customers',
+        'settings' => 'AppSettings',
+        'password' => 'Safe Access',
+    ];
+
+    private $stepOrder = [
         'area' => 1,
         'staff' => 2,
         'service_category' => 3,
@@ -69,7 +79,7 @@ class OnboardingController extends Controller
             'step' => $currentStep,
             'steps' => $this->steps,
             'tenant' => $tenant,
-            'currentStepIndex' => $this->steps[$currentStep->step],
+            'currentStepIndex' => $this->stepOrder[$currentStep->step],
             'allSteps' => OnboardingStep::where('tenant_id', $tenant->id)->orderBy('id', 'asc')->get()
         ]);
     }
@@ -106,70 +116,88 @@ class OnboardingController extends Controller
             foreach ($data as $item) {
                 switch ($stepName) {
                     case 'area':
-                        Area::firstOrCreate(['name' => $item['Name']]);
+                        Area::firstOrCreate([
+                            'tenant_id' => $tenant->id,
+                            'name' => $item['Name']
+                        ]);
                         break;
                     case 'staff':
-                        $areaId = Area::withoutGlobalScope('tenant')
-                            ->where(function($q) use ($item, $tenant) {
-                                $q->where('name', $item['Area'])
-                                  ->where(function($qq) use ($tenant) {
-                                      $qq->whereNull('tenant_id')->orWhere('tenant_id', $tenant->id);
-                                  });
-                            })->first()?->id;
+                        $staffAreaId = Area::where('tenant_id', $tenant->id)
+                            ->where('name', $item['Area'] ?? null)
+                            ->first()?->id;
+                        
                         $user = User::create([
-                            'name' => $item['UserID'],
+                            'tenant_id' => $tenant->id,
+                            'name' => $item['Name'],
                             'phone_number' => $item['Phone Number'],
-                            'password' => Hash::make($item['Password']),
-                            'role' => Str::lower(str_replace(' ', '_', $item['Role'])),
-                            'area_id' => $areaId,
+                            'password' => Hash::make($item['Password'] ?? 'password123'),
+                            'role' => strtolower($item['Role'] ?? 'staff'),
                         ]);
+
                         Staff::create([
+                            'tenant_id' => $tenant->id,
                             'user_id' => $user->id,
                             'name' => $item['Name'],
                             'phone_number' => $item['Phone Number'],
-                            'area_id' => $areaId,
+                            'area_id' => $staffAreaId,
                         ]);
                         break;
                     case 'service_category':
-                        ServiceCategory::firstOrCreate(['name' => $item['Categories Name']]);
+                        ServiceCategory::firstOrCreate([
+                            'tenant_id' => $tenant->id,
+                            'name' => $item['Categories Name'] ?? $item['Name']
+                        ]);
                         break;
                     case 'service':
-                        $catName = $item['Category'] ?? $item['Categories Name'] ?? null;
-                        $catId = ServiceCategory::where('name', $catName)->first()?->id;
+                        $catName = $item['Category'] ?? $item['Categories Name'] ?? 'General';
+                        $category = ServiceCategory::firstOrCreate([
+                            'tenant_id' => $tenant->id,
+                            'name' => $catName
+                        ]);
+                        
                         Service::create([
-                            'name' => $item['Service Name'],
-                            'category_id' => $catId,
-                            'price' => (float)$item['Price'],
-                            'cost' => (float)$item['Cost'],
+                            'tenant_id' => $tenant->id,
+                            'category_id' => $category->id,
+                            'name' => $item['Service Name'] ?? $item['Name'],
+                            'price' => (float)($item['Price'] ?? 0),
+                            'cost' => (float)($item['Cost'] ?? 0),
                             'description' => $item['Description'] ?? '',
                         ]);
                         break;
                     case 'customer':
-                        $customer = Customer::firstOrCreate(
-                            ['phone_number' => $item['Customer Phone Number']],
+                        $customer = Customer::updateOrCreate(
+                            [
+                                'tenant_id' => $tenant->id,
+                                'phone_number' => $item['Customer Phone Number']
+                            ],
                             ['name' => $item['Customer Name']]
                         );
-                        $areaId = Area::withoutGlobalScope('tenant')
-                            ->where(function($q) use ($item, $tenant) {
-                                $q->where('name', $item['Area'])
-                                  ->where(function($qq) use ($tenant) {
-                                      $qq->whereNull('tenant_id')->orWhere('tenant_id', $tenant->id);
-                                  });
-                            })->first()?->id;
-                        Address::create([
-                            'customer_id' => $customer->id,
-                            'label' => $item['Address Label'] ?? 'Home',
-                            'contact_name' => $item['Contact Name'] ?? $customer->name,
-                            'contact_phone' => $item['Contact Phone'] ?? $customer->phone_number,
-                            'full_address' => $item['Full Address'] ?? '',
-                            'google_maps_link' => $item['Google Maps Link'] ?? '',
-                            'area_id' => $areaId,
-                        ]);
+                        
+                        $custAreaId = Area::where('tenant_id', $tenant->id)
+                            ->where('name', $item['Area'] ?? null)
+                            ->first()?->id;
+
+                        Address::updateOrCreate(
+                            [
+                                'tenant_id' => $tenant->id,
+                                'customer_id' => $customer->id,
+                                'label' => $item['Address Label'] ?? 'Home'
+                            ],
+                            [
+                                'area_id' => $custAreaId,
+                                'full_address' => $item['Full Address'] ?? '',
+                            ]
+                        );
                         break;
                 }
             }
             DB::commit();
-            return $this->completeStep($request, $stepName);
+            $count = count($data);
+            return response()->json([
+                'success' => true, 
+                'message' => "Successfully imported {$count} items!",
+                'count' => $count
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => 'Import failed: ' . $e->getMessage()], 422);
@@ -184,6 +212,7 @@ class OnboardingController extends Controller
             case 'area':
                 $validated = $request->validate(['name' => ['required', 'string', Rule::unique('areas')->where('tenant_id', $tenantId)]]);
                 Area::create($validated);
+                return response()->json(['success' => true, 'message' => 'Area added!']);
                 break;
             case 'staff':
                 $validated = $request->validate([
@@ -206,10 +235,12 @@ class OnboardingController extends Controller
                     'phone_number' => $validated['phone_number'],
                     'area_id' => $validated['area_id'],
                 ]);
+                return response()->json(['success' => true, 'message' => 'Staff added!']);
                 break;
             case 'service_category':
                 $validated = $request->validate(['name' => ['required', 'string', Rule::unique('service_categories')->where('tenant_id', $tenantId)]]);
                 ServiceCategory::create($validated);
+                return response()->json(['success' => true, 'message' => 'Category added!']);
                 break;
             case 'service':
                 $validated = $request->validate([
@@ -220,6 +251,7 @@ class OnboardingController extends Controller
                     'description' => 'nullable|string'
                 ]);
                 Service::create($validated);
+                return response()->json(['success' => true, 'message' => 'Service added!']);
                 break;
             case 'customer':
                 $validated = $request->validate([
@@ -238,6 +270,7 @@ class OnboardingController extends Controller
                     'full_address' => $validated['full_address'],
                     'area_id' => $validated['area_id']
                 ]);
+                return response()->json(['success' => true, 'message' => 'Customer added!']);
                 break;
             case 'settings':
                 $validated = $request->validate([

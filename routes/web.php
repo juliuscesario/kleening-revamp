@@ -79,6 +79,7 @@ Route::prefix('{tenant_slug?}')->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding.index');
         Route::post('/onboarding/{step}', [OnboardingController::class, 'storeStep'])->name('onboarding.store');
+        Route::post('/onboarding/{step}/complete', [OnboardingController::class, 'completeStep'])->name('onboarding.complete');
         Route::get('/onboarding/template/{type}', [OnboardingController::class, 'downloadTemplate'])->name('onboarding.template');
     });
 
