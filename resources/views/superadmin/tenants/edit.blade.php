@@ -96,13 +96,49 @@
               </div>
             </div>
           </div>
-          <div class="card-footer text-end">
-            <div class="d-flex">
-              <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-link">Cancel</a>
-              <button type="submit" class="btn btn-primary ms-auto">Update Tenant</button>
+          <div class="card-footer d-flex">
+            <a href="{{ route('superadmin.tenants.index') }}" class="btn btn-link">Cancel</a>
+            <div class="ms-auto">
+              <button type="submit" class="btn btn-primary">Update Tenant</button>
             </div>
           </div>
         </form>
+
+        @if($tenant->onboarding_completed_at)
+        <div class="card mt-4 border-warning">
+          <div class="card-body">
+            <div class="row align-items-center text-center text-md-start">
+              <div class="col-md-9 mb-3 mb-md-0">
+                <h4 class="mb-1 text-warning">Reset Onboarding Process</h4>
+                <p class="text-muted mb-0">This will allow the tenant owner to go through the 7-step onboarding process again. Existing data will <strong>not</strong> be deleted, but they must verify each step.</p>
+              </div>
+              <div class="col-md-3 text-md-end">
+                <form action="{{ route('onboarding.reset', ['tenant' => $tenant->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to reset the onboarding process for this tenant?')">
+                  @csrf
+                  <button type="submit" class="btn btn-warning">Reset Onboarding</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        @else
+        <div class="card mt-4">
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-9">
+                <h4 class="mb-1">Onboarding in Progress</h4>
+                <p class="text-muted mb-0">The tenant owner is currently completing the onboarding steps. You can force reset if they are stuck.</p>
+              </div>
+              <div class="col-md-3 text-md-end">
+                <form action="{{ route('onboarding.reset', ['tenant' => $tenant->id]) }}" method="POST" onsubmit="return confirm('Reset current progress?')">
+                  @csrf
+                  <button type="submit" class="btn btn-outline-danger">Reset Progress</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        @endif
       </div>
     </div>
   </div>

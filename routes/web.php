@@ -23,6 +23,7 @@ use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\InvoiceController;
 use App\Http\Controllers\Web\PaymentController;
 use App\Http\Controllers\Web\SchedulerLogController;
+use App\Http\Controllers\OnboardingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +49,10 @@ Route::prefix('superadminpanel')->group(function () {
         Route::get('tenants/{tenant}/edit', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'edit'])->name('superadmin.tenants.edit');
         Route::put('tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('superadmin.tenants.update');
         Route::delete('tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy'])->name('superadmin.tenants.destroy');
+        
+        // Onboarding Reset (Admin/SuperAdmin)
+        Route::post('tenants/{tenant}/onboarding/reset', [OnboardingController::class, 'reset'])
+            ->name('onboarding.reset');
     });
 });
 
@@ -68,7 +73,14 @@ Route::prefix('{tenant_slug?}')->group(function () {
 
     // Use the new DashboardController for the dashboard route
     Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->middleware(['auth', 'verified'])->name('dashboard');
+        ->middleware(['auth', 'verified', 'onboarding'])->name('dashboard');
+
+    // Onboarding Routes
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding.index');
+        Route::post('/onboarding/{step}', [OnboardingController::class, 'storeStep'])->name('onboarding.store');
+        Route::get('/onboarding/template/{type}', [OnboardingController::class, 'downloadTemplate'])->name('onboarding.template');
+    });
 
     Route::middleware(['auth'])->group(function () {
         // DataTables and JSON Data Routes

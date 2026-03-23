@@ -96,7 +96,7 @@ class TenantMiddleware
                     'login', 'register', 'up', 'forgot-password', 'reset-password',
                     'verify-email', 'email', 'confirm-password', 'password', 'logout',
                     'auth', 'superadminpanel', 'api', 'sanctum', 'broadcasting',
-                    '_debugbar', 'livewire', 'storage', 'images', 'css', 'js', 'fonts', 'build'
+                    '_debugbar', 'livewire', 'storage', 'images', 'css', 'js', 'fonts', 'build', 'onboarding'
                 ];
 
                 if ($slug && !in_array($slug, $allowedGlobalSegments)) {

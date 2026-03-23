@@ -15,10 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'tenant' => \App\Http\Middleware\TenantMiddleware::class,
+            'onboarding' => \App\Http\Middleware\EnsureOnboardingIsCompleted::class,
         ]);
 
         $middleware->appendToGroup('web', [
             \App\Http\Middleware\TenantMiddleware::class,
+            \App\Http\Middleware\EnsureOnboardingIsCompleted::class,
         ]);
 
         $middleware->appendToGroup('api', [
