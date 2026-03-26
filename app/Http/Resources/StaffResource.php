@@ -26,6 +26,7 @@ class StaffResource extends JsonResource
             ],
             // Kita gunakan whenLoaded agar data user hanya muncul jika diminta
             'user_account' => new UserResource($this->whenLoaded('user')),
+            'tenant_id' => $this->tenant_id,
             'created_at' => $this->created_at,
         ];
     }

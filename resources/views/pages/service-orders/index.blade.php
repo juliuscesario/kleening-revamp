@@ -6,11 +6,12 @@
     <div class="page-header d-print-none">
         <div class="row align-items-center">
             <div class="col">
-                <h2 class="page-title">Daftar Service Order @if(isset($serviceOrders) && $serviceOrders->isNotEmpty()) (Belum Ada Staff) @endif</h2>
+                <h2 class="page-title">Service Orders</h2>
+                <div class="text-muted mt-1 font-medium">Monitoring dan manajemen jadwal pengerjaan layanan.</div>
             </div>
             <div class="col-auto ms-auto d-print-none">
                 @if(!isset($serviceOrders))
-                <a href="{{ route('web.service-orders.create') }}" class="btn btn-primary">
+                <a href="{{ route('web.service-orders.create') }}" class="btn btn-brand shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     Tambah SO Baru
                 </a>
@@ -96,7 +97,8 @@
                     <div class="table-responsive">
                         <table id="service-orders-table" class="table card-table table-vcenter text-nowrap datatable"
                             data-url="{{ route('data.service-orders') }}"
-                            data-update-url-template="{{ route('web.service-orders.update', ['service_order' => '__SERVICE_ORDER_ID__']) }}">
+                            data-update-url-template="{{ route('web.service-orders.update', ['service_order' => '__SERVICE_ORDER_ID__']) }}"
+                            data-create-invoice-url-template="{{ route('web.invoices.create', ['service_order_id' => '__SERVICE_ORDER_ID__']) }}">
                             <thead>
                                 <tr>
                                     <th>SO Number</th>

@@ -16,6 +16,7 @@ class Service extends Model
         'price',
         'cost',
         'description',
+        'tenant_id',
     ];
 
     /**

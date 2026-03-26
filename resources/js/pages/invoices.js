@@ -40,7 +40,7 @@ $(function () {
 
     const table = $('#invoices-table').DataTable({
         ajax: {
-            url: '/data/invoices',
+            url: $('#invoices-table').data('url'),
             data: function (d) {
                 d.status = $('#invoices-table').data('current-status-filter');
                 d.start_date = formatDateForServer($('#filter-start-date').val());
@@ -138,7 +138,7 @@ $(function () {
         } else {
             if (confirm(`Are you sure you want to change the status to ${newStatus}?`)) {
                 $.ajax({
-                    url: `/invoices/${invoiceId}/status`,
+                    url: $('#invoices-table').data('status-url-template').replace('__INVOICE_ID__', invoiceId),
                     method: 'PUT',
                     data: {
                         _token: $('meta[name="csrf-token"]').attr('content'),
@@ -166,7 +166,7 @@ $(function () {
         // const invoiceId = form.find('#invoice_id').val(); // unused variable
 
         $.ajax({
-            url: '/payments',
+            url: $('#invoices-table').data('payments-url'),
             method: 'POST',
             data: form.serialize() + '&_token=' + $('meta[name="csrf-token"]').attr('content'),
             success: function (response) {

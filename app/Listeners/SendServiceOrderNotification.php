@@ -40,12 +40,13 @@ class SendServiceOrderNotification
         $customerPhoneNumber = $serviceOrder->customer->phone_number;
         $customerUser = User::where('phone_number', $customerPhoneNumber)->first();
 
-        $ownerAndCoOwners = User::whereIn('role', ['owner', 'co-owner'])->get();
+        $users = User::whereIn('role', ['owner', 'co-owner'])->get();
 
-        if ($customerUser) {
-            Notification::send($customerUser, new ServiceOrderInvoicedNotification($serviceOrder));
+        if ($customerUser && !$users->contains($customerUser)) {
+            $users->push($customerUser);
         }
-        Notification::send($ownerAndCoOwners, new ServiceOrderInvoicedNotification($serviceOrder));
+
+        Notification::send($users, new ServiceOrderInvoicedNotification($serviceOrder));
     }
 
     private function notifyAdmin(ServiceOrder $serviceOrder)

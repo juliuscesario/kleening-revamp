@@ -22,7 +22,6 @@ window.__select2Ready = import('select2/dist/js/select2.full.min.js')
 
 import * as bootstrap from 'bootstrap';
 window.bootstrap = bootstrap;
-
 // NOTE: We are no longer importing '@tabler/core/dist/js/tabler.min.js'
 
 // 3. Import other plugins like DataTables.

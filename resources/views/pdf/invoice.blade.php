@@ -108,6 +108,7 @@
             padding: 2px 5px;
             vertical-align: top;
         }
+    </style>
 </head>
 
 <body>

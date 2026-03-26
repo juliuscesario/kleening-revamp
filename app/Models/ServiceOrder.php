@@ -41,6 +41,7 @@ class ServiceOrder extends Model
         'created_by',
         'work_proof_completed_at',
         'customer_signature_image',
+        'tenant_id',
     ];
 
     protected $casts = [

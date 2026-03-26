@@ -37,9 +37,15 @@ class CustomerController extends Controller
     {
         $this->authorize('create', Customer::class);
 
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'phone_number' => 'required|string|unique:customers,phone_number|max:255',
+            'phone_number' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('customers')->where('tenant_id', $tenantId),
+            ],
             // Optional Address Fields
             'add_address' => 'nullable|boolean',
             'label' => 'required_if:add_address,true|string|max:255',
@@ -95,6 +101,7 @@ class CustomerController extends Controller
         // Cek izin: apakah user boleh mengupdate Customer ini?
         $this->authorize('update', $customer);
 
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'phone_number' => [
@@ -102,7 +109,7 @@ class CustomerController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('customers')->ignore($customer->id),
+                Rule::unique('customers')->ignore($customer->id)->where('tenant_id', $tenantId),
             ],
         ]);
 

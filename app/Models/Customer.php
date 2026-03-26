@@ -22,7 +22,8 @@ class Customer extends Model
         static::addGlobalScope(new AreaScope);
     }
 
-    protected $fillable = ['name', 'phone_number'];
+    protected $fillable = ['name', 'phone_number', 'tenant_id'];
+    
 
     /**
      * Mutator untuk nama customer (auto upper case).

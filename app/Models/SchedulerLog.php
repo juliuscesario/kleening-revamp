@@ -15,5 +15,6 @@ class SchedulerLog extends Model
         'start_time',
         'end_time',
         'items_processed',
+        'tenant_id',
     ];
 }

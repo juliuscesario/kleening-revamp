@@ -45,7 +45,7 @@ $(document).ready(function () {
 
     const table = $('#payments-table').DataTable({
         ajax: {
-            url: '/data/payments',
+            url: $('#payments-table').data('url'),
             data: function (d) {
                 d.start_date = formatDateForServer($('#filter-start-date').val());
                 d.end_date = formatDateForServer($('#filter-end-date').val());

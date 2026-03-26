@@ -40,12 +40,13 @@ class SendInvoiceNotification
         $customerPhoneNumber = $invoice->serviceOrder->customer->phone_number;
         $customerUser = User::where('phone_number', $customerPhoneNumber)->first();
 
-        $adminsAndOwners = User::whereIn('role', ['admin', 'owner', 'co-owner'])->get();
+        $users = User::whereIn('role', ['admin', 'owner', 'co-owner'])->get();
 
-        if ($customerUser) {
-            Notification::send($customerUser, new InvoiceOverdueNotification($invoice));
+        if ($customerUser && !$users->contains($customerUser)) {
+            $users->push($customerUser);
         }
-        Notification::send($adminsAndOwners, new InvoiceOverdueNotification($invoice));
+
+        Notification::send($users, new InvoiceOverdueNotification($invoice));
     }
 
     private function notifyOwnerCoOwnerAndAdmin(Invoice $invoice)

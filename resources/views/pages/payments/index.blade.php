@@ -90,7 +90,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <table class="table table-striped table-bordered" id="payments-table" width="100%">
+                    <table class="table table-striped table-bordered" id="payments-table" width="100%" data-url="{{ route('data.payments') }}">
                         <thead>
                             <tr>
                                 <th>Invoice Number</th>

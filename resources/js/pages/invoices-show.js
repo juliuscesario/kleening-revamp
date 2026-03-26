@@ -5,7 +5,7 @@ $(function() {
 
         if (confirm(`Are you sure you want to change the status to ${newStatus}?`)) {
             $.ajax({
-                url: `/invoices/${invoiceId}/status`,
+                url: $('#invoice-show-page').data('status-url-template').replace('__INVOICE_ID__', invoiceId),
                 method: 'PUT',
                 data: {
                     _token: $('meta[name="csrf-token"]').attr('content'),
@@ -32,7 +32,7 @@ $(function() {
         const invoiceId = form.find('#invoice_id').val();
 
         $.ajax({
-            url: '/payments',
+            url: $('#invoice-show-page').data('payments-url'),
             method: 'POST',
             data: form.serialize() + '&_token=' + $('meta[name="csrf-token"]').attr('content'),
             success: function(response) {

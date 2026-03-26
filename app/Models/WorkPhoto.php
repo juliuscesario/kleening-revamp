@@ -19,6 +19,7 @@ class WorkPhoto extends Model
         'file_path',
         'type',
         'uploaded_by',
+        'tenant_id',
     ];
 
     protected $casts = [

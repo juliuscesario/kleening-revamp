@@ -171,8 +171,15 @@ class InvoiceController extends Controller
     {
         $this->authorize('view', $invoice);
 
-        $pdf = app('dompdf.wrapper');
-        $pdf->loadView('pdf.invoice', compact('invoice'));
+        $invoice->load([
+            'serviceOrder.customer' => fn($q) => $q->withTrashed(),
+            'serviceOrder.address' => fn($q) => $q->withTrashed(),
+            'serviceOrder.address.area',
+            'serviceOrder.items.service',
+            'payments'
+        ]);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice'));
 
         return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
     }

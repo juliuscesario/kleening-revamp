@@ -29,6 +29,7 @@ class ServiceOrderResource extends JsonResource
             'work_notes' => $this->work_notes,
             'staff_notes' => $this->staff_notes,
             'created_by' => new UserResource($this->whenLoaded('creator')),
+            'tenant_id' => $this->tenant_id,
             'created_at' => $this->created_at,
         ];
     }

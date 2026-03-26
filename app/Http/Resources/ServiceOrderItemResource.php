@@ -23,7 +23,8 @@ class ServiceOrderItemResource extends JsonResource
             'service' => [
                 'id' => $this->service->id,
                 'name' => $this->service->name,
-            ]
+            ],
+            'tenant_id' => $this->tenant_id,
         ];
     }
 }

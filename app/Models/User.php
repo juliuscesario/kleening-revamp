@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'role',
         'area_id',
+        'tenant_id',
     ];
 
     /**
@@ -51,5 +52,13 @@ class User extends Authenticatable
     public function staff()
     {
         return $this->hasOne(Staff::class);
+    }
+
+    /**
+     * Get the entity's notifications.
+     */
+    public function notifications()
+    {
+        return $this->morphMany(Notification::class, 'notifiable')->latest();
     }
 }

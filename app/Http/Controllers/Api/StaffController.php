@@ -29,9 +29,15 @@ class StaffController extends Controller
     {
         $this->authorize('create', Staff::class);
 
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'phone_number' => 'required|string|max:15|unique:users,phone_number',
+            'phone_number' => [
+                'required',
+                'string',
+                'max:15',
+                Rule::unique('users', 'phone_number')->where('tenant_id', $tenantId),
+            ],
             'area_id' => 'required|integer|exists:areas,id',
             'role' => 'required|string|in:admin,staff', // Assuming these are the roles
             'password' => 'required|string|min:8',
@@ -77,9 +83,16 @@ class StaffController extends Controller
     {
         $this->authorize('update', $staff);
 
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : auth()->user()?->tenant_id;
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'phone_number' => ['sometimes', 'required', 'string', 'max:15', Rule::unique('users', 'phone_number')->ignore($staff->user_id)],
+            'phone_number' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:15',
+                Rule::unique('users', 'phone_number')->ignore($staff->user_id)->where('tenant_id', $tenantId),
+            ],
             'area_id' => 'sometimes|required|integer|exists:areas,id',
             'role' => 'sometimes|required|string|in:admin,staff',
             'password' => 'nullable|string|min:8',

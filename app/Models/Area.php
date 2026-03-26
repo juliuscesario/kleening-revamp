@@ -15,7 +15,7 @@ class Area extends Model
      *
      * @var array
      */
-    protected $fillable = ['name']; // <-- Ini juga penting untuk method create
+    protected $fillable = ['name', 'tenant_id']; // <-- Ini juga penting untuk method create
 
     /**
      * Get all of the addresses for the Area.

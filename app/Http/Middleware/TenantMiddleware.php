@@ -18,42 +18,101 @@ class TenantMiddleware
         $host = $request->getHost();
         $centralDomain = config('app.central_domain', 'pakeberes.id');
 
-        // If it's the exact central domain (no subdomain)
-        if ($host === $centralDomain) {
-            // Central domain logic (landing page, tenant registration, etc.)
-            // For now, we just let it pass, but you can add a session/flag if needed
+        $tenant = null;
+
+        // 1. Check if this is the super admin panel (bypasses tenant identification)
+        if ($request->segment(1) === 'superadminpanel') {
             return $next($request);
         }
 
-        // Check if it's a subdomain of the central domain
-        if (str_ends_with($host, '.' . $centralDomain)) {
-            $subdomain = str_replace('.' . $centralDomain, '', $host);
-            
-            $tenant = \App\Models\Tenant::where('slug', $subdomain)->first();
-
-            if (!$tenant) {
-                // If subdomain exists but tenant not found, 404
-                abort(404, 'Business not found.');
+        // 2. Check if the first path segment is a tenant slug (Path-based tenancy)
+        if ($host === $centralDomain || str_ends_with($host, '.' . $centralDomain)) {
+            $slug = $request->segment(1);
+            if ($slug && $slug !== 'login' && $slug !== 'register' && $slug !== 'up') {
+                $tenant = \App\Models\Tenant::where('slug', $slug)->first();
             }
-
-            app()->instance('currentTenant', $tenant);
-            return $next($request);
         }
 
-        // Check for custom domains
-        $tenant = \App\Models\Tenant::where('domain', $host)->first();
-        
+        // 2. Subdomain-based tenancy (if not path-based)
+        if (!$tenant && str_ends_with($host, '.' . $centralDomain)) {
+            $subdomain = str_replace('.' . $centralDomain, '', $host);
+            $tenant = \App\Models\Tenant::where('slug', $subdomain)->first();
+        }
+
+        // 3. Custom domain support
+        if (!$tenant) {
+            $tenant = \App\Models\Tenant::where('domain', $host)->first();
+        }
+
+        // 4. Fallback to authenticated user's tenant (especially for API calls)
+        if (!$tenant && auth()->check()) {
+            $user = auth()->user();
+            if ($user->tenant_id) {
+                $tenant = \App\Models\Tenant::find($user->tenant_id);
+            }
+        }
+
         if ($tenant) {
             app()->instance('currentTenant', $tenant);
-            return $next($request);
+            
+            // Set global route defaults for the identified tenant
+            \Illuminate\Support\Facades\URL::defaults([
+                'tenant_slug' => $tenant->slug,
+            ]);
+
+            // Remove tenant_slug from route parameters to prevent interference with controller parameters
+            if ($request->route() && $request->route()->hasParameter('tenant_slug')) {
+                $request->route()->forgetParameter('tenant_slug');
+            }
+        } else {
+            // If on central domain, check if user should be redirected to a tenant
+            if ($host === $centralDomain) {
+                // If user is authenticated and not superadmin, redirect to their tenant
+                if (auth()->check()) {
+                    $user = auth()->user();
+                    if ($user->role !== 'superadmin' && $user->tenant_id) {
+                        $userTenant = \App\Models\Tenant::find($user->tenant_id);
+                        if ($userTenant) {
+                            // Redirect to current path but with tenant slug
+                            $currentPath = ltrim($request->path(), '/');
+                            if ($currentPath === '') $currentPath = 'dashboard';
+                            
+                            // Check if currentPath already starts with slug or is the slug itself
+                            $isPathCorrect = ($currentPath === $userTenant->slug) || 
+                                             str_starts_with($currentPath, $userTenant->slug . '/');
+                                             
+                            if (!$isPathCorrect) {
+                                $queryString = $request->getQueryString();
+                                $redirectUrl = '/' . $userTenant->slug . '/' . $currentPath . ($queryString ? '?' . $queryString : '');
+                                return redirect($redirectUrl);
+                            }
+                        }
+                    }
+                }
+                
+                // If no tenant was matched, but a slug is present, abort unless it's a global route
+                $slug = $request->segment(1);
+                $allowedGlobalSegments = [
+                    'login', 'register', 'up', 'forgot-password', 'reset-password',
+                    'verify-email', 'email', 'confirm-password', 'password', 'logout',
+                    'auth', 'superadminpanel', 'api', 'sanctum', 'broadcasting',
+                    '_debugbar', 'livewire', 'storage', 'images', 'css', 'js', 'fonts', 'build', 'onboarding'
+                ];
+
+                if ($slug && !in_array($slug, $allowedGlobalSegments)) {
+                    abort(404, "Business page not found. Please check your URL.");
+                }
+
+                return $next($request);
+            }
+            // Fallback for local development
+            if (config('app.env') === 'local' && !str_contains($host, '.')) {
+                 return $next($request);
+            }
+
+            abort(404, 'Page not found.');
         }
 
-        // Fallback for local development or other cases
-        if (config('app.env') === 'local' && !str_contains($host, '.')) {
-             // In local development without subdomains, you might want to auto-select a tenant or show central
-             return $next($request);
-        }
-
-        abort(404, 'Page not found.');
+        return $next($request);
     }
 }

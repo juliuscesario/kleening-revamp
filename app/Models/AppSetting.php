@@ -11,7 +11,7 @@ class AppSetting extends Model
 {
     use HasFactory, BelongsToTenant;
 
-    protected $fillable = ['key', 'value'];
+    protected $fillable = ['key', 'value', 'tenant_id'];
 
     /**
      * Retrieve a setting value by key.
@@ -22,8 +22,10 @@ class AppSetting extends Model
      */
     public static function get($key, $default = null)
     {
-        // Cache the setting to avoid repeated DB hits
-        return Cache::rememberForever("app_setting_{$key}", function () use ($key, $default) {
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : (auth()->hasUser() ? auth()->user()->tenant_id : 'global');
+        
+        // Cache the setting to avoid repeated DB hits, but make it tenant-specific
+        return Cache::rememberForever("tenant_{$tenantId}_app_setting_{$key}", function () use ($key, $default) {
             $setting = self::where('key', $key)->first();
             return $setting ? $setting->value : $default;
         });
@@ -38,7 +40,9 @@ class AppSetting extends Model
      */
     public static function set($key, $value)
     {
+        $tenantId = app()->has('currentTenant') ? app('currentTenant')->id : (auth()->hasUser() ? auth()->user()->tenant_id : 'global');
+        
         self::updateOrCreate(['key' => $key], ['value' => $value]);
-        Cache::forget("app_setting_{$key}");
+        Cache::forget("tenant_{$tenantId}_app_setting_{$key}");
     }
 }
