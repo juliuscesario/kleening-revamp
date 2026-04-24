@@ -13,6 +13,7 @@ class Expense extends Model
     protected $fillable = [
         'user_id',
         'category_id',
+        'service_order_id',
         'name',
         'amount',
         'date',
@@ -34,5 +35,10 @@ class Expense extends Model
     public function category()
     {
         return $this->belongsTo(ExpenseCategory::class, 'category_id');
+    }
+
+    public function serviceOrder()
+    {
+        return $this->belongsTo(ServiceOrder::class);
     }
 }

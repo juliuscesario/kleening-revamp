@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\ServiceOrder;
 use App\Models\Invoice;
+use App\Models\Service;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -42,8 +43,9 @@ class InvoiceController extends Controller
             $invoice->transport_fee = 0;
         }
 
+        $services = Service::all();
 
-        return view('pages.invoices.create', compact('serviceOrder', 'invoice'));
+        return view('pages.invoices.create', compact('serviceOrder', 'invoice', 'services'));
     }
 
     /**
@@ -65,6 +67,10 @@ class InvoiceController extends Controller
             'dp_value' => 'nullable|numeric',
             'dp_type' => 'nullable|string|in:fixed,percentage',
             'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.service_id' => 'required|exists:services,id',
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.quantity' => 'required|numeric|min:1',
         ]);
 
         $serviceOrder = ServiceOrder::findOrFail($request->service_order_id);
@@ -119,27 +125,64 @@ class InvoiceController extends Controller
         }
 
         // If no invoice exists, or if it was cancelled, create or update it
-        $invoice = Invoice::updateOrCreate(
-            ['service_order_id' => $request->service_order_id],
-            [
-                'invoice_number' => $request->invoice_number,
-                'issue_date' => $request->issue_date,
-                'due_date' => $request->due_date,
-                'subtotal' => $subtotal,
-                'discount' => $discount,
-                'discount_type' => $discountType,
-                'transport_fee' => $transportFee,
-                'grand_total' => $grandTotal,
-                'dp_type' => $dpType,
-                'dp_value' => $dpValue,
-                'total_after_dp' => $totalAfterDp,
-                'paid_amount' => $dpAmount, // Assuming DP is paid upon invoice creation
-                'status' => Invoice::STATUS_NEW,
-                'notes' => $notes,
-            ]
-        );
 
-        $serviceOrder->update(['status' => ServiceOrder::STATUS_INVOICED]);
+        // Generate revision snapshot
+        $snapshot = $serviceOrder->items->map(function ($item) {
+            return [
+                'service_id' => $item->service_id,
+                'service_name' => $item->service->name ?? 'Unknown Service',
+                'price' => $item->price,
+                'quantity' => $item->quantity,
+                'total' => $item->price * $item->quantity,
+            ];
+        })->toArray();
+
+        $revision = [
+            'version' => 1,
+            'changed_at' => now()->toIso8601String(),
+            'changed_by' => auth()->id(),
+            'changed_by_name' => auth()->user()->name ?? 'System',
+            'old_items' => $snapshot,
+        ];
+
+        DB::transaction(function () use ($request, $serviceOrder, $subtotal, $discount, $discountType, $transportFee, $grandTotal, $dpType, $dpValue, $totalAfterDp, $dpAmount, $notes, $revision) {
+            // Overwrite Service Order Items
+            $serviceOrder->items()->delete();
+            foreach ($request->items as $itemData) {
+                $serviceOrder->items()->create([
+                    'service_id' => $itemData['service_id'],
+                    'price' => $itemData['price'],
+                    'quantity' => $itemData['quantity'],
+                    'total' => $itemData['price'] * $itemData['quantity'],
+                    'tenant_id' => $serviceOrder->tenant_id,
+                ]);
+            }
+
+            $invoice = Invoice::updateOrCreate(
+                ['service_order_id' => $request->service_order_id],
+                [
+                    'invoice_number' => $request->invoice_number,
+                    'issue_date' => $request->issue_date,
+                    'due_date' => $request->due_date,
+                    'subtotal' => $subtotal,
+                    'discount' => $discount,
+                    'discount_type' => $discountType,
+                    'transport_fee' => $transportFee,
+                    'grand_total' => $grandTotal,
+                    'dp_type' => $dpType,
+                    'dp_value' => $dpValue,
+                    'total_after_dp' => $totalAfterDp,
+                    'paid_amount' => $dpAmount, // Assuming DP is paid upon invoice creation
+                    'status' => Invoice::STATUS_NEW,
+                    'notes' => $notes,
+                    'revisions' => [$revision],
+                ]
+            );
+
+            $serviceOrder->update(['status' => ServiceOrder::STATUS_INVOICED]);
+        });
+        
+        $invoice = Invoice::where('service_order_id', $request->service_order_id)->first();
 
         return redirect()->route('web.invoices.show', $invoice);
     }

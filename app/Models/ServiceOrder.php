@@ -146,12 +146,21 @@ class ServiceOrder extends Model
     }
 
     /**
-     * Mendefinisikan relasi "hasOne" ke Invoice.
-     * Satu ServiceOrder hanya memiliki satu Invoice.
+     * Mendefinisikan relasi "hasMany" ke WorkPhoto.
+     * Satu ServiceOrder memiliki banyak WorkPhoto.
      */
     public function workPhotos() // <-- TAMBAHKAN METHOD INI
     {
         return $this->hasMany(WorkPhoto::class);
+    }
+
+    /**
+     * Mendefinisikan relasi "hasMany" ke Expense.
+     * Satu ServiceOrder bisa memiliki banyak pengeluaran material lapangan.
+     */
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
     }
 
     /**

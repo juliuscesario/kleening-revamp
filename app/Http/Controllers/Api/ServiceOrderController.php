@@ -259,7 +259,7 @@ class ServiceOrderController extends Controller
         $this->authorize('uploadWorkProof', $serviceOrder);
 
         $validated = $request->validate([
-            'type' => 'required|string|in:before,after',
+            'type' => 'required|string|in:before,after,receipt',
             // Align with front-end validation to allow HEIC/HEIF up to 128 MB
             'photo' => 'required|file|mimes:jpeg,png,jpg,gif,svg,bmp,webp,heic,heif|max:128000',
         ]);

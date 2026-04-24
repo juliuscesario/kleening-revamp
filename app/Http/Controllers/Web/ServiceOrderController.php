@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Address; // Add this line
+use App\Models\Expense;
 use Carbon\Carbon;
 
 class ServiceOrderController extends Controller
@@ -334,5 +335,82 @@ class ServiceOrderController extends Controller
             ->get();
 
         return view('pages.service-orders.index', ['serviceOrders' => $unassignedServiceOrders]);
+    }
+
+    public function storeAdHocMaterial(Request $request, ServiceOrder $serviceOrder)
+    {
+        $request->validate([
+            'material_name' => 'required|string|max:255',
+            'cost_price' => 'required|numeric|min:0',
+            'add_to_billing' => 'nullable|boolean',
+            'selling_price' => 'required_if:add_to_billing,1|nullable|numeric|min:0',
+        ]);
+
+        $user = Auth::user();
+        $addToBilling = $request->boolean('add_to_billing');
+
+        $expenseCategory = \App\Models\ExpenseCategory::firstOrCreate(
+            ['name' => 'Pembelian Material Lapangan']
+        );
+
+        DB::transaction(function () use ($request, $serviceOrder, $user, $expenseCategory, $addToBilling) {
+            // 1. Create the Expense
+            Expense::create([
+                'user_id' => $user->id,
+                'category_id' => $expenseCategory->id,
+                'service_order_id' => $serviceOrder->id,
+                'name' => 'Beli ' . $request->material_name . ' (SO #' . $serviceOrder->so_number . ')',
+                'amount' => $request->cost_price,
+                'date' => now()->toDateString(),
+                'tenant_id' => $serviceOrder->tenant_id,
+            ]);
+
+            // 2. Conditionally Create Service and ServiceOrderItem
+            if ($addToBilling) {
+                $serviceCategory = \App\Models\ServiceCategory::firstOrCreate(
+                    ['name' => 'Material Tambahan']
+                );
+
+                $service = Service::create([
+                    'category_id' => $serviceCategory->id,
+                    'name' => 'Ad-Hoc: ' . $request->material_name,
+                    'price' => $request->selling_price,
+                    'cost' => $request->cost_price,
+                    'description' => 'Material dibeli di lapangan pada SO #' . $serviceOrder->so_number,
+                    'tenant_id' => $serviceOrder->tenant_id,
+                ]);
+
+                ServiceOrderItem::create([
+                    'service_order_id' => $serviceOrder->id,
+                    'service_id' => $service->id,
+                    'quantity' => 1,
+                    'price' => $request->selling_price,
+                    'total' => $request->selling_price,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Material berhasil ditambahkan ke Service Order.',
+        ]);
+    }
+
+    public function uploadExpenseBon(Request $request, Expense $expense)
+    {
+        $request->validate([
+            'photo' => 'required|file|image|max:10240', // 10MB
+        ]);
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('expense_bons', 'public');
+            $expense->update(['photo_path' => $path]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bon berhasil diunggah.',
+            'photo_url' => Storage::url($expense->photo_path)
+        ]);
     }
 }

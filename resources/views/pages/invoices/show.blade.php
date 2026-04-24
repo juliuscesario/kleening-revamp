@@ -221,6 +221,46 @@
                             </div>
                         </div>
                     </div>
+
+                    @if(in_array(strtolower(auth()->user()->role), ['owner', 'co_owner']))
+                        @if(!empty($invoice->revisions))
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h3 class="card-title">History Logs (Modifications)</h3>
+                                </div>
+                                <div class="card-body">
+                                    @foreach($invoice->revisions as $revision)
+                                        <div class="mb-4">
+                                            <h5>Modified at {{ \Carbon\Carbon::parse($revision['changed_at'])->format('d M Y H:i') }} (by {{ $revision['changed_by_name'] ?? 'Unknown' }})</h5>
+                                            <p class="text-muted mb-2">Items before modification:</p>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Service</th>
+                                                            <th class="text-end">Price</th>
+                                                            <th class="text-center">Quantity</th>
+                                                            <th class="text-end">Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($revision['old_items'] ?? [] as $oldItem)
+                                                            <tr>
+                                                                <td>{{ $oldItem['service_name'] ?? 'Unknown Service' }}</td>
+                                                                <td class="text-end">Rp {{ number_format($oldItem['price'] ?? 0, 2, ',', '.') }}</td>
+                                                                <td class="text-center">{{ $oldItem['quantity'] ?? 0 }}</td>
+                                                                <td class="text-end">Rp {{ number_format($oldItem['total'] ?? 0, 2, ',', '.') }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    @endif
                 </div>
             </div>
         </div>

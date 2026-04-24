@@ -127,6 +127,8 @@ Route::prefix('{tenant_slug?}')->group(function () {
         Route::resource('addresses', AddressController::class)->names('web.addresses');
         Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');
         Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
+        Route::post('service-orders/{serviceOrder}/ad-hoc-materials', [ServiceOrderController::class, 'storeAdHocMaterial'])->name('web.service-orders.ad-hoc-materials');
+        Route::post('expenses/{expense}/upload-bon', [ServiceOrderController::class, 'uploadExpenseBon'])->name('web.expenses.upload-bon');
         Route::resource('invoices', InvoiceController::class)->names('web.invoices');
         Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');
         Route::resource('payments', PaymentController::class)->names('web.payments');

@@ -43,26 +43,41 @@
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped">
+                            <table class="table table-striped" id="items-table">
                                 <thead>
                                     <tr>
                                         <th>Service</th>
                                         <th>Price</th>
                                         <th>Quantity</th>
                                         <th>Total</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($serviceOrder->items as $item)
+                                    @foreach($serviceOrder->items as $index => $item)
                                     <tr>
-                                        <td>{{ $item->service->name }}</td>
-                                        <td>Rp {{ number_format($item->price, 2, ',', '.') }}</td>
-                                        <td>{{ $item->quantity }}</td>
-                                        <td class="item-total" data-total="{{ $item->price * $item->quantity }}">Rp {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</td>
+                                        <td>
+                                            <select name="items[{{ $index }}][service_id]" class="form-select service-select">
+                                                @foreach($services as $service)
+                                                    <option value="{{ $service->id }}" data-price="{{ $service->price }}" {{ $service->id == $item->service_id ? 'selected' : '' }}>{{ $service->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="items[{{ $index }}][price]" class="form-control item-price" value="{{ $item->price }}">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="items[{{ $index }}][quantity]" class="form-control item-quantity" value="{{ $item->quantity }}">
+                                        </td>
+                                        <td class="item-total-display">Rp {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+                                        </td>
                                     </tr>
                                     @endforeach
                                 </tbody>
                             </table>
+                            <button type="button" class="btn btn-success btn-sm mt-2" id="add-item">Add New Item</button>
                         </div>
                     </div>
                 </div>
@@ -192,8 +207,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function calculateTotals() {
         let subtotal = 0;
-        document.querySelectorAll('.item-total').forEach(function(item) {
-            subtotal += parseFloat(item.dataset.total);
+        document.querySelectorAll('#items-table tbody tr').forEach(function(row) {
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+            const total = price * quantity;
+            row.querySelector('.item-total-display').innerText = formatCurrency(total);
+            subtotal += total;
         });
 
         const discount = parseFloat(discountElement.value) || 0;
@@ -298,6 +317,62 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     setActiveTransportFeeButton(parseInt(transportFeeElement.value, 10) || 0);
+
+    setActiveTransportFeeButton(parseInt(transportFeeElement.value, 10) || 0);
+
+    let itemIndex = {{ count($serviceOrder->items) }};
+    const servicesData = @json($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'price' => $s->price]));
+
+    document.getElementById('add-item').addEventListener('click', function() {
+        let optionsHtml = '';
+        servicesData.forEach(service => {
+            optionsHtml += `<option value="${service.id}" data-price="${service.price}">${service.name}</option>`;
+        });
+
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>
+                <select name="items[${itemIndex}][service_id]" class="form-select service-select">
+                    ${optionsHtml}
+                </select>
+            </td>
+            <td>
+                <input type="number" name="items[${itemIndex}][price]" class="form-control item-price" value="${servicesData.length > 0 ? servicesData[0].price : 0}">
+            </td>
+            <td>
+                <input type="number" name="items[${itemIndex}][quantity]" class="form-control item-quantity" value="1">
+            </td>
+            <td class="item-total-display">Rp 0,00</td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+            </td>
+        `;
+        document.querySelector('#items-table tbody').appendChild(newRow);
+        itemIndex++;
+        calculateTotals();
+    });
+
+    document.querySelector('#items-table').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-item')) {
+            e.target.closest('tr').remove();
+            calculateTotals();
+        }
+    });
+
+    document.querySelector('#items-table').addEventListener('change', function(e) {
+        if (e.target.classList.contains('service-select')) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const price = selectedOption.dataset.price;
+            e.target.closest('tr').querySelector('.item-price').value = price;
+            calculateTotals();
+        }
+    });
+
+    document.querySelector('#items-table').addEventListener('input', function(e) {
+        if (e.target.classList.contains('item-price') || e.target.classList.contains('item-quantity')) {
+            calculateTotals();
+        }
+    });
 
     calculateTotals();
     refreshDueDateBasedOnActiveButton();

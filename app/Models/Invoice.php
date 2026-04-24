@@ -45,7 +45,12 @@ class Invoice extends Model
         'status',
         'notes',
         'signature',
+        'revisions',
         'tenant_id',
+    ];
+
+    protected $casts = [
+        'revisions' => 'array',
     ];
 
     public function serviceOrder()

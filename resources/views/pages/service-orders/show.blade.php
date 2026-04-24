@@ -107,8 +107,9 @@
                 </div>
 
                 <div class="card mt-4">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h3 class="card-title">Layanan yang Dipesan</h3>
+                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#adHocMaterialModal">Catat Material Lapangan</button>
                     </div>
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter text-nowrap">
@@ -153,7 +154,14 @@
                                             <a href="{{ $photo->photo_url }}" target="_blank" class="d-block"><img src="{{ $photo->photo_url }}" class="card-img-top"></a>
                                             <div class="card-body">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge bg-{{ $photo->type == 'arrival' ? 'primary' : ($photo->type == 'before' ? 'info' : 'success') }} me-2">{{ ucfirst($photo->type) }}</span>
+                                                    @php
+                                                        $badgeColor = 'success';
+                                                        $badgeText = ucfirst($photo->type);
+                                                        if ($photo->type == 'arrival') { $badgeColor = 'primary'; }
+                                                        elseif ($photo->type == 'before') { $badgeColor = 'info'; }
+                                                        elseif ($photo->type == 'receipt') { $badgeColor = 'warning'; $badgeText = 'Bon Material'; }
+                                                    @endphp
+                                                    <span class="badge bg-{{ $badgeColor }} me-2">{{ $badgeText }}</span>
                                                     <div>
                                                         <div>{{ $photo->uploader->name ?? 'N/A' }}</div>
                                                         <div class="text-muted">{{ $photo->created_at->format('d M Y H:i') }}</div>
@@ -167,6 +175,46 @@
                         @else
                             <p class="text-muted">Belum ada bukti pekerjaan yang diunggah.</p>
                         @endif
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="card-title">Material & Pengeluaran Lapangan</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter">
+                            <thead>
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Biaya Modal</th>
+                                    <th>Bon/Nota</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($serviceOrder->expenses as $expense)
+                                <tr>
+                                    <td>{{ $expense->name }}</td>
+                                    <td>Rp {{ number_format($expense->amount, 0, ',', '.') }}</td>
+                                    <td>
+                                        @if($expense->photo_path)
+                                            <a href="{{ Storage::url($expense->photo_path) }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                                Lihat Bon
+                                            </a>
+                                        @else
+                                            <button type="button" class="btn btn-sm btn-warning btn-upload-bon" data-id="{{ $expense->id }}" data-name="{{ $expense->name }}">
+                                                Upload Bon
+                                            </button>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">Belum ada material yang dicatat.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -253,6 +301,208 @@
                 @include('pages.service-orders._edit_modal_content', ['serviceOrder' => $serviceOrder, 'allServices' => $allServices, 'allStaff' => $allStaff])
             </div>
         </div>
+        </div>
     </div>
 </div>
+
+<!-- Modal -->
+<div class="modal modal-blur fade" id="adHocMaterialModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Catat Material Lapangan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="adHocMaterialForm">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label required">Nama Material</label>
+                        <input type="text" class="form-control" name="material_name" placeholder="Contoh: Pipa AC 2 Meter" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Harga Beli (Modal)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" class="form-control" name="cost_price" required>
+                        </div>
+                        <small class="form-hint">Ini akan dicatat sebagai Pengeluaran (Expense).</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="add_to_billing" id="chkAddToBilling">
+                            <span class="form-check-label">Tambahkan ke tagihan customer?</span>
+                        </label>
+                    </div>
+                    <div class="mb-3" id="divSellingPrice" style="display: none;">
+                        <label class="form-label required">Harga Jual (Ke Customer)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" class="form-control" name="selling_price">
+                        </div>
+                        <small class="form-hint">Ini akan ditambahkan sebagai layanan pada Service Order ini.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveAdHocMaterial">Simpan Material</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Receipt Modal -->
+<div class="modal modal-blur fade" id="uploadReceiptModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form id="uploadReceiptForm" enctype="multipart/form-data">
+                <input type="hidden" name="expense_id" id="receipt_expense_id">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">Upload Bon Material</h5>
+                        <div class="text-muted" id="receipt_material_name"></div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Unggah Foto Bon/Nota</label>
+                        <input type="file" class="form-control" name="photo" id="receipt_photo" accept="image/*" required>
+                    </div>
+                     <div class="d-flex align-items-center mt-3 d-none" id="receiptWorkProofLoading">
+                        <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                        <span>Sedang mengunggah foto, mohon tunggu...</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="receiptWorkProofSubmitBtn">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const chkAddToBilling = document.getElementById('chkAddToBilling');
+    const divSellingPrice = document.getElementById('divSellingPrice');
+    
+    if (chkAddToBilling) {
+        chkAddToBilling.addEventListener('change', function() {
+            divSellingPrice.style.display = this.checked ? 'block' : 'none';
+            const input = divSellingPrice.querySelector('input');
+            if (this.checked) {
+                input.setAttribute('required', 'required');
+            } else {
+                input.removeAttribute('required');
+            }
+        });
+    }
+
+    const btnSaveAdHocMaterial = document.getElementById('btnSaveAdHocMaterial');
+    if (btnSaveAdHocMaterial) {
+        btnSaveAdHocMaterial.addEventListener('click', function() {
+            const form = document.getElementById('adHocMaterialForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            data.add_to_billing = chkAddToBilling.checked ? 1 : 0;
+
+            // Disable button and show loading state
+            btnSaveAdHocMaterial.disabled = true;
+            btnSaveAdHocMaterial.innerText = 'Menyimpan...';
+
+            fetch('{{ route("web.service-orders.ad-hoc-materials", $serviceOrder->id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Material berhasil ditambahkan!');
+                    window.location.reload();
+                } else {
+                    alert('Gagal: ' + (result.message || 'Terjadi kesalahan'));
+                    btnSaveAdHocMaterial.disabled = false;
+                    btnSaveAdHocMaterial.innerText = 'Simpan Material';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat menyimpan material.');
+                btnSaveAdHocMaterial.disabled = false;
+                btnSaveAdHocMaterial.innerText = 'Simpan Material';
+            });
+        });
+    }
+
+    // --- Upload Receipt Photo ---
+    const uploadReceiptModalEl = document.getElementById('uploadReceiptModal');
+    const uploadReceiptForm = document.getElementById('uploadReceiptForm');
+    const receiptExpenseIdInput = document.getElementById('receipt_expense_id');
+    const receiptMaterialNameDiv = document.getElementById('receipt_material_name');
+    const receiptWorkProofLoading = document.getElementById('receiptWorkProofLoading');
+    const receiptWorkProofSubmitBtn = document.getElementById('receiptWorkProofSubmitBtn');
+
+    document.querySelectorAll('.btn-upload-bon').forEach(btn => {
+        btn.addEventListener('click', function() {
+            receiptExpenseIdInput.value = this.dataset.id;
+            receiptMaterialNameDiv.innerText = this.dataset.name;
+            const modal = new bootstrap.Modal(uploadReceiptModalEl);
+            modal.show();
+        });
+    });
+
+    if (uploadReceiptForm) {
+        uploadReceiptForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const expenseId = receiptExpenseIdInput.value;
+            const formData = new FormData(this);
+
+            receiptWorkProofLoading.classList.remove('d-none');
+            receiptWorkProofSubmitBtn.disabled = true;
+
+            const uploadUrl = '{{ route("web.expenses.upload-bon", ":id") }}'.replace(':id', expenseId);
+
+            fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(result.message);
+                    window.location.reload();
+                } else {
+                    alert('Gagal: ' + (result.message || 'Terjadi kesalahan'));
+                    receiptWorkProofLoading.classList.add('d-none');
+                    receiptWorkProofSubmitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat mengunggah bon.');
+                receiptWorkProofLoading.classList.add('d-none');
+                receiptWorkProofSubmitBtn.disabled = false;
+            });
+        });
+    }
+});
+</script>
+@endpush
