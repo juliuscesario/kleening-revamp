@@ -22,6 +22,7 @@ class TenantMiddleware
 
         // 1. Check if this is the super admin panel (bypasses tenant identification)
         if ($request->segment(1) === 'superadminpanel') {
+            \Illuminate\Support\Facades\Log::info('TenantMiddleware: superadminpanel segment detected, skipping tenant identification.');
             return $next($request);
         }
 

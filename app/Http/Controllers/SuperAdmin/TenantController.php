@@ -14,6 +14,7 @@ class TenantController extends Controller
 {
     public function index()
     {
+        \Illuminate\Support\Facades\Log::info('TenantController index method hit by:', ['user_id' => auth()->id()]);
         $tenants = Tenant::all();
         return view('superadmin.tenants.index', compact('tenants'));
     }

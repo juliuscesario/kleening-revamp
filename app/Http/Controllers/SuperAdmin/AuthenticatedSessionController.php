@@ -24,12 +24,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        \Illuminate\Support\Facades\Log::info('SuperAdmin login attempt:', ['phone_number' => $request->phone_number]);
+        
+        try {
+            $request->authenticate();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Illuminate\Support\Facades\Log::error('SuperAdmin authentication failed for:', ['phone_number' => $request->phone_number, 'errors' => $e->errors()]);
+            throw $e;
+        }
 
         $user = Auth::user();
+        \Illuminate\Support\Facades\Log::info('SuperAdmin authenticated:', ['user_id' => $user->id, 'role' => $user->role]);
 
         // Extra check for superadmin role
         if ($user->role !== 'superadmin') {
+            \Illuminate\Support\Facades\Log::warning('Non-superadmin tried to access superadmin panel:', ['user_id' => $user->id, 'role' => $user->role]);
             Auth::logout();
             return redirect()->route('superadmin.login')->withErrors(['phone_number' => 'You are not authorized to access this panel.']);
         }
