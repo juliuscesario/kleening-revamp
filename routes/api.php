@@ -15,7 +15,7 @@ use App\Http\Controllers\Api\WorkPhotoController;
 Route::post('/login', [AuthController::class, 'login']);
 
 // Route yang butuh login
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'role:owner'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     
     //SET ROUTES

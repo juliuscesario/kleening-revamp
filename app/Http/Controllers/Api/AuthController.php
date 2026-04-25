@@ -22,6 +22,11 @@ class AuthController extends Controller
 
         $user = User::where('phone_number', $credentials['phone_number'])->firstOrFail();
         
+        // Restrict login to owner role only
+        if ($user->role !== 'owner') {
+            return response()->json(['message' => 'Unauthorized. Only the Owner can use the API.'], 403);
+        }
+        
         // Hapus token lama dan buat token baru
         $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;

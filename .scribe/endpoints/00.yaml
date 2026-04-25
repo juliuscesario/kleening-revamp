@@ -1048,7 +1048,7 @@ endpoints:
         name: add_address
         description: 'Optional Address Fields.'
         required: false
-        example: true
+        example: false
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -1112,7 +1112,7 @@ endpoints:
     cleanBodyParameters:
       name: b
       phone_number: 'n'
-      add_address: true
+      add_address: false
       label: g
       contact_name: z
       contact_phone: m
@@ -1949,7 +1949,7 @@ endpoints:
         name: role
         description: ''
         required: false
-        example: staff
+        example: admin
         type: string
         enumValues:
           - admin
@@ -1972,7 +1972,7 @@ endpoints:
       name: b
       phone_number: 'n'
       area_id: 16
-      role: staff
+      role: admin
       password: ']|{+-0pBNvYg'
     fileParameters: []
     responses: []
@@ -2126,7 +2126,7 @@ endpoints:
         name: work_date
         description: 'Must be a valid date.'
         required: true
-        example: '2026-04-25T10:41:35'
+        example: '2026-04-25T12:44:01'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2137,7 +2137,7 @@ endpoints:
         name: work_time
         description: 'Must be a valid date in the format <code>H:i</code>.'
         required: true
-        example: '10:41'
+        example: '12:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2213,8 +2213,8 @@ endpoints:
     cleanBodyParameters:
       customer_id: architecto
       address_id: architecto
-      work_date: '2026-04-25T10:41:35'
-      work_time: '10:41'
+      work_date: '2026-04-25T12:44:01'
+      work_time: '12:44'
       work_notes: architecto
       staff_notes: architecto
       staff_ids:
@@ -2352,7 +2352,7 @@ endpoints:
         name: work_date
         description: 'Must be a valid date.'
         required: false
-        example: '2026-04-25T10:41:35'
+        example: '2026-04-25T12:44:01'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2363,7 +2363,7 @@ endpoints:
         name: work_time
         description: 'Must be a valid date in the format <code>H:i</code>.'
         required: false
-        example: '10:41'
+        example: '12:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2459,8 +2459,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      work_date: '2026-04-25T10:41:35'
-      work_time: '10:41'
+      work_date: '2026-04-25T12:44:01'
+      work_time: '12:44'
       status: architecto
       work_notes: architecto
       staff_notes: architecto
@@ -2942,7 +2942,7 @@ endpoints:
         name: status
         description: ''
         required: false
-        example: paid
+        example: overdue
         type: string
         enumValues:
           - unpaid
@@ -2963,7 +2963,7 @@ endpoints:
         nullable: true
         deprecated: false
     cleanBodyParameters:
-      status: paid
+      status: overdue
       signature: architecto
     fileParameters: []
     responses: []
@@ -3063,7 +3063,7 @@ endpoints:
         name: type
         description: ''
         required: true
-        example: before
+        example: arrival
         type: string
         enumValues:
           - arrival
@@ -3084,7 +3084,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      type: before
+      type: arrival
     fileParameters:
       photo: null
     responses: []

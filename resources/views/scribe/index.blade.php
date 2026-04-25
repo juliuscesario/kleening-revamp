@@ -246,11 +246,13 @@
     <div class="dark-box"></div>
     <div class="content">
         <h1 id="introduction">Introduction</h1>
-<p>Comprehensive API documentation for Kleening Revamp service management system. This API allows for managing areas, service categories, customers, staff, service orders, and invoices.</p>
+<p>Comprehensive API documentation for Kleening Revamp service management system. This API is strictly restricted to the Owner role for reporting and dashboard integration purposes.</p>
 <aside>
     <strong>Base URL</strong>: <code>https://kleening-revamp.test</code>
 </aside>
 <pre><code>This documentation aims to provide all the information you need to work with our API.
+
+**Authentication Notice**: Only users with the **Owner** role are authorized to access these endpoints. Any other roles will receive an unauthorized error.
 
 &lt;aside&gt;As you scroll, you'll see code examples for working with the API in different programming languages in the dark area to the right (or as part of the content on mobile).
 You can switch the language used with the tabs at the top right (or from the nav menu at the top left on mobile).&lt;/aside&gt;</code></pre>
@@ -3067,7 +3069,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"name\": \"b\",
     \"phone_number\": \"n\",
-    \"add_address\": true,
+    \"add_address\": false,
     \"label\": \"g\",
     \"contact_name\": \"z\",
     \"contact_phone\": \"m\",
@@ -3091,7 +3093,7 @@ const headers = {
 let body = {
     "name": "b",
     "phone_number": "n",
-    "add_address": true,
+    "add_address": false,
     "label": "g",
     "contact_name": "z",
     "contact_phone": "m",
@@ -3237,7 +3239,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <code>false</code>
         </label>
     <br>
-<p>Optional Address Fields. Example: <code>true</code></p>
+<p>Optional Address Fields. Example: <code>false</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>label</code></b>&nbsp;&nbsp;
@@ -5182,7 +5184,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"name\": \"b\",
     \"phone_number\": \"n\",
     \"area_id\": 16,
-    \"role\": \"staff\",
+    \"role\": \"admin\",
     \"password\": \"]|{+-0pBNvYg\"
 }"
 </code></pre></div>
@@ -5203,7 +5205,7 @@ let body = {
     "name": "b",
     "phone_number": "n",
     "area_id": 16,
-    "role": "staff",
+    "role": "admin",
     "password": "]|{+-0pBNvYg"
 };
 
@@ -5361,10 +5363,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="role"                data-endpoint="PUTapi-staff--id-"
-               value="staff"
+               value="admin"
                data-component="body">
     <br>
-<p>Example: <code>staff</code></p>
+<p>Example: <code>admin</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>admin</code></li> <li><code>staff</code></li></ul>
         </div>
@@ -5684,8 +5686,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"customer_id\": \"architecto\",
     \"address_id\": \"architecto\",
-    \"work_date\": \"2026-04-25T10:41:35\",
-    \"work_time\": \"10:41\",
+    \"work_date\": \"2026-04-25T12:44:01\",
+    \"work_time\": \"12:44\",
     \"work_notes\": \"architecto\",
     \"staff_notes\": \"architecto\",
     \"staff_ids\": [
@@ -5714,8 +5716,8 @@ const headers = {
 let body = {
     "customer_id": "architecto",
     "address_id": "architecto",
-    "work_date": "2026-04-25T10:41:35",
-    "work_time": "10:41",
+    "work_date": "2026-04-25T12:44:01",
+    "work_time": "12:44",
     "work_notes": "architecto",
     "staff_notes": "architecto",
     "staff_ids": [
@@ -5853,10 +5855,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="work_date"                data-endpoint="POSTapi-service-orders"
-               value="2026-04-25T10:41:35"
+               value="2026-04-25T12:44:01"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-25T10:41:35</code></p>
+<p>Must be a valid date. Example: <code>2026-04-25T12:44:01</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>work_time</code></b>&nbsp;&nbsp;
@@ -5865,10 +5867,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="work_time"                data-endpoint="POSTapi-service-orders"
-               value="10:41"
+               value="12:44"
                data-component="body">
     <br>
-<p>Must be a valid date in the format <code>H:i</code>. Example: <code>10:41</code></p>
+<p>Must be a valid date in the format <code>H:i</code>. Example: <code>12:44</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>work_notes</code></b>&nbsp;&nbsp;
@@ -6120,8 +6122,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"work_date\": \"2026-04-25T10:41:35\",
-    \"work_time\": \"10:41\",
+    \"work_date\": \"2026-04-25T12:44:01\",
+    \"work_time\": \"12:44\",
     \"status\": \"architecto\",
     \"work_notes\": \"architecto\",
     \"staff_notes\": \"architecto\",
@@ -6150,8 +6152,8 @@ const headers = {
 };
 
 let body = {
-    "work_date": "2026-04-25T10:41:35",
-    "work_time": "10:41",
+    "work_date": "2026-04-25T12:44:01",
+    "work_time": "12:44",
     "status": "architecto",
     "work_notes": "architecto",
     "staff_notes": "architecto",
@@ -6308,10 +6310,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="work_date"                data-endpoint="PUTapi-service-orders--id-"
-               value="2026-04-25T10:41:35"
+               value="2026-04-25T12:44:01"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-04-25T10:41:35</code></p>
+<p>Must be a valid date. Example: <code>2026-04-25T12:44:01</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>work_time</code></b>&nbsp;&nbsp;
@@ -6320,10 +6322,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="work_time"                data-endpoint="PUTapi-service-orders--id-"
-               value="10:41"
+               value="12:44"
                data-component="body">
     <br>
-<p>Must be a valid date in the format <code>H:i</code>. Example: <code>10:41</code></p>
+<p>Must be a valid date in the format <code>H:i</code>. Example: <code>12:44</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>status</code></b>&nbsp;&nbsp;
@@ -6582,7 +6584,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "photo=@/tmp/phpl2jr22lmt60l8angRXI" </code></pre></div>
+    --form "photo=@/tmp/php0b96ctmqiavp3ICRFmz" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -6716,7 +6718,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>128 MB max, allow common image types including HEIC/HEIF. Must be a file. Must not be greater than 128000 kilobytes. Example: <code>/tmp/phpl2jr22lmt60l8angRXI</code></p>
+<p>128 MB max, allow common image types including HEIC/HEIF. Must be a file. Must not be greater than 128000 kilobytes. Example: <code>/tmp/php0b96ctmqiavp3ICRFmz</code></p>
         </div>
         </form>
 
@@ -6739,7 +6741,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "type=after"\
-    --form "photo=@/tmp/phpvlihdqo3g9nbdYrkES4" </code></pre></div>
+    --form "photo=@/tmp/phpc86ba6c1kpeg7eMbVLB" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -6888,7 +6890,7 @@ Must be one of:
                value=""
                data-component="body">
     <br>
-<p>Align with front-end validation to allow HEIC/HEIF up to 128 MB. Must be a file. Must not be greater than 128000 kilobytes. Example: <code>/tmp/phpvlihdqo3g9nbdYrkES4</code></p>
+<p>Align with front-end validation to allow HEIC/HEIF up to 128 MB. Must be a file. Must not be greater than 128000 kilobytes. Example: <code>/tmp/phpc86ba6c1kpeg7eMbVLB</code></p>
         </div>
         </form>
 
@@ -7554,7 +7556,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"status\": \"paid\",
+    \"status\": \"overdue\",
     \"signature\": \"architecto\"
 }"
 </code></pre></div>
@@ -7572,7 +7574,7 @@ const headers = {
 };
 
 let body = {
-    "status": "paid",
+    "status": "overdue",
     "signature": "architecto"
 };
 
@@ -7694,10 +7696,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="status"                data-endpoint="PUTapi-invoices--id-"
-               value="paid"
+               value="overdue"
                data-component="body">
     <br>
-<p>Example: <code>paid</code></p>
+<p>Example: <code>overdue</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>unpaid</code></li> <li><code>paid</code></li> <li><code>overdue</code></li></ul>
         </div>
@@ -7872,8 +7874,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "type=before"\
-    --form "photo=@/tmp/phpbsi2t76a18n01dpGqr9" </code></pre></div>
+    --form "type=arrival"\
+    --form "photo=@/tmp/phpdb7vfvf8kcbp0Ev60CF" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -7888,7 +7890,7 @@ const headers = {
 };
 
 const body = new FormData();
-body.append('type', 'before');
+body.append('type', 'arrival');
 body.append('photo', document.querySelector('input[name="photo"]').files[0]);
 
 fetch(url, {
@@ -8005,10 +8007,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="POSTapi-service-orders--serviceOrder_id--photos"
-               value="before"
+               value="arrival"
                data-component="body">
     <br>
-<p>Example: <code>before</code></p>
+<p>Example: <code>arrival</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>arrival</code></li> <li><code>before</code></li> <li><code>after</code></li></ul>
         </div>
@@ -8022,7 +8024,7 @@ Must be one of:
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phpbsi2t76a18n01dpGqr9</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phpdb7vfvf8kcbp0Ev60CF</code></p>
         </div>
         </form>
 
