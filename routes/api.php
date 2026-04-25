@@ -45,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/service-orders/{serviceOrder}/invoice', [InvoiceController::class, 'storeFromServiceOrder']);
 
     // Route standar untuk mengelola Invoice (melihat, update status, hapus)
-    Route::apiResource('invoices', InvoiceController::class);
+    Route::apiResource('invoices', InvoiceController::class)->except(['store']);
 
     // Route untuk mengelola foto di bawah Service Order
     Route::post('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'store']);
