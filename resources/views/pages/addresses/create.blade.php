@@ -54,6 +54,11 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="lokasi" class="form-label">Lokasi <small class="text-muted">(Kecamatan/Kelurahan untuk routing)</small></label>
+                            <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="cth: Cengkareng, Serpong, Kelapa Gading">
+                        </div>
+
+                        <div class="mb-3">
                             <label for="google_maps_link" class="form-label">Link Google Maps</label>
                             <input type="url" class="form-control" id="google_maps_link" name="google_maps_link">
                         </div>

@@ -18,6 +18,7 @@ use App\Http\Controllers\Web\ServiceCategoriesController;
 use App\Http\Controllers\Web\ServiceController;
 use App\Http\Controllers\Web\ServiceOrderController;
 use App\Http\Controllers\Web\StaffController;
+use App\Http\Controllers\Web\PlannerController;
 use App\Http\Controllers\Web\NotificationController;
 
 use App\Http\Controllers\Web\InvoiceController;
@@ -42,6 +43,13 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    // Operational Planner
+    Route::get('planner', [PlannerController::class, 'index'])->name('web.planner.index');
+    Route::post('planner/{serviceOrder}/update-field', [PlannerController::class, 'updateField'])->name('web.planner.update-field');
+    Route::post('planner/{serviceOrder}/update-staff', [PlannerController::class, 'updateStaff'])->name('web.planner.update-staff');
+    Route::post('planner/toggle-staff-off', [PlannerController::class, 'toggleStaffOff'])->name('web.planner.toggle-staff-off');
+    Route::post('planner/quick-store', [PlannerController::class, 'quickStore'])->name('web.planner.quick-store');
+
     // DataTables and JSON Data Routes
     Route::get('data/areas', [DataTablesController::class, 'areas'])->name('data.areas');
     Route::get('data/service-categories', [DataTablesController::class, 'serviceCategories'])->name('data.service-categories');

@@ -40,4 +40,9 @@ class Staff extends Model
     {
         return $this->belongsToMany(ServiceOrder::class, 'service_order_staff');
     }
+
+    public function offDays()
+    {
+        return $this->hasMany(\App\Models\StaffOffDay::class);
+    }
 }

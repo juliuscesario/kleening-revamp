@@ -27,6 +27,7 @@ class Address extends Model
         'contact_name',
         'contact_phone',
         'full_address',
+        'lokasi',
         'google_maps_link',
     ];
 

@@ -24,8 +24,13 @@ class DashboardController extends Controller
         $user = Auth::user();
         $viewData = [];
         $today = Carbon::today();
+        $role = strtolower(trim($user->role));
 
-        if ($user->role === 'owner' || $user->role === 'co_owner') {
+        if ($role === 'admin') {
+            return redirect()->route('web.planner.index');
+        }
+
+        if ($role === 'owner' || $role === 'co_owner') {
             $startOfMonth = $today->copy()->startOfMonth();
             $endOfMonth = $today->copy()->endOfMonth();
 
@@ -95,7 +100,7 @@ class DashboardController extends Controller
                 });
             }
 
-        } elseif ($user->role === 'admin') {
+        } elseif ($role === 'admin') {
             // Admin Widgets
             $viewData['todaySchedule'] = ServiceOrder::whereDate('work_date', $today)
                 ->whereIn('status', [ServiceOrder::STATUS_BOOKED, ServiceOrder::STATUS_PROSES])
@@ -118,7 +123,7 @@ class DashboardController extends Controller
                 ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
                 ->get();
 
-        } elseif ($user->role === 'staff') {
+        } elseif ($role === 'staff') {
             // Existing staff logic...
             $staffId = $user->staff->id;
             $tomorrow = Carbon::tomorrow();
