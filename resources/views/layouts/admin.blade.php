@@ -36,6 +36,18 @@
           })
           .catch(err => console.error('Could not auto-fetch API token:', err));
       }
+
+      // Theme Management - Fast Apply to avoid FOUC
+      (function() {
+        const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-bs-theme', theme);
+      })();
+
+      // Theme Switcher Logic
+      window.setTheme = function(theme) {
+        localStorage.setItem('theme', theme);
+        document.documentElement.setAttribute('data-bs-theme', theme);
+      };
     </script>
   @endauth
 
@@ -48,11 +60,15 @@
 
     @media (max-width: 576px) {
       .notification-dropdown-menu.dropdown-menu-end {
-        min-width: 95vw;
-        max-width: 95vw;
-        left: auto !important;
-        right: 5px !important;
+        min-width: 90vw !important;
+        position: fixed !important;
+        top: 60px !important;
+        left: 5vw !important;
+        right: 5vw !important;
+        width: 90vw !important;
+        margin: 0 !important;
         transform: none !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
       }
     }
   </style>
@@ -421,6 +437,17 @@
               </div>
             </div>
           </div>
+
+          {{-- THEME TOGGLE --}}
+          <div class="nav-item d-flex me-2">
+            <a href="#" class="nav-link px-0 hide-theme-dark" title="Enable dark mode" onclick="setTheme('dark')">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" /></svg>
+            </a>
+            <a href="#" class="nav-link px-0 hide-theme-light" title="Enable light mode" onclick="setTheme('light')">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" /></svg>
+            </a>
+          </div>
+
           <div class="nav-item dropdown">
             <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown"
               aria-label="Open user menu">

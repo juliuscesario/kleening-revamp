@@ -193,7 +193,7 @@
                                         <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
                                         @if($so->work_time_formatted)
                                             <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
                                         @endif
@@ -229,7 +229,7 @@
                                         <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
                                         @if($so->work_time_formatted)
                                             <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
                                         @endif
@@ -265,7 +265,7 @@
                                         <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
                                         @if($so->work_time_formatted)
                                             <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
                                         @endif
@@ -308,7 +308,7 @@
                                         </p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
                                         @if($so->work_time_formatted)
                                             <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
                                         @endif
@@ -348,7 +348,7 @@
                                         <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5 text-dark">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
                                         @if($so->work_time_formatted)
                                             <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
                                         @endif

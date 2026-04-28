@@ -1,66 +1,210 @@
-/* Impor stylesheet inti dari Tabler UI dari node_modules */
+/* Core Design System - Kleening.id x Intercom Aesthetic */
 @import '@tabler/core/dist/css/tabler.min.css';
 @import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
 @import 'datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css';
 @import 'select2/dist/css/select2.min.css';
 @import 'sweetalert2/dist/sweetalert2.min.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* CSS kustom Anda bisa ditambahkan di bawah sini */
-
-.select2-container {
-    width: 100% !important;
+:root {
+    /* Functional Tokens - Light Mode (The Sophisticated Clean) */
+    --bg-canvas: #FAF9F6;     /* Warm Cream */
+    --bg-surface: #FFFFFF;    /* Pure White */
+    --text-main: #111111;     /* Off-Black */
+    --text-secondary: #7B7B78; /* Black 50 */
+    --border-color: #DEDBD6;   /* Oat */
+    
+    --brand-primary: #2196F3;  /* Kleening Cyan */
+    --brand-secondary: #3F51B5; /* Deep Indigo */
+    
+    --radius-btn: 4px;
+    --radius-card: 8px;
+    
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    
+    --logo-filter: none;
+    --sidebar-bg: #111111;
+    --sidebar-text: rgba(255, 255, 255, 0.7);
+    --sidebar-active: #FFFFFF;
 }
 
-.select2-container .select2-selection--single {
-    height: calc(2.5rem + 2px);
-    padding: .375rem 2.25rem .375rem .75rem;
-    border: 1px solid #ced4da;
-    border-radius: .375rem;
-    display: flex;
-    align-items: center;
+[data-bs-theme="dark"] {
+    /* Functional Tokens - Dark Mode */
+    --bg-canvas: #0A0A0A;     /* Deep Black */
+    --bg-surface: #121212;    /* Dark Surface */
+    --text-main: #FAF9F6;     /* Warm Cream */
+    --text-secondary: #A1A09A;
+    --border-color: #2A2A2A;
+    
+    --logo-filter: brightness(0) invert(1);
+    --sidebar-bg: #000000;
+    --sidebar-text: rgba(255, 255, 255, 0.6);
+    --sidebar-active: #FAF9F6;
 }
 
-.select2-container--default .select2-selection--single .select2-selection__rendered {
-    color: #212529;
-    line-height: 1.5;
-    padding-left: 0;
+/* Base resets */
+body {
+    background-color: var(--bg-canvas) !important;
+    color: var(--text-main) !important;
+    font-family: var(--font-sans) !important;
+    -webkit-font-smoothing: antialiased;
 }
 
-.select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 100%;
-    right: .75rem;
+.page {
+    background-color: var(--bg-canvas) !important;
 }
 
-.select2-container--default .select2-results__option--highlighted,
-.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
-    background-color: #206bc4;
-    color: #fff;
+/* Typography */
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    color: var(--text-main) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.04em !important;
+    line-height: 1.1 !important;
 }
 
-.select2-container--default .select2-search--dropdown .select2-search__field {
-    border-color: #ced4da;
-    border-radius: .375rem;
+.text-muted, .text-secondary {
+    color: var(--text-secondary) !important;
 }
 
-#service-items-container .service-item {
-    border: 1px solid #e9ecef;
-    border-radius: .75rem;
-    padding: 1rem;
-    background-color: #f8f9fa;
-    position: relative;
+/* Sidebar - High Contrast Operational look */
+.navbar-vertical {
+    background-color: var(--sidebar-bg) !important;
+    border-right: 1px solid var(--border-color) !important;
 }
 
-#service-items-container .service-item .form-label {
-    font-size: 0.85rem;
-    font-weight: 600;
+.navbar-vertical .nav-link {
+    color: var(--sidebar-text) !important;
+    font-weight: 500;
 }
 
-#service-items-container .service-item .remove-service-item {
-    min-height: 42px;
+.navbar-vertical .nav-link:hover,
+.navbar-vertical .nav-link.active {
+    color: var(--sidebar-active) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-@media (max-width: 576px) {
-    #service-items-container .service-item {
-        padding: .75rem;
-    }
+.navbar-vertical .nav-link.active {
+    font-weight: 700;
+}
+
+.navbar-vertical .nav-link.active::after {
+    border-left-color: var(--brand-primary) !important;
+}
+
+.navbar-brand-image {
+    filter: brightness(0) invert(1); /* Sidebar logo always white */
+}
+
+/* Header */
+header.navbar {
+    background-color: var(--bg-surface) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+header.navbar .navbar-brand-image {
+    filter: var(--logo-filter);
+}
+
+/* Components */
+.card {
+    background-color: var(--bg-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-card) !important;
+    box-shadow: none !important;
+}
+
+.card-header {
+    background-color: transparent !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.btn {
+    border-radius: var(--radius-btn) !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-primary {
+    background-color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+    color: #FFFFFF !important;
+}
+
+.btn-outline-primary {
+    color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+}
+
+.table {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-main) !important;
+}
+
+.table thead th {
+    background-color: var(--bg-canvas) !important;
+    color: var(--text-secondary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+}
+
+/* Modals & Popups */
+.modal-content, .dropdown-menu {
+    background-color: var(--bg-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+.dropdown-item {
+    color: var(--text-main) !important;
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg-canvas) !important;
+}
+
+/* Inputs */
+.form-control, .form-select {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(33, 150, 243, 0.25) !important;
+}
+
+/* Utility overrides for mixed legacy styles */
+.text-dark { color: var(--text-main) !important; }
+.bg-white { background-color: var(--bg-surface) !important; }
+.bg-light { background-color: var(--bg-canvas) !important; }
+.border { border-color: var(--border-color) !important; }
+
+/* Operational Planner specific styles (Ensure compatibility) */
+.planner-area-tab {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-secondary) !important;
+}
+
+.planner-area-tab.active {
+    background-color: var(--text-main) !important;
+    color: var(--bg-surface) !important;
+}
+
+.staff-chip {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.staff-chip.is-assigned {
+    background-color: var(--bg-canvas) !important;
+    color: var(--text-main) !important;
+}
+
+.job-row:hover {
+    background-color: var(--bg-canvas) !important;
 }

@@ -7,6 +7,12 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
   <title>{{ \App\Models\AppSetting::get('app_name', config('app.name')) }}</title>
   @vite(['resources/css/app.css'])
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    })();
+  </script>
 </head>
 
 <body class="d-flex flex-column">

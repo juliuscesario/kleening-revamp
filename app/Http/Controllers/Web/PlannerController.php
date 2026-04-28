@@ -29,7 +29,7 @@ class PlannerController extends Controller
 
         $date = $request->input('date', now()->toDateString());
         $areaId = $request->input('area_id');
-        $viewMode = $request->input('view', 'staff'); // 'staff' or 'list'
+        $viewMode = $request->input('view', 'list'); // 'staff' or 'list' as default
         $carbonDate = Carbon::parse($date);
 
         $areas = Area::orderBy('name')->get();
@@ -66,8 +66,12 @@ class PlannerController extends Controller
             $so->lifecycle_status = $this->computeLifecycleStatus($so);
         });
 
-        // Get all active staff (with area filter if needed)
-        $staffQuery = Staff::where('is_active', true)->orderBy('name');
+        // Get all active staff (strictly role 'staff' only)
+        $staffQuery = Staff::where('is_active', true)
+            ->whereHas('user', function($q) {
+                $q->where('role', 'staff');
+            })
+            ->orderBy('name');
         if ($areaId) {
             $staffQuery->where('area_id', $areaId);
         }
@@ -131,7 +135,12 @@ class PlannerController extends Controller
 
         // Summary counts
         $totalJobs = $serviceOrders->where('status', '!=', ServiceOrder::STATUS_CANCELLED)->count();
-        $activeStaffCount = $allStaff->count() - $offDays->count();
+        
+        $totalStaffCount = $allStaff->count();
+        $offStaffCount = $offDays->count();
+        $assignedStaffIds = $assignedJobs->flatMap(fn($so) => $so->staff->pluck('id'))->unique();
+        $assignedStaffCount = $assignedStaffIds->count();
+        $availableStaffCount = max(0, $totalStaffCount - $offStaffCount - $assignedStaffCount);
 
         return view('pages.planner.index', compact(
             'date',
@@ -152,7 +161,11 @@ class PlannerController extends Controller
             'nextDate',
             'today',
             'totalJobs',
-            'activeStaffCount',
+            'totalStaffCount',
+            'offStaffCount',
+            'availableStaffCount',
+            'assignedStaffCount',
+            'assignedStaffIds',
         ));
     }
 
