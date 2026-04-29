@@ -118,14 +118,27 @@ class FormOrderParser
         // Compile notes with daya listrik
         $result['notes'] = $this->compileNotes($notesValue, $dayaListrik);
 
-        // Geocode address if possible
-        if (!empty($result['alamat'])) {
-            $geoResult = $this->geocodeAddress($result['alamat']);
-            if ($geoResult) {
-                $result['alamat'] = $geoResult['formatted_address'];
-                $result['google_maps'] = $geoResult['google_maps_url'];
-                $result['geocoding_success'] = true;
-            }
+        // NOTE: Geocoding is NOT done here — it's done by the controller
+        // only when the customer is confirmed as NEW.
+
+        return $result;
+    }
+
+    /**
+     * Enrich parsed data with geocoding.
+     * Called by the controller when customer is NOT found.
+     */
+    public function enrichWithGeocoding(array $result): array
+    {
+        if (empty($result['alamat'])) {
+            return $result;
+        }
+
+        $geoResult = $this->geocodeAddress($result['alamat']);
+        if ($geoResult) {
+            $result['alamat'] = $geoResult['formatted_address'];
+            $result['google_maps'] = $geoResult['google_maps_url'];
+            $result['geocoding_success'] = true;
         }
 
         return $result;
@@ -354,8 +367,9 @@ class FormOrderParser
 
     /**
      * Geocode address using Google Geocoding API.
+     * Public so the controller can call it separately.
      */
-    protected function geocodeAddress(string $address): ?array
+    public function geocodeAddress(string $address): ?array
     {
         $apiKey = config('services.google.geocoding_key');
 

@@ -112,6 +112,34 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Address Selection (shown only for existing customer with multiple addresses) -->
+                    <div id="parserAddressSection" class="mt-3" style="display: none;">
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <h4 class="card-title">Pilih Alamat Customer</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-success mb-3">
+                                    ✅ Customer ditemukan: <strong id="parserCustomerName"></strong>
+                                    <span class="text-muted ms-2" id="parserCustomerPhone"></span>
+                                </div>
+                                <select id="parserAddressSelect" class="form-select mb-3"></select>
+                                <button id="btnPrefillSO" class="btn btn-success">Isi Form SO</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- New Customer Notice (shown when customer not found) -->
+                    <div id="newCustomerNotice" class="mt-3" style="display: none;">
+                        <div class="alert alert-warning d-flex align-items-center">
+                            <span>⚠️ Customer baru — belum ada di sistem.</span>
+                        </div>
+                        <button id="btnCreateNewCustomer" class="btn btn-warning">
+                            + Buat Customer Baru
+                        </button>
+                        <small class="text-muted ms-2">(Segment 3 — coming soon)</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -212,6 +240,10 @@
 
 @push('scripts')
 <script>
+// ============================================
+// SEGMENT 2: Parse + Auto Check Customer
+// ============================================
+
 document.getElementById('btnProses').addEventListener('click', async function() {
     const rawText = document.getElementById('rawFormOrder').value.trim();
     if (!rawText) {
@@ -226,6 +258,8 @@ document.getElementById('btnProses').addEventListener('click', async function() 
     btn.disabled = true;
     loading.style.display = 'block';
     resultCard.style.display = 'none';
+    document.getElementById('parserAddressSection').style.display = 'none';
+    document.getElementById('newCustomerNotice').style.display = 'none';
 
     try {
         const response = await fetch('/form-order/parse', {
@@ -243,13 +277,50 @@ document.getElementById('btnProses').addEventListener('click', async function() 
         if (result.success) {
             const data = result.data;
 
-            let previewHtml = buildPreviewHtml(data);
+            // Build and show preview card
+            let previewHtml = buildPreviewHtml(data, result.customer_found);
             document.getElementById('parsedResultBody').innerHTML = previewHtml;
             resultCard.style.display = 'block';
 
+            // Update textarea with cleaned text
             document.getElementById('rawFormOrder').value = buildCleanedText(data);
 
+            // Store parsed data globally
             window.parsedFormOrder = data;
+
+            if (result.customer_found) {
+                // === EXISTING CUSTOMER ===
+                window.foundCustomer = result.customer;
+                const addressCount = result.addresses ? result.addresses.length : 0;
+
+                if (addressCount === 1) {
+                    // Exactly 1 address — auto-prefill immediately
+                    prefillSOForm(data, result.customer, result.addresses[0].id);
+
+                } else if (addressCount > 1) {
+                    // Multiple addresses — show picker
+                    document.getElementById('parserCustomerName').textContent = result.customer.name;
+                    document.getElementById('parserCustomerPhone').textContent = '(' + result.customer.phone + ')';
+
+                    const addressSelect = document.getElementById('parserAddressSelect');
+                    addressSelect.innerHTML = '';
+                    result.addresses.forEach(function(addr) {
+                        const option = document.createElement('option');
+                        option.value = addr.id;
+                        option.textContent = addr.label;
+                        addressSelect.appendChild(option);
+                    });
+                    document.getElementById('parserAddressSection').style.display = 'block';
+
+                } else {
+                    // 0 addresses — prefill without address
+                    prefillSOForm(data, result.customer, null);
+                }
+
+            } else {
+                // === NEW CUSTOMER ===
+                document.getElementById('newCustomerNotice').style.display = 'block';
+            }
         } else {
             Swal.fire('Error', result.message || 'Gagal memproses form order', 'error');
         }
@@ -262,7 +333,95 @@ document.getElementById('btnProses').addEventListener('click', async function() 
     }
 });
 
-function buildPreviewHtml(data) {
+// --- Isi Form SO (for multiple addresses case) ---
+document.getElementById('btnPrefillSO').addEventListener('click', function() {
+    const parsedData = window.parsedFormOrder;
+    const customer = window.foundCustomer;
+
+    if (!parsedData || !customer) {
+        Swal.fire('Error', 'Data tidak lengkap', 'warning');
+        return;
+    }
+
+    const selectedAddressId = document.getElementById('parserAddressSelect').value;
+    if (!selectedAddressId) {
+        Swal.fire('Peringatan', 'Pilih alamat terlebih dahulu', 'warning');
+        return;
+    }
+
+    prefillSOForm(parsedData, customer, selectedAddressId);
+    document.getElementById('parserAddressSection').style.display = 'none';
+});
+
+// --- Buat Customer Baru (Segment 3 placeholder) ---
+document.getElementById('btnCreateNewCustomer').addEventListener('click', function() {
+    Swal.fire('Info', 'Fitur Buat Customer Baru akan dibuat di Segment 3', 'info');
+});
+
+/**
+ * Reusable prefill function.
+ * Sets customer, address (if provided), work date/time, and notes in the SO form.
+ */
+function prefillSOForm(parsedData, customer, addressId) {
+    const customerSearchInput = document.getElementById('customer-search');
+    const customerIdInput = document.getElementById('customer_id');
+
+    if (customerSearchInput && customerIdInput) {
+        customerSearchInput.value = customer.name;
+        customerIdInput.value = customer.id;
+
+        const form = document.getElementById('create-so-form');
+        const addressesUrlTemplate = form.dataset.addressesUrlTemplate;
+        const url = addressesUrlTemplate.replace('__CUSTOMER_ID__', customer.id);
+
+        const addressSelect = document.getElementById('address-select');
+        if (addressSelect) {
+            addressSelect.innerHTML = '<option value="">Loading...</option>';
+            addressSelect.disabled = true;
+
+            fetch(url)
+                .then(function(res) { return res.json(); })
+                .then(function(addresses) {
+                    addressSelect.innerHTML = '<option value="">Pilih Alamat</option>';
+                    addresses.forEach(function(addr) {
+                        const option = new Option(addr.full_address, addr.id);
+                        option.dataset.areaName = addr.area.name;
+                        option.dataset.areaId = addr.area.id;
+                        option.dataset.lokasi = addr.lokasi || '';
+                        addressSelect.add(option);
+                    });
+                    addressSelect.disabled = false;
+
+                    if (addressId) {
+                        addressSelect.value = addressId;
+                        addressSelect.dispatchEvent(new Event('change'));
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Failed to load addresses:', err);
+                });
+        }
+    }
+
+    const workDateInput = document.querySelector('[name="work_date"]');
+    if (workDateInput && parsedData.tanggal_kerja_raw) {
+        workDateInput.value = parsedData.tanggal_kerja_raw;
+        workDateInput.dispatchEvent(new Event('change'));
+    }
+
+    const workTimeInput = document.querySelector('[name="work_time"]');
+    if (workTimeInput && parsedData.jam) {
+        workTimeInput.value = parsedData.jam;
+        workTimeInput.dispatchEvent(new Event('change'));
+    }
+
+    const notesInput = document.querySelector('[name="staff_notes"]');
+    if (notesInput && parsedData.notes) {
+        notesInput.value = parsedData.notes;
+    }
+}
+
+function buildPreviewHtml(data, customerFound) {
     let html = '<div class="datagrid">';
 
     html += `<div class="datagrid-item">
@@ -285,9 +444,14 @@ function buildPreviewHtml(data) {
         <div class="datagrid-content">${escapeHtml(data.no_hp || '-')}</div>
     </div>`;
 
+    // For existing customers: show raw address. For new: show geocoded with badge.
+    const addressBadge = (!customerFound && data.geocoding_success)
+        ? ' <span class="badge bg-green-lt">✓ Google Maps</span>'
+        : (customerFound ? ' <span class="badge bg-blue-lt">Alamat Tersimpan</span>' : ' <span class="badge bg-yellow-lt">Manual</span>');
+
     html += `<div class="datagrid-item">
         <div class="datagrid-title">Alamat</div>
-        <div class="datagrid-content">${escapeHtml(data.alamat || '-')}${data.geocoding_success ? ' <span class="badge bg-green-lt">✓ Google Maps</span>' : ' <span class="badge bg-yellow-lt">Manual</span>'}</div>
+        <div class="datagrid-content">${escapeHtml(data.alamat || '-')}${addressBadge}</div>
     </div>`;
 
     html += `<div class="datagrid-item">
