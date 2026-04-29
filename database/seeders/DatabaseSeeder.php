@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         // 1. Jalankan Seeder data inti yang statis
         $this->call([
+            UserSeeder::class,
             DummyMaster2025Seeder::class, //removed when you already run it first
             //DailyBookedServiceOrderSeeder::class, // Daily booked service orders for staff
         ]);

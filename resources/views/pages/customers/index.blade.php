@@ -77,12 +77,8 @@
                     </div>
 
                     <hr>
-                    {{-- Optional Address Section --}}
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="add-address-checkbox" name="add_address" value="1">
-                        <label class="form-check-label" for="add-address-checkbox">Tambah Alamat Baru</label>
-                    </div>
-                    <div id="address-fields" class="mt-3" style="display: none;">
+                    {{-- Address Section --}}
+                    <div id="address-fields" class="mt-3">
                         <h5>Detail Alamat</h5>
                         <div class="row">
                             <div class="col-md-6">
@@ -98,15 +94,14 @@
                                 </div>
                                 @endif
                                 <div class="mb-3">
-                                    <label class="form-label">Label Alamat</label>
-                                    <input type="text" class="form-control" name="label" id="address-label" placeholder="Contoh: Rumah, Kantor">
-                                    <div class="invalid-feedback" id="label-error"></div>
+                                    <label class="form-label">Lokasi</label>
+                                    <input type="text" class="form-control" name="lokasi" id="address-lokasi" placeholder="Nama lokasi, gedung, atau patokan">
+                                    <div class="invalid-feedback" id="lokasi-error"></div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-check form-check-inline">
-                                        <input class="form-check-input" type="checkbox" id="copy-customer-data">
-                                        <span class="form-check-label">Samakan dengan Data Customer</span>
-                                    </label>
+                                    <label class="form-label">Label Alamat</label>
+                                    <input type="text" class="form-control" name="label" id="address-label" value="Rumah" placeholder="Contoh: Rumah, Kantor">
+                                    <div class="invalid-feedback" id="label-error"></div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Nama Kontak</label>

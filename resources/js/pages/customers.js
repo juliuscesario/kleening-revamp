@@ -25,26 +25,15 @@ $(function () {
         ]
     });
 
-    // Show/hide address fields based on checkbox
-    $('#add-address-checkbox').on('change', function () {
-        if ($(this).is(':checked')) {
-            $('#address-fields').slideDown();
-        } else {
-            $('#address-fields').slideUp();
-        }
-    });
-
     function resetForm() {
         $('#customer-form').trigger("reset");
         $('#customer-id').val('');
-        $('#add-address-checkbox').prop('checked', false);
-        $('#copy-customer-data').prop('checked', false); // Reset copy checkbox
-        $('#address-fields').hide();
+        $('#address-contact_name').removeData('user-edited');
+        $('#address-contact_phone').removeData('user-edited');
+        $('#address-label').val('Rumah'); // Reset to default
         $('#modal-title').html("Tambah Customer Baru");
         $('.form-control').removeClass('is-invalid');
         $('.invalid-feedback').text('');
-        // For edit, we disable adding address
-        $('#add-address-checkbox').closest('.form-check').show();
     }
 
     $('#add-customer-button').on('click', function () {
@@ -52,35 +41,26 @@ $(function () {
         modalInstance.show();
     });
 
-    // Auto-copy customer data logic
-    $('#copy-customer-data').on('change', function () {
-        if ($(this).is(':checked')) {
-            $('#address-contact_name').val($('#customer-name').val());
-            $('#address-contact_phone').val($('#customer-phone_number').val());
-
-            // Make them readonly to indicate they are synced (optional, based on preference)
-            // $('#address-contact_name').prop('readonly', true);
-            // $('#address-contact_phone').prop('readonly', true);
-        } else {
-            $('#address-contact_name').val('');
-            $('#address-contact_phone').val('');
-
-            // $('#address-contact_name').prop('readonly', false);
-            // $('#address-contact_phone').prop('readonly', false);
-        }
-    });
-
-    // Real-time sync
+    // Auto-copy customer data to address contact fields
     $('#customer-name').on('input', function () {
-        if ($('#copy-customer-data').is(':checked')) {
+        if (!$('#address-contact_name').data('user-edited')) {
             $('#address-contact_name').val($(this).val());
         }
     });
 
     $('#customer-phone_number').on('input', function () {
-        if ($('#copy-customer-data').is(':checked')) {
+        if (!$('#address-contact_phone').data('user-edited')) {
             $('#address-contact_phone').val($(this).val());
         }
+    });
+
+    // Track if user manually edited the contact fields
+    $('#address-contact_name').on('input', function () {
+        $(this).data('user-edited', true);
+    });
+
+    $('#address-contact_phone').on('input', function () {
+        $(this).data('user-edited', true);
     });
 
     // Handle Show Addresses button
@@ -123,7 +103,6 @@ $(function () {
             $('#customer-phone_number').val(data.data.phone_number);
 
             // Hide address section when editing customer
-            $('#add-address-checkbox').closest('.form-check').hide();
             $('#address-fields').hide();
 
             modalInstance.show();

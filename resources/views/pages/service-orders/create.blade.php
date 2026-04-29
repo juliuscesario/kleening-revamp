@@ -38,6 +38,21 @@
         background-color: #0d6efd;
         color: #fff;
     }
+    [data-bs-theme="dark"] .custom-search-results {
+        background-color: var(--bg-surface, #121212);
+        border-color: var(--border-color, #2a2a2a);
+    }
+    [data-bs-theme="dark"] .result-item {
+        border-bottom-color: var(--border-color, #2a2a2a);
+        color: var(--text-main, #FAF9F6);
+    }
+    [data-bs-theme="dark"] .result-item:hover {
+        background-color: var(--bg-canvas, #0a0a0a);
+    }
+    [data-bs-theme="dark"] .result-item.is-highlighted {
+        background-color: #0d6efd;
+        color: #fff;
+    }
 </style>
 @endpush
 
@@ -88,11 +103,15 @@
                             <input type="hidden" id="area-id" name="area_id">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Tanggal Pengerjaan</label>
-                            <input type="date" name="work_date" class="form-control" required value="{{ date('Y-m-d') }}">
+                            <label class="form-label">Lokasi</label>
+                            <input type="text" id="lokasi" class="form-control" readonly>
                         </div>
                     </div>
                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tanggal Pengerjaan</label>
+                            <input type="date" name="work_date" class="form-control" required value="{{ date('Y-m-d') }}">
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Waktu Pengerjaan (WIB)</label>
                             <input type="text"
@@ -107,14 +126,15 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Catatan Invoice</label>
-                        <textarea name="work_notes" class="form-control" rows="3"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Catatan untuk Staff (Internal)</label>
-                        <textarea name="staff_notes" class="form-control" rows="3"></textarea>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Invoicing Notes</label>
+                            <textarea name="work_notes" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Notes Internal</label>
+                            <textarea name="staff_notes" class="form-control" rows="3"></textarea>
+                        </div>
                     </div>
 
                     <div class="mb-3">

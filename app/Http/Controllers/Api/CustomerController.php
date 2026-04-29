@@ -40,12 +40,12 @@ class CustomerController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone_number' => 'required|string|unique:customers,phone_number|max:255',
-            // Optional Address Fields
-            'add_address' => 'nullable|boolean',
-            'label' => 'required_if:add_address,true|string|max:255',
-            'contact_name' => 'required_if:add_address,true|string|max:255',
-            'contact_phone' => 'required_if:add_address,true|string|max:255',
-            'full_address' => 'required_if:add_address,true|string',
+            // Address Fields (always required for new customer)
+            'label' => 'required|string|max:255',
+            'contact_name' => 'required|string|max:255',
+            'contact_phone' => 'required|string|max:255',
+            'full_address' => 'required|string',
+            'lokasi' => 'required|string|max:100',
             'google_maps_link' => 'nullable|url',
         ]);
 
@@ -55,25 +55,25 @@ class CustomerController extends Controller
                 'phone_number' => $validated['phone_number'],
             ]);
 
-            if (!empty($validated['add_address'])) {
-                $addressData = [
-                    'label' => $validated['label'],
-                    'contact_name' => $validated['contact_name'],
-                    'contact_phone' => $validated['contact_phone'],
-                    'full_address' => $validated['full_address'],
-                    'google_maps_link' => $validated['google_maps_link'] ?? null,
-                ];
+            // Always create an address for new customer
+            $addressData = [
+                'label' => $validated['label'],
+                'contact_name' => $validated['contact_name'],
+                'contact_phone' => $validated['contact_phone'],
+                'full_address' => $validated['full_address'],
+                'lokasi' => $validated['lokasi'],
+                'google_maps_link' => $validated['google_maps_link'] ?? null,
+            ];
 
-                // Assign area_id based on role
-                $user = auth()->user();
-                if (in_array($user->role, ['owner', 'admin'])) {
-                    $addressData['area_id'] = $request->area_id;
-                } elseif ($user->role === 'co_owner') {
-                    $addressData['area_id'] = $user->area_id;
-                }
-
-                $customer->addresses()->create($addressData);
+            // Assign area_id based on role
+            $user = auth()->user();
+            if (in_array($user->role, ['owner', 'admin'])) {
+                $addressData['area_id'] = $request->area_id;
+            } elseif ($user->role === 'co_owner') {
+                $addressData['area_id'] = $user->area_id;
             }
+
+            $customer->addresses()->create($addressData);
 
             return $customer;
         });

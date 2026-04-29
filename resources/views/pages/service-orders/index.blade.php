@@ -69,6 +69,15 @@
                                     <input type="text" id="filter-end-time" class="form-control form-control-sm js-filter-time" placeholder="Sampai (23:59)" inputmode="numeric">
                                 </div>
                             </div>
+                            <div class="mt-2">
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm quick-date-btn" data-days="0">Hari Ini</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm quick-date-btn" data-days-start="1" data-days-end="0">Kemarin</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm quick-date-btn" data-days-start="5" data-days-end="0">5 Hari</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm quick-date-btn" data-days-start="10" data-days-end="0">10 Hari</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm quick-date-btn" data-days-start="30" data-days-end="0">30 Hari</button>
+                                </div>
+                            </div>
                             <div class="mt-2 d-flex gap-2 flex-wrap">
                                 <button type="button" class="btn btn-primary btn-sm" id="apply-date-filter">Terapkan</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="reset-date-filter">Reset</button>
@@ -116,3 +125,34 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function() {
+    function formatDate(date) {
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const yyyy = date.getFullYear();
+        return dd + '/' + mm + '/' + yyyy;
+    }
+
+    function setQuickDateFilter(daysBackStart, daysBackEnd) {
+        const today = new Date();
+        const startDate = new Date();
+        startDate.setDate(today.getDate() - daysBackStart);
+        const endDate = new Date();
+        endDate.setDate(today.getDate() - daysBackEnd);
+        document.getElementById('filter-start-date').value = formatDate(startDate);
+        document.getElementById('filter-end-date').value = formatDate(endDate);
+    }
+
+    document.querySelectorAll('.quick-date-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const daysStart = parseInt(this.getAttribute('data-days-start') || this.getAttribute('data-days') || 0, 10);
+            const daysEnd = parseInt(this.getAttribute('data-days-end') || 0, 10);
+            setQuickDateFilter(daysStart, daysEnd);
+        });
+    });
+})();
+</script>
+@endpush

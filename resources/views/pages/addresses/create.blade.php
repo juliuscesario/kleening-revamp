@@ -34,6 +34,11 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="lokasi" class="form-label">Lokasi <small class="text-muted">(Kecamatan/Kelurahan untuk routing)</small></label>
+                            <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="cth: Cengkareng, Serpong, Kelapa Gading" required>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="label" class="form-label">Label Alamat</label>
                             <input type="text" class="form-control" id="label" name="label" required>
                         </div>
@@ -51,11 +56,6 @@
                         <div class="mb-3">
                             <label for="full_address" class="form-label">Alamat Lengkap</label>
                             <textarea class="form-control" id="full_address" name="full_address" rows="3" required></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="lokasi" class="form-label">Lokasi <small class="text-muted">(Kecamatan/Kelurahan untuk routing)</small></label>
-                            <input type="text" class="form-control" id="lokasi" name="lokasi" placeholder="cth: Cengkareng, Serpong, Kelapa Gading">
                         </div>
 
                         <div class="mb-3">

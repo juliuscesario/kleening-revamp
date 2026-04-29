@@ -155,6 +155,7 @@ if (form) {
 
         if (!customerId) {
             addressSelect.innerHTML = '<option value="">Pilih Customer terlebih dahulu</option>';
+            document.getElementById('lokasi').value = '';
             return;
         }
 
@@ -167,9 +168,17 @@ if (form) {
             const option = new Option(address.full_address, address.id);
             option.dataset.areaName = address.area.name;
             option.dataset.areaId = address.area.id;
+            option.dataset.lokasi = address.lokasi || '';
             addressSelect.add(option);
         });
         addressSelect.disabled = false;
+
+        // Auto-select if customer only has 1 address
+        if (addresses.length === 1) {
+            addressSelect.value = addresses[0].id;
+            // Trigger change event to load staff for the area
+            addressSelect.dispatchEvent(new Event('change'));
+        }
     };
 
     addressSelect.addEventListener('change', async function () {
@@ -180,6 +189,7 @@ if (form) {
         if (!selectedOption.value) {
             areaNameInput.value = '';
             areaIdInput.value = '';
+            document.getElementById('lokasi').value = '';
             addStaffBtn.disabled = true;
             addStaffBtn.textContent = 'Pilih Alamat terlebih dahulu';
             return;
@@ -187,9 +197,11 @@ if (form) {
 
         const areaName = selectedOption.dataset.areaName;
         const areaId = selectedOption.dataset.areaId;
+        const lokasi = selectedOption.dataset.lokasi;
 
         areaNameInput.value = areaName;
         areaIdInput.value = areaId;
+        document.getElementById('lokasi').value = lokasi;
 
         const url = staffByAreaUrlTemplate.replace('__AREA_ID__', areaId);
         const response = await fetch(url);

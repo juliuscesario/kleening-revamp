@@ -291,11 +291,27 @@ function getStatusLabel($status) {
                         <th>Notes</th>
                         <th style="width:100px">Admin</th>
                         <th style="width:120px">Status</th>
-                        <th style="width:40px"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($serviceOrders->where('status', '!=', 'cancelled')->sortBy(fn($s) => $s->work_time ?? '23:59:59') as $so)
+                    @forelse($serviceOrders->where('status', '!=', 'cancelled') as $so)
+                        @php
+                            // Deduplicate categories for display
+                            $pekerjaanCodes = [];
+                            $pekerjaanDetails = [];
+                            foreach ($so->items as $item) {
+                                $code = getCategoryShortCode($item->service?->category?->name);
+                                $pekerjaanCodes[$code] = true;
+                                $fullServiceName = $item->service?->name ?? 'Unknown Service';
+                                $pekerjaanDetails[] = $fullServiceName;
+                            }
+                            $uniqueCodes = array_keys($pekerjaanCodes);
+                            $popoverContent = '<ul style="margin:0;padding-left:1rem;">';
+                            foreach ($pekerjaanDetails as $detail) {
+                                $popoverContent .= '<li>' . e($detail) . '</li>';
+                            }
+                            $popoverContent .= '</ul>';
+                        @endphp
                         <tr data-so-id="{{ $so->id }}">
                             <td>
                                 <span class="inline-edit fw-bold text-dark" onclick="editStaff(this, {{ $so->id }})" data-staff-ids="{{ $so->staff->pluck('id')->implode(',') }}">
@@ -318,8 +334,13 @@ function getStatusLabel($status) {
                             </td>
                             <td><span class="lokasi-text">{{ $so->address?->lokasi ?? '—' }}</span></td>
                             <td>
-                                @foreach($so->items as $item)
-                                    <span class="cat-tag cat-{{ strtolower(getCategoryShortCode($item->service?->category?->name)) }}">{{ getCategoryShortCode($item->service?->category?->name) }}</span>
+                                @foreach($uniqueCodes as $code)
+                                    <span class="cat-tag cat-{{ strtolower($code) }}"
+                                          data-bs-toggle="popover"
+                                          data-bs-trigger="click"
+                                          data-bs-content="{!! htmlspecialchars($popoverContent) !!}"
+                                          data-bs-html="true"
+                                          style="cursor:pointer;">{{ $code }}</span>
                                 @endforeach
                             </td>
                             <td>
@@ -329,14 +350,9 @@ function getStatusLabel($status) {
                             </td>
                             <td><span class="admin-pill">{{ $so->creator?->name ? Str::limit($so->creator->name, 8) : '—' }}</span></td>
                             <td><span class="status-pill status-{{ $so->lifecycle_status }}">{{ getStatusLabel($so->lifecycle_status) }}</span></td>
-                            <td>
-                                <a href="{{ route('web.service-orders.show', $so) }}" class="btn btn-sm btn-ghost-secondary p-1" title="Detail">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h-2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-12a2 2 0 0 0-2-2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>
-                                </a>
-                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="9" class="text-center text-muted py-4">Tidak ada pekerjaan untuk tanggal ini.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada pekerjaan untuk tanggal ini.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -499,5 +515,22 @@ function toggleStaffOffDirectly(staffId, date) {
         }
     });
 }
+
+// Initialize Bootstrap popovers for pekerjaan badges
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+        new bootstrap.Popover(el, { html: true, trigger: 'click', placement: 'right' });
+    });
+
+    // Close popover when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('[data-bs-toggle="popover"]') && !e.target.closest('.popover')) {
+            document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+                const bsPopover = bootstrap.Popover.getInstance(el);
+                if (bsPopover) bsPopover.hide();
+            });
+        }
+    });
+});
 </script>
 @endpush

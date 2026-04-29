@@ -57,9 +57,21 @@ class PlannerController extends Controller
             $soQuery->whereHas('address', fn($q) => $q->where('area_id', $areaId));
         }
 
-        $serviceOrders = $soQuery
-            ->orderByRaw("COALESCE(work_time, '23:59:59') ASC")
-            ->get();
+        $serviceOrders = $soQuery->get();
+
+        // For list view: sort by staff name (first staff) then by work_time
+        $serviceOrders = $serviceOrders->sortBy([
+            function ($a, $b) {
+                $nameA = $a->staff->first()?->name ?? '';
+                $nameB = $b->staff->first()?->name ?? '';
+                $cmp = strcmp($nameA, $nameB);
+                if ($cmp !== 0) return $cmp;
+                // Same staff (or both unassigned): sort by work_time
+                $timeA = $a->work_time ?? '23:59:59';
+                $timeB = $b->work_time ?? '23:59:59';
+                return strcmp($timeA, $timeB);
+            },
+        ])->values();
 
         // Compute lifecycle status for each SO
         $serviceOrders->each(function ($so) {

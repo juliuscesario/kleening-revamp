@@ -34,7 +34,7 @@ class AddressController extends Controller
             'contact_name' => 'required|string|max:255',
             'contact_phone' => 'required|string|max:255',
             'full_address' => 'required|string',
-            'lokasi' => 'nullable|string|max:100',
+            'lokasi' => 'required|string|max:100',
             'google_maps_link' => 'nullable|url',
         ]);
 
@@ -68,7 +68,7 @@ class AddressController extends Controller
             'contact_name' => 'sometimes|required|string|max:255',
             'contact_phone' => 'sometimes|required|string|max:255',
             'full_address' => 'sometimes|required|string',
-            'lokasi' => 'nullable|string|max:100',
+            'lokasi' => 'sometimes|required|string|max:100',
             'google_maps_link' => 'nullable|url',
         ]);
 
