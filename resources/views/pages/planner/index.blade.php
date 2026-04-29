@@ -344,8 +344,8 @@ function getStatusLabel($status) {
                                 @endforeach
                             </td>
                             <td>
-                                <span class="inline-edit notes-text" onclick="editNotes(this, {{ $so->id }})" data-value="{{ $so->work_notes }}">
-                                    {{ $so->work_notes ?: '—' }}
+                                <span class="inline-edit notes-text" onclick="editNotes(this, {{ $so->id }})" data-value="{{ $so->staff_notes }}">
+                                    {{ $so->staff_notes ?: '—' }}
                                 </span>
                             </td>
                             <td><span class="admin-pill">{{ $so->creator?->name ? Str::limit($so->creator->name, 8) : '—' }}</span></td>
@@ -455,7 +455,7 @@ function editNotes(el, soId) {
         const val = input.value;
         fetchJson(`/planner/${soId}/update-field`, {
             method: 'POST',
-            body: JSON.stringify({ field: 'work_notes', value: val }),
+            body: JSON.stringify({ field: 'staff_notes', value: val }),
         }).then(data => {
             if (data.success) location.reload();
         });

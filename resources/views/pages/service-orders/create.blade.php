@@ -3,6 +3,13 @@
 
 @push('styles')
 <style>
+    #parsedResultCard .datagrid {
+        --tblr-datagrid-item-width: 200px;
+    }
+    #rawFormOrder {
+        font-family: monospace;
+        font-size: 13px;
+    }
     .custom-search-wrapper {
         position: relative;
     }
@@ -18,7 +25,7 @@
         max-height: 250px;
         overflow-y: auto;
         background-color: #fff;
-        z-index: 1050; /* High z-index to appear above other elements */
+        z-index: 1050;
     }
     .custom-search-results.is-active {
         display: block;
@@ -67,6 +74,48 @@
     </div>
 
     <div class="page-body">
+        <!-- Form Order Parser Panel -->
+        <div class="card mb-3">
+            <div class="card-header" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#formOrderParser">
+                <h3 class="card-title d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+                        <path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" />
+                    </svg>
+                    Form Order Parser
+                </h3>
+                <span class="text-muted ms-2">Paste dari WhatsApp</span>
+            </div>
+            <div id="formOrderParser" class="collapse show">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <textarea id="rawFormOrder" class="form-control" rows="10"
+                            placeholder="Paste form order dari WhatsApp di sini..."></textarea>
+                    </div>
+
+                    <button id="btnProses" class="btn btn-primary">
+                        Proses
+                    </button>
+
+                    <div id="parseLoading" class="mt-3" style="display: none;">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 text-muted">Memproses form order...</span>
+                    </div>
+
+                    <div id="parsedResultCard" class="mt-3" style="display: none;">
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <h4 class="card-title">Hasil Parse</h4>
+                            </div>
+                            <div class="card-body p-3" id="parsedResultBody">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
             <form id="create-so-form" 
                 method="POST" 
@@ -160,4 +209,134 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.getElementById('btnProses').addEventListener('click', async function() {
+    const rawText = document.getElementById('rawFormOrder').value.trim();
+    if (!rawText) {
+        Swal.fire('Error', 'Paste form order terlebih dahulu', 'warning');
+        return;
+    }
+
+    const btn = this;
+    const loading = document.getElementById('parseLoading');
+    const resultCard = document.getElementById('parsedResultCard');
+
+    btn.disabled = true;
+    loading.style.display = 'block';
+    resultCard.style.display = 'none';
+
+    try {
+        const response = await fetch('/form-order/parse', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ raw_text: rawText }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            const data = result.data;
+
+            let previewHtml = buildPreviewHtml(data);
+            document.getElementById('parsedResultBody').innerHTML = previewHtml;
+            resultCard.style.display = 'block';
+
+            document.getElementById('rawFormOrder').value = buildCleanedText(data);
+
+            window.parsedFormOrder = data;
+        } else {
+            Swal.fire('Error', result.message || 'Gagal memproses form order', 'error');
+        }
+    } catch (error) {
+        console.error('Parse error:', error);
+        Swal.fire('Error', 'Terjadi kesalahan saat memproses', 'error');
+    } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+    }
+});
+
+function buildPreviewHtml(data) {
+    let html = '<div class="datagrid">';
+
+    html += `<div class="datagrid-item">
+        <div class="datagrid-title">Tanggal Kerja</div>
+        <div class="datagrid-content">${escapeHtml(data.tanggal_kerja || '-')}</div>
+    </div>`;
+
+    html += `<div class="datagrid-item">
+        <div class="datagrid-title">Jam</div>
+        <div class="datagrid-content">${escapeHtml(data.jam || '-')}</div>
+    </div>`;
+
+    html += `<div class="datagrid-item">
+        <div class="datagrid-title">Nama</div>
+        <div class="datagrid-content">${escapeHtml(data.nama || '-')}</div>
+    </div>`;
+
+    html += `<div class="datagrid-item">
+        <div class="datagrid-title">No HP</div>
+        <div class="datagrid-content">${escapeHtml(data.no_hp || '-')}</div>
+    </div>`;
+
+    html += `<div class="datagrid-item">
+        <div class="datagrid-title">Alamat</div>
+        <div class="datagrid-content">${escapeHtml(data.alamat || '-')}${data.geocoding_success ? ' <span class="badge bg-green-lt">✓ Google Maps</span>' : ' <span class="badge bg-yellow-lt">Manual</span>'}</div>
+    </div>`;
+
+    html += `<div class="datagrid-item">
+        <div class="datagrid-title">Google Maps</div>
+        <div class="datagrid-content">${data.google_maps ? '<a href="' + escapeHtml(data.google_maps) + '" target="_blank" class="text-truncate d-inline-block" style="max-width: 300px;">' + escapeHtml(data.google_maps) + '</a>' : '-'}</div>
+    </div>`;
+
+    html += `<div class="datagrid-item" style="grid-column: span 2;">
+        <div class="datagrid-title">Services (raw — manual entry)</div>
+        <div class="datagrid-content"><pre class="mb-0" style="white-space: pre-wrap; font-size: inherit; font-family: inherit;">${escapeHtml(data.services_raw || '-')}</pre></div>
+    </div>`;
+
+    if (data.notes) {
+        html += `<div class="datagrid-item" style="grid-column: span 2;">
+            <div class="datagrid-title">Notes</div>
+            <div class="datagrid-content">${escapeHtml(data.notes)}</div>
+        </div>`;
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function buildCleanedText(data) {
+    let lines = [];
+    lines.push('FORM ORDER KLEENING ID');
+    lines.push('Tanggal Kerja : ' + (data.tanggal_kerja || ''));
+    lines.push('Jam Kedatangan : ' + (data.jam || ''));
+    lines.push('Nama : ' + (data.nama || ''));
+    lines.push('No HP : ' + (data.no_hp || ''));
+    lines.push('');
+    lines.push('Alamat Lengkap: ' + (data.alamat || ''));
+    lines.push('Google maps: ' + (data.google_maps || ''));
+    lines.push('Service:');
+    if (data.services_raw) {
+        lines.push(data.services_raw);
+    }
+    if (data.notes) {
+        lines.push('');
+        lines.push('Notes: ' + data.notes);
+    }
+    return lines.join('\n');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+@endpush
 @endsection

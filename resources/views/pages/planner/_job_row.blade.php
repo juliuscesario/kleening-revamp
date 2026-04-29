@@ -15,8 +15,8 @@
             </a>
             <span class="lokasi-text" style="font-size: 0.75rem;">{{ $so->address?->lokasi ?? '—' }}</span>
         </div>
-        @if($so->work_notes)
-            <div class="notes-text inline-edit" onclick="editNotes(this, {{ $so->id }})" data-value="{{ $so->work_notes }}">{{ $so->work_notes }}</div>
+        @if($so->staff_notes)
+            <div class="notes-text inline-edit" onclick="editNotes(this, {{ $so->id }})" data-value="{{ $so->staff_notes }}">{{ $so->staff_notes }}</div>
         @else
             <div class="notes-text inline-edit" onclick="editNotes(this, {{ $so->id }})" data-value="" style="color:#cbd5e1">+ catatan</div>
         @endif
