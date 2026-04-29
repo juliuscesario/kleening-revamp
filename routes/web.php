@@ -97,6 +97,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Form Order Parser
     Route::post('form-order/parse', [FormOrderController::class, 'parse'])->name('web.form-order.parse');
+    Route::post('form-order/create-customer', [FormOrderController::class, 'createCustomer'])->name('web.form-order.create-customer');
     Route::resource('invoices', InvoiceController::class)->names('web.invoices');
     Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');
     Route::resource('payments', PaymentController::class)->names('web.payments');

@@ -138,7 +138,6 @@
                         <button id="btnCreateNewCustomer" class="btn btn-warning">
                             + Buat Customer Baru
                         </button>
-                        <small class="text-muted ms-2">(Segment 3 — coming soon)</small>
                     </div>
                 </div>
             </div>
@@ -234,6 +233,84 @@
                     <button type="submit" class="btn btn-primary">Buat Service Order</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- New Customer Modal (Parser Flow) -->
+<div class="modal modal-blur fade" id="newCustomerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Buat Customer Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Customer Section -->
+                <h4 class="mb-3">Data Customer</h4>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label required">Nama Customer</label>
+                        <input type="text" class="form-control" id="newCustName">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label required">No. Telepon</label>
+                        <input type="text" class="form-control" id="newCustPhone">
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Address Section -->
+                <h4 class="mb-3">Alamat</h4>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label required">Label Alamat</label>
+                        <input type="text" class="form-control" id="newCustLabel" value="Rumah">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label required">Area</label>
+                        <select class="form-select" id="newCustArea">
+                            <option value="">Pilih Area</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label required">Lokasi</label>
+                        <input type="text" class="form-control" id="newCustLokasi" maxlength="100" placeholder="e.g. Ciputat, Kosambi">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Google Maps</label>
+                        <input type="text" class="form-control" id="newCustGoogleMaps" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label required">Alamat Lengkap</label>
+                    <textarea class="form-control" id="newCustAddress" rows="3"></textarea>
+                </div>
+
+                <hr>
+
+                <!-- Contact Person Section -->
+                <h4 class="mb-3">Kontak di Lokasi</h4>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label required">Nama Kontak</label>
+                        <input type="text" class="form-control" id="newCustContactName">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label required">No. Telp Kontak</label>
+                        <input type="text" class="form-control" id="newCustContactPhone">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveNewCustomer">
+                    Simpan & Lanjut
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -353,14 +430,225 @@ document.getElementById('btnPrefillSO').addEventListener('click', function() {
     document.getElementById('parserAddressSection').style.display = 'none';
 });
 
-// --- Buat Customer Baru (Segment 3 placeholder) ---
+// --- Buat Customer Baru (Segment 3) ---
+let areasLoaded = false;
+
 document.getElementById('btnCreateNewCustomer').addEventListener('click', function() {
-    Swal.fire('Info', 'Fitur Buat Customer Baru akan dibuat di Segment 3', 'info');
+    const data = window.parsedFormOrder;
+    if (!data) return;
+
+    // Prefill from parsed data
+    document.getElementById('newCustName').value = data.nama || '';
+    document.getElementById('newCustPhone').value = data.no_hp || '';
+    document.getElementById('newCustAddress').value = data.alamat || '';
+    document.getElementById('newCustGoogleMaps').value = data.google_maps || '';
+    document.getElementById('newCustLokasi').value = data.lokasi || '';
+    document.getElementById('newCustLabel').value = 'Rumah';
+
+    // Contact person = same as customer by default
+    document.getElementById('newCustContactName').value = data.nama || '';
+    document.getElementById('newCustContactPhone').value = data.no_hp || '';
+
+    // Reset area selection
+    document.getElementById('newCustArea').value = '';
+
+    // Auto-select area based on kota from geocoding
+    if (!areasLoaded) {
+        loadAreasForModal().then(function() {
+            autoSelectArea(data.kota);
+        });
+    } else {
+        autoSelectArea(data.kota);
+    }
+
+    // Open modal
+    const modal = new bootstrap.Modal(document.getElementById('newCustomerModal'));
+    modal.show();
+});
+
+// Load areas via AJAX into the modal select
+async function loadAreasForModal() {
+    return new Promise(function(resolve) {
+        fetch('/data/areas')
+            .then(function(res) { return res.json(); })
+            .then(function(result) {
+                const areas = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
+
+                const select = document.getElementById('newCustArea');
+                areas.forEach(function(area) {
+                    const option = document.createElement('option');
+                    option.value = area.id;
+                    option.textContent = area.name;
+                    select.appendChild(option);
+                });
+                areasLoaded = true;
+                resolve();
+            })
+            .catch(function(err) {
+                console.error('Failed to load areas:', err);
+                resolve();
+            });
+    });
+}
+
+// Auto-select area based on kota from geocoding
+function autoSelectArea(kota) {
+    if (!kota) return;
+
+    const kotaLower = kota.toLowerCase();
+    const areaSelect = document.getElementById('newCustArea');
+
+    let targetArea = null;
+
+    // Determine which area based on kota
+    if (kotaLower.includes('malang')) {
+        targetArea = 'malang';
+    } else if (kotaLower.includes('serang')) {
+        targetArea = 'serang';
+    } else if (
+        kotaLower.includes('jakarta') ||
+        kotaLower.includes('bogor') ||
+        kotaLower.includes('tangerang') ||
+        kotaLower.includes('depok') ||
+        kotaLower.includes('bekasi')
+    ) {
+        targetArea = 'jadetabek';
+    } else {
+        // Default to jadetabek for any other area
+        targetArea = 'jadetabek';
+    }
+
+    // Find and select the matching option
+    Array.from(areaSelect.options).forEach(function(option) {
+        if (option.textContent.toLowerCase().includes(targetArea)) {
+            areaSelect.value = option.value;
+        }
+    });
+}
+
+// One-way sync: when customer name changes, update contact name (unless manually edited)
+(function() {
+    let contactNameEdited = false;
+    let contactPhoneEdited = false;
+
+    const contactNameInput = document.getElementById('newCustContactName');
+    const contactPhoneInput = document.getElementById('newCustContactPhone');
+    const nameInput = document.getElementById('newCustName');
+    const phoneInput = document.getElementById('newCustPhone');
+    const modal = document.getElementById('newCustomerModal');
+
+    if (!contactNameInput || !contactPhoneInput || !nameInput || !phoneInput) return;
+
+    contactNameInput.addEventListener('input', function() { contactNameEdited = true; });
+    contactPhoneInput.addEventListener('input', function() { contactPhoneEdited = true; });
+
+    nameInput.addEventListener('input', function() {
+        if (!contactNameEdited) contactNameInput.value = this.value;
+    });
+    phoneInput.addEventListener('input', function() {
+        if (!contactPhoneEdited) contactPhoneInput.value = this.value;
+    });
+
+    // Reset flags when modal opens
+    modal.addEventListener('show.bs.modal', function() {
+        contactNameEdited = false;
+        contactPhoneEdited = false;
+    });
+})();
+
+// Save new customer
+document.getElementById('btnSaveNewCustomer').addEventListener('click', async function() {
+    const btn = this;
+
+    const payload = {
+        name: document.getElementById('newCustName').value.trim(),
+        phone: document.getElementById('newCustPhone').value.trim(),
+        address: {
+            label: document.getElementById('newCustLabel').value.trim(),
+            area_id: document.getElementById('newCustArea').value,
+            lokasi: document.getElementById('newCustLokasi').value.trim(),
+            full_address: document.getElementById('newCustAddress').value.trim(),
+            google_maps_link: document.getElementById('newCustGoogleMaps').value.trim(),
+            contact_name: document.getElementById('newCustContactName').value.trim(),
+            contact_phone: document.getElementById('newCustContactPhone').value.trim(),
+        }
+    };
+
+    // Client-side validation
+    if (!payload.name) { Swal.fire('Error', 'Nama customer harus diisi', 'warning'); return; }
+    if (!payload.phone) { Swal.fire('Error', 'No telepon harus diisi', 'warning'); return; }
+    if (!payload.address.area_id) { Swal.fire('Error', 'Area harus dipilih', 'warning'); return; }
+    if (!payload.address.lokasi) { Swal.fire('Error', 'Lokasi harus diisi', 'warning'); return; }
+    if (!payload.address.full_address) { Swal.fire('Error', 'Alamat lengkap harus diisi', 'warning'); return; }
+    if (!payload.address.contact_name) { Swal.fire('Error', 'Nama kontak harus diisi', 'warning'); return; }
+    if (!payload.address.contact_phone) { Swal.fire('Error', 'No telp kontak harus diisi', 'warning'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menyimpan...';
+
+    try {
+        const response = await fetch('/form-order/create-customer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            if (result.errors) {
+                const errorMessages = Object.values(result.errors).flat().join('\n');
+                Swal.fire('Validation Error', errorMessages, 'error');
+            } else {
+                Swal.fire('Error', result.message || 'Gagal menyimpan customer', 'error');
+            }
+            return;
+        }
+
+        if (result.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('newCustomerModal')).hide();
+
+            // Store the new customer data
+            window.foundCustomer = result.customer;
+
+            // Auto-prefill SO form with the new customer + their new address
+            const parsedData = window.parsedFormOrder;
+            prefillSOForm(parsedData, result.customer, result.address_id);
+
+            // Update the new customer notice to show success
+            document.getElementById('newCustomerNotice').innerHTML =
+                '<div class="alert alert-success">✅ Customer baru dibuat: <strong>' +
+                escapeHtml(result.customer.name) + '</strong> — Form SO sudah diisi otomatis</div>';
+
+            // Show success toast
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Customer baru berhasil dibuat',
+                text: 'Form SO sudah diisi otomatis',
+                showConfirmButton: false,
+                timer: 3000,
+            });
+        }
+    } catch (error) {
+        console.error('Create customer error:', error);
+        Swal.fire('Error', 'Terjadi kesalahan saat menyimpan', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Simpan & Lanjut';
+    }
 });
 
 /**
  * Reusable prefill function.
  * Sets customer, address (if provided), work date/time, and notes in the SO form.
+ * Handles both existing and brand-new customers.
  */
 function prefillSOForm(parsedData, customer, addressId) {
     const customerSearchInput = document.getElementById('customer-search');
@@ -383,22 +671,48 @@ function prefillSOForm(parsedData, customer, addressId) {
                 .then(function(res) { return res.json(); })
                 .then(function(addresses) {
                     addressSelect.innerHTML = '<option value="">Pilih Alamat</option>';
-                    addresses.forEach(function(addr) {
-                        const option = new Option(addr.full_address, addr.id);
-                        option.dataset.areaName = addr.area.name;
-                        option.dataset.areaId = addr.area.id;
-                        option.dataset.lokasi = addr.lokasi || '';
-                        addressSelect.add(option);
-                    });
+
+                    if (addresses && addresses.length > 0) {
+                        addresses.forEach(function(addr) {
+                            const option = new Option(addr.full_address, addr.id);
+                            option.dataset.areaName = addr.area.name;
+                            option.dataset.areaId = addr.area.id;
+                            option.dataset.lokasi = addr.lokasi || '';
+                            addressSelect.add(option);
+                        });
+                    }
+
+                    // If we have a specific addressId and it wasn't loaded via AJAX
+                    // (e.g. brand new customer, or caching), manually inject it
+                    if (addressId) {
+                        if (!addressSelect.querySelector('option[value="' + addressId + '"]')) {
+                            // Address not in the fetched list — create option manually
+                            const opt = document.createElement('option');
+                            opt.value = addressId;
+                            opt.textContent = parsedData.alamat || 'Alamat Baru';
+                            opt.selected = true;
+                            opt.dataset.areaName = '';
+                            opt.dataset.areaId = '';
+                            opt.dataset.lokasi = parsedData.lokasi || '';
+                            addressSelect.add(opt);
+                        } else {
+                            addressSelect.value = addressId;
+                        }
+                    }
+
                     addressSelect.disabled = false;
 
-                    if (addressId) {
-                        addressSelect.value = addressId;
-                        addressSelect.dispatchEvent(new Event('change'));
-                    }
+                    // Trigger change to load staff for the area
+                    addressSelect.dispatchEvent(new Event('change'));
                 })
                 .catch(function(err) {
                     console.error('Failed to load addresses:', err);
+                    // Fallback: still set the address if we have it
+                    if (addressId) {
+                        addressSelect.innerHTML = '<option value="' + addressId + '" selected>' + (parsedData.alamat || 'Alamat Baru') + '</option>';
+                        addressSelect.disabled = false;
+                        addressSelect.dispatchEvent(new Event('change'));
+                    }
                 });
         }
     }

@@ -56,6 +56,8 @@ class FormOrderParser
             'no_hp' => null,
             'alamat' => null,
             'google_maps' => '',
+            'lokasi' => null,
+            'kota' => null,
             'services_raw' => '',
             'notes' => '',
             'geocoding_success' => false,
@@ -138,6 +140,8 @@ class FormOrderParser
         if ($geoResult) {
             $result['alamat'] = $geoResult['formatted_address'];
             $result['google_maps'] = $geoResult['google_maps_url'];
+            $result['lokasi'] = $geoResult['lokasi'] ?? '';
+            $result['kota'] = $geoResult['kota'] ?? '';
             $result['geocoding_success'] = true;
         }
 
@@ -399,9 +403,35 @@ class FormOrderParser
             $lat = $result['geometry']['location']['lat'];
             $lng = $result['geometry']['location']['lng'];
 
+            // Extract lokasi (kecamatan) and kota (kabupaten/kota) from address components
+            $lokasi = '';
+            $kota = '';
+            if (isset($result['address_components'])) {
+                foreach ($result['address_components'] as $component) {
+                    // Lokasi: kecamatan / sublocality
+                    if (in_array('sublocality_level_1', $component['types']) ||
+                        in_array('sublocality', $component['types']) ||
+                        in_array('administrative_area_level_3', $component['types'])) {
+                        $lokasi = $component['long_name'];
+                    }
+                    // Kota: kabupaten / kota
+                    if (in_array('administrative_area_level_2', $component['types'])) {
+                        $kota = $component['long_name'];
+                    }
+                }
+
+                // Strip "Kecamatan" or "Kec." prefix from lokasi
+                if ($lokasi) {
+                    $lokasi = preg_replace('/^(Kecamatan|Kec\.?)\s+/i', '', $lokasi);
+                    $lokasi = trim($lokasi);
+                }
+            }
+
             return [
                 'formatted_address' => $result['formatted_address'],
                 'google_maps_url' => "https://www.google.com/maps?q={$lat},{$lng}",
+                'lokasi' => $lokasi,
+                'kota' => $kota,
             ];
         } catch (\Exception $e) {
             return null;

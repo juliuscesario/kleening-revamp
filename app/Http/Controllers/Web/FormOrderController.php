@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\FormOrderParser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FormOrderController extends Controller
 {
@@ -84,6 +85,76 @@ class FormOrderController extends Controller
             'customer_found' => false,
             'customer' => null,
             'addresses' => [],
+        ]);
+    }
+
+    public function createCustomer(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'address.label' => 'required|string|max:255',
+            'address.area_id' => 'required|exists:areas,id',
+            'address.lokasi' => 'required|string|max:100',
+            'address.full_address' => 'required|string',
+            'address.google_maps_link' => 'nullable|string',
+            'address.contact_name' => 'required|string|max:255',
+            'address.contact_phone' => 'required|string|max:20',
+        ]);
+
+        // Check if phone already exists (prevent duplicates)
+        $phone = $request->phone;
+        $searchVariants = [
+            $phone,
+            '+' . $phone,
+            '0' . substr($phone, 2),
+            substr($phone, 2),
+        ];
+
+        $existingCustomer = Customer::withoutGlobalScopes()
+            ->where(function ($query) use ($searchVariants) {
+                foreach ($searchVariants as $variant) {
+                    $query->orWhere('phone_number', $variant);
+                }
+            })
+            ->first();
+
+        if ($existingCustomer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer dengan nomor telepon ini sudah terdaftar: ' . $existingCustomer->name,
+            ], 422);
+        }
+
+        // Create customer + address in a transaction
+        $result = DB::transaction(function () use ($request) {
+            $customer = Customer::create([
+                'name' => $request->name,
+                'phone_number' => $request->phone,
+            ]);
+
+            $addressData = $request->address;
+            $address = $customer->addresses()->create([
+                'area_id' => $addressData['area_id'],
+                'label' => $addressData['label'],
+                'contact_name' => $addressData['contact_name'],
+                'contact_phone' => $addressData['contact_phone'],
+                'full_address' => $addressData['full_address'],
+                'lokasi' => $addressData['lokasi'],
+                'google_maps_link' => $addressData['google_maps_link'] ?? null,
+            ]);
+
+            return compact('customer', 'address');
+        });
+
+        return response()->json([
+            'success' => true,
+            'customer' => [
+                'id' => $result['customer']->id,
+                'name' => $result['customer']->name,
+                'phone' => $result['customer']->phone_number,
+            ],
+            'address_id' => $result['address']->id,
         ]);
     }
 }
