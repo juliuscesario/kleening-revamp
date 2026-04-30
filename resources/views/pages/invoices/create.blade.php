@@ -66,20 +66,35 @@
                         </div>
                     </div>
                 </div>
-                <div class="card mt-3">
+                @php
+                    $wp = $serviceOrder->workPhotos;
+                    $wpArrival = $wp->where('type', 'arrival')->sortByDesc('created_at')->first();
+                    $wpBefore = $wp->where('type', 'before')->sortByDesc('created_at')->first();
+                    $wpAfter = $wp->where('type', 'after')->sortByDesc('created_at')->first();
+                @endphp
+                @if($wpArrival && $wpBefore && $wpAfter)
+                <div class="card mt-3" style="{{ $serviceOrder->items->count() > 5 ? 'page-break-before:always;' : '' }}">
                     <div class="card-header">
                         <h3 class="card-title">Work Photos</h3>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            @foreach($serviceOrder->workPhotos as $photo)
-                                <div class="col-md-4">
-                                    <img src="{{ $photo->photo_url }}" class="img-fluid mb-2">
-                                </div>
-                            @endforeach
+                            <div class="col-md-4">
+                                <img src="{{ $wpArrival->photo_url }}" class="img-fluid mb-2" alt="Arrival">
+                                <div class="text-center text-muted small">Arrival</div>
+                            </div>
+                            <div class="col-md-4">
+                                <img src="{{ $wpBefore->photo_url }}" class="img-fluid mb-2" alt="Before">
+                                <div class="text-center text-muted small">Before</div>
+                            </div>
+                            <div class="col-md-4">
+                                <img src="{{ $wpAfter->photo_url }}" class="img-fluid mb-2" alt="After">
+                                <div class="text-center text-muted small">After</div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
             <div class="col-md-4">
                 <div class="card">

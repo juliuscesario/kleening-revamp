@@ -171,10 +171,38 @@ class InvoiceController extends Controller
     {
         $this->authorize('view', $invoice);
 
+        $invoice->load(['serviceOrder.workPhotos']);
+
+        $amountDue = max($invoice->grand_total - $invoice->paid_amount, 0);
+
+        $workPhotos = $invoice->serviceOrder->workPhotos ?? collect();
+        $photoArrival = $workPhotos->where('type', 'arrival')->sortByDesc('created_at')->first();
+        $photoBefore = $workPhotos->where('type', 'before')->sortByDesc('created_at')->first();
+        $photoAfter = $workPhotos->where('type', 'after')->sortByDesc('created_at')->first();
+
         $pdf = app('dompdf.wrapper');
-        $pdf->loadView('pdf.invoice', compact('invoice'));
+        $pdf->loadView('pdf.invoice', compact('invoice', 'amountDue', 'photoArrival', 'photoBefore', 'photoAfter'));
 
         return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
+    }
+
+    public function viewPdf(Invoice $invoice)
+    {
+        $this->authorize('view', $invoice);
+
+        $invoice->load(['serviceOrder.workPhotos']);
+
+        $amountDue = max($invoice->grand_total - $invoice->paid_amount, 0);
+
+        $workPhotos = $invoice->serviceOrder->workPhotos ?? collect();
+        $photoArrival = $workPhotos->where('type', 'arrival')->sortByDesc('created_at')->first();
+        $photoBefore = $workPhotos->where('type', 'before')->sortByDesc('created_at')->first();
+        $photoAfter = $workPhotos->where('type', 'after')->sortByDesc('created_at')->first();
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->loadView('pdf.invoice', compact('invoice', 'amountDue', 'photoArrival', 'photoBefore', 'photoAfter'));
+
+        return $pdf->stream('invoice-' . $invoice->invoice_number . '.pdf');
     }
 
     /**

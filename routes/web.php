@@ -103,6 +103,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('form-order/create-customer', [FormOrderController::class, 'createCustomer'])->name('web.form-order.create-customer');
     Route::resource('invoices', InvoiceController::class)->names('web.invoices');
     Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');
+    Route::get('/invoices/{invoice}/view-pdf', [InvoiceController::class, 'viewPdf'])->name('web.invoices.view-pdf');
     Route::resource('payments', PaymentController::class)->names('web.payments');
 
     Route::resource('expenses', \App\Http\Controllers\Web\ExpenseController::class)->only(['index', 'create', 'store'])->names('web.expenses');

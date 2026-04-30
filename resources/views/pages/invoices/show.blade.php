@@ -35,6 +35,15 @@
                                 </button>
                             </form>
                         @endif
+                        <a href="{{ route('web.invoices.view-pdf', $invoice) }}" class="btn btn-outline-primary" target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                                stroke-width="2" stroke="currentColor" fill="none">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+                            </svg>
+                            View Invoice
+                        </a>
                         <a href="{{ route('web.invoices.download', $invoice) }}" class="btn btn-primary">Download PDF</a>
                         <a href="{{ route('web.invoices.index') }}" class="btn">Kembali</a>
                     </div>
@@ -205,20 +214,35 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card mt-3">
+                    @php
+                        $wp = $invoice->serviceOrder->workPhotos;
+                        $wpArrival = $wp->where('type', 'arrival')->sortByDesc('created_at')->first();
+                        $wpBefore = $wp->where('type', 'before')->sortByDesc('created_at')->first();
+                        $wpAfter = $wp->where('type', 'after')->sortByDesc('created_at')->first();
+                    @endphp
+                    @if($wpArrival && $wpBefore && $wpAfter)
+                    <div class="card mt-3" style="{{ $invoice->serviceOrder->items->count() > 5 ? 'page-break-before:always;' : '' }}">
                         <div class="card-header">
                             <h3 class="card-title">Work Photos</h3>
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                @foreach($invoice->serviceOrder->workPhotos as $photo)
-                                    <div class="col-md-4">
-                                        <img src="{{ $photo->photo_url }}" class="img-fluid mb-2">
-                                    </div>
-                                @endforeach
+                                <div class="col-md-4">
+                                    <img src="{{ $wpArrival->photo_url }}" class="img-fluid mb-2" alt="Arrival">
+                                    <div class="text-center text-muted small">Arrival</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <img src="{{ $wpBefore->photo_url }}" class="img-fluid mb-2" alt="Before">
+                                    <div class="text-center text-muted small">Before</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <img src="{{ $wpAfter->photo_url }}" class="img-fluid mb-2" alt="After">
+                                    <div class="text-center text-muted small">After</div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
