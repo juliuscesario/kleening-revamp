@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\ServiceOrder;
 use App\Services\FormOrderParser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +64,28 @@ class FormOrderController extends Controller
                 ];
             });
 
+            // Check for open Service Orders
+            $openSOs = ServiceOrder::withoutGlobalScopes()
+                ->where('customer_id', $customer->id)
+                ->whereIn('status', ['booked', 'proses', 'done'])
+                ->with('items.service')
+                ->orderBy('work_date', 'asc')
+                ->get()
+                ->map(function ($so) {
+                    $serviceNames = $so->items->map(function ($item) {
+                        return $item->service?->name ?? 'Unknown';
+                    })->unique()->values()->toArray();
+
+                    return [
+                        'id' => $so->id,
+                        'so_number' => $so->so_number,
+                        'work_date' => $so->work_date?->format('d M Y'),
+                        'work_time' => $so->work_time,
+                        'status' => $so->status,
+                        'services' => $serviceNames,
+                    ];
+                });
+
             return response()->json([
                 'success' => true,
                 'data' => $result,
@@ -73,6 +96,7 @@ class FormOrderController extends Controller
                     'phone' => $customer->phone_number,
                 ],
                 'addresses' => $addressData,
+                'open_sos' => $openSOs,
             ]);
         }
 

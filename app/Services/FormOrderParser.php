@@ -213,6 +213,19 @@ class FormOrderParser
         }
 
         try {
+            // Strip leading day name (Indonesian or English), case-insensitive
+            // Handles optional comma or whitespace after the day name
+            $dateString = preg_replace(
+                '/^\s*(senin|selasa|rabu|kamis|jumat|sabtu|minggu|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*,?\s*/i',
+                '',
+                $dateString
+            );
+            $dateString = trim($dateString);
+
+            if (empty($dateString)) {
+                return null;
+            }
+
             // Try to replace Indonesian month names with English equivalents for Carbon parsing
             $normalizedDate = $dateString;
             foreach ($this->indonesianMonths as $indo => $monthNum) {
@@ -254,12 +267,12 @@ class FormOrderParser
                 }
                 $carbon = Carbon::createFromDate($year, $month, $day, 'Asia/Jakarta');
             } else {
-                // Try standard Carbon parsing
+                // Try standard Carbon parse
                 $carbon = Carbon::parse($dateString, 'Asia/Jakarta');
             }
 
             return [
-                'display' => $carbon->locale('id')->isoFormat('D MMMM YYYY'),
+                'display' => $carbon->format('d/m/Y'),
                 'raw' => $carbon->format('Y-m-d'),
             ];
         } catch (\Exception $e) {

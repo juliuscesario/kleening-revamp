@@ -94,9 +94,14 @@
                             placeholder="Paste form order dari WhatsApp di sini..."></textarea>
                     </div>
 
-                    <button id="btnProses" class="btn btn-primary">
-                        Proses
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button id="btnProses" class="btn btn-primary">
+                            Proses
+                        </button>
+                        <button id="btnResetParser" class="btn btn-outline-secondary">
+                            Reset
+                        </button>
+                    </div>
 
                     <div id="parseLoading" class="mt-3" style="display: none;">
                         <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
@@ -124,9 +129,17 @@
                                     ✅ Customer ditemukan: <strong id="parserCustomerName"></strong>
                                     <span class="text-muted ms-2" id="parserCustomerPhone"></span>
                                 </div>
+                                <div id="openSOSAlert" class="alert alert-warning mb-3" style="display: none;"></div>
                                 <select id="parserAddressSelect" class="form-select mb-3"></select>
                                 <button id="btnPrefillSO" class="btn btn-success">Isi Form SO</button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Open SOs Warning (shown when existing customer has active SOs, single/0 address case) -->
+                    <div id="openSOSAlertStandalone" class="mt-3" style="display: none;">
+                        <div class="alert alert-warning d-flex align-items-start">
+                            <span id="openSOSAlertStandaloneBody"></span>
                         </div>
                     </div>
 
@@ -369,6 +382,10 @@ document.getElementById('btnProses').addEventListener('click', async function() 
                 // === EXISTING CUSTOMER ===
                 window.foundCustomer = result.customer;
                 const addressCount = result.addresses ? result.addresses.length : 0;
+                const openSOs = result.open_sos || [];
+
+                // Show open SOs warning if any
+                renderOpenSOsWarning(openSOs);
 
                 if (addressCount === 1) {
                     // Exactly 1 address — auto-prefill immediately
@@ -410,6 +427,112 @@ document.getElementById('btnProses').addEventListener('click', async function() 
     }
 });
 
+/**
+ * Render open SOs warning alert.
+ * Stores openSOs in window._lastOpenSOs for reuse after address picker is dismissed.
+ */
+function renderOpenSOsWarning(openSOs) {
+    // Hide both containers first
+    document.getElementById('openSOSAlert').style.display = 'none';
+    document.getElementById('openSOSAlertStandalone').style.display = 'none';
+
+    window._lastOpenSOs = openSOs;
+
+    if (!openSOs || openSOs.length === 0) return;
+
+    const count = openSOs.length;
+    const soList = openSOs.map(function(so) {
+        const services = (so.services || []).join(', ');
+        const servicePart = services ? ' — ' + escapeHtml(services) : '';
+        return '<strong>#' + escapeHtml(so.so_number) + '</strong> (' + escapeHtml(so.status) + ', ' + escapeHtml(so.work_date || '-') + ')' + servicePart;
+    }).join(', ');
+
+    const message = 'Pelanggan ini memiliki <strong>' + count + ' SO aktif</strong>: ' + soList;
+
+    // If address section is visible, use the inline alert
+    if (document.getElementById('parserAddressSection').style.display !== 'none') {
+        const alertEl = document.getElementById('openSOSAlert');
+        alertEl.innerHTML = '<span>⚠️ ' + message + '</span>';
+        alertEl.style.display = 'block';
+    } else {
+        // Use standalone alert
+        const alertEl = document.getElementById('openSOSAlertStandalone');
+        document.getElementById('openSOSAlertStandaloneBody').innerHTML = '<span>⚠️ ' + message + '</span>';
+        alertEl.style.display = 'block';
+    }
+}
+
+// --- Reset Parser UI ---
+document.getElementById('btnResetParser').addEventListener('click', function() {
+    resetParserUI();
+});
+
+function resetParserUI() {
+    // Clear textarea
+    document.getElementById('rawFormOrder').value = '';
+
+    // Hide all parser outputs
+    document.getElementById('parsedResultCard').style.display = 'none';
+    document.getElementById('parsedResultBody').innerHTML = '';
+    document.getElementById('parserAddressSection').style.display = 'none';
+    document.getElementById('openSOSAlert').style.display = 'none';
+    document.getElementById('openSOSAlertStandalone').style.display = 'none';
+    document.getElementById('newCustomerNotice').style.display = 'none';
+
+    // Reset any prefilled SO form fields
+    const customerSearchInput = document.getElementById('customer-search');
+    const customerIdInput = document.getElementById('customer_id');
+    if (customerSearchInput) customerSearchInput.value = '';
+    if (customerIdInput) customerIdInput.value = '';
+
+    const addressSelect = document.getElementById('address-select');
+    if (addressSelect) {
+        addressSelect.innerHTML = '<option value="">Pilih Customer terlebih dahulu</option>';
+        addressSelect.disabled = true;
+    }
+
+    const areaNameInput = document.getElementById('area-name');
+    const areaIdInput = document.getElementById('area-id');
+    if (areaNameInput) areaNameInput.value = '';
+    if (areaIdInput) areaIdInput.value = '';
+
+    const lokasiInput = document.getElementById('lokasi');
+    if (lokasiInput) lokasiInput.value = '';
+
+    // Reset work date/time to defaults
+    const workDateInput = document.querySelector('[name="work_date"]');
+    if (workDateInput) workDateInput.value = "{{ date('Y-m-d') }}";
+
+    const workTimeInput = document.querySelector('[name="work_time"]');
+    if (workTimeInput) workTimeInput.value = "{{ now()->setTimezone('Asia/Jakarta')->format('H:i') }}";
+
+    // Reset notes
+    const workNotesInput = document.querySelector('[name="work_notes"]');
+    if (workNotesInput) workNotesInput.value = '';
+    const staffNotesInput = document.querySelector('[name="staff_notes"]');
+    if (staffNotesInput) staffNotesInput.value = '';
+
+    // Clear service items
+    const serviceContainer = document.getElementById('service-items-container');
+    if (serviceContainer) serviceContainer.innerHTML = '';
+
+    // Clear staff
+    const staffContainer = document.getElementById('staff-container');
+    if (staffContainer) staffContainer.innerHTML = '';
+
+    // Reset global vars
+    window.parsedFormOrder = null;
+    window.foundCustomer = null;
+    window._lastOpenSOs = null;
+
+    // Disable add staff button
+    const addStaffBtn = document.getElementById('add-staff-member');
+    if (addStaffBtn) {
+        addStaffBtn.disabled = true;
+        addStaffBtn.textContent = 'Pilih Alamat terlebih dahulu';
+    }
+}
+
 // --- Isi Form SO (for multiple addresses case) ---
 document.getElementById('btnPrefillSO').addEventListener('click', function() {
     const parsedData = window.parsedFormOrder;
@@ -428,6 +551,11 @@ document.getElementById('btnPrefillSO').addEventListener('click', function() {
 
     prefillSOForm(parsedData, customer, selectedAddressId);
     document.getElementById('parserAddressSection').style.display = 'none';
+
+    // Re-show open SOs warning as standalone after hiding address section
+    if (window._lastOpenSOs && window._lastOpenSOs.length > 0) {
+        renderOpenSOsWarning(window._lastOpenSOs);
+    }
 });
 
 // --- Buat Customer Baru (Segment 3) ---
