@@ -74,7 +74,9 @@ class ServiceOrderController extends Controller
         $serviceOrder->load($relationsToLoad);
 
         $allServices = Service::all();
-        $allStaff = Staff::all();
+        $allStaff = Staff::whereHas('user', function ($q) {
+            $q->where('role', 'staff');
+        })->get();
 
         if ($isStaff) {
             return view('pages.service-orders.staff-show', compact('serviceOrder', 'isStaff'));

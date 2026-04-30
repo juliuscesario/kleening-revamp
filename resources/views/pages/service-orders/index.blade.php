@@ -60,13 +60,7 @@
                                     <input type="text" id="filter-start-date" class="form-control form-control-sm js-filter-date" placeholder="Mulai (dd/mm/yyyy)" inputmode="numeric">
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="text" id="filter-start-time" class="form-control form-control-sm js-filter-time" placeholder="Mulai (00:00)" inputmode="numeric">
-                                </div>
-                                <div class="col-md-6">
                                     <input type="text" id="filter-end-date" class="form-control form-control-sm js-filter-date" placeholder="Sampai (dd/mm/yyyy)" inputmode="numeric">
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" id="filter-end-time" class="form-control form-control-sm js-filter-time" placeholder="Sampai (23:59)" inputmode="numeric">
                                 </div>
                             </div>
                             <div class="mt-2">
@@ -81,7 +75,7 @@
                             <div class="mt-2 d-flex gap-2 flex-wrap">
                                 <button type="button" class="btn btn-primary btn-sm" id="apply-date-filter">Terapkan</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="reset-date-filter">Reset</button>
-                                <small class="text-muted align-self-center">Filter berdasarkan tanggal & waktu pengerjaan.</small>
+                                <small class="text-muted align-self-center">Filter berdasarkan tanggal pengerjaan.</small>
                             </div>
                         </div>
                         <div class="col-lg-5">

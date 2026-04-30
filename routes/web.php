@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('planner', [PlannerController::class, 'index'])->name('web.planner.index');
     Route::post('planner/{serviceOrder}/update-field', [PlannerController::class, 'updateField'])->name('web.planner.update-field');
     Route::post('planner/{serviceOrder}/update-staff', [PlannerController::class, 'updateStaff'])->name('web.planner.update-staff');
+    Route::post('planner/{serviceOrder}/update-lokasi', [PlannerController::class, 'updateLokasi'])->name('web.planner.update-lokasi');
     Route::post('planner/toggle-staff-off', [PlannerController::class, 'toggleStaffOff'])->name('web.planner.toggle-staff-off');
     Route::post('planner/quick-store', [PlannerController::class, 'quickStore'])->name('web.planner.quick-store');
 

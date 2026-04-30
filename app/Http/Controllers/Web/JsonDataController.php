@@ -26,7 +26,11 @@ class JsonDataController extends Controller
     public function staffByArea(Area $area)
     {
         $user = Auth::user();
-        $query = Staff::query()->where('area_id', $area->id);
+        $query = Staff::query()
+            ->where('area_id', $area->id)
+            ->whereHas('user', function ($q) {
+                $q->where('role', 'staff');
+            });
 
         if ($user->role == 'co_owner' && $user->area_id != $area->id) {
             return response()->json([], 403);

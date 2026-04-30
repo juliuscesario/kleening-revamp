@@ -2,6 +2,7 @@
 @section('title', 'Detail Service Order')
 
 @section('content')
+<div id="service-order-show-page" style="display:none;"></div>
 <div class="container-xl">
     <div class="page-header d-print-none">
         <div class="row align-items-center">
@@ -22,10 +23,10 @@
                         Edit Service Order
                     </button>
                     @endif
-                    <a href="{{ route('web.service-orders.print', $serviceOrder->id) }}" class="btn btn-success" target="_blank">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><rect x="7" y="13" width="10" height="8" rx="2" /></svg>
-                        Print Service Order
-                    </a>
+                    <button id="btn-confirm-order" class="btn btn-success">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
+                        Confirm Order
+                    </button>
                     <a href="{{ route('web.service-orders.index') }}" class="btn">Kembali</a>
                 </div>
             </div>
@@ -255,4 +256,15 @@
         </div>
     </div>
 </div>
+
+<script>
+    window.soConfirmData = {
+        name: "{{ $serviceOrder->customer->name ?? '' }}",
+        phone: "{{ $serviceOrder->customer->phone_number ?? '' }}",
+        tanggal: "{{ $serviceOrder->work_date ? \Carbon\Carbon::parse($serviceOrder->work_date)->translatedFormat('d F Y') : '' }}",
+        jam: "{{ $serviceOrder->work_time_formatted ?? '' }}",
+        alamat: "{{ $serviceOrder->address ? addslashes($serviceOrder->address->full_address) : '' }}",
+        services: {!! json_encode($serviceOrder->items->map(fn($i, $k) => ($k + 1) . '. ' . $i->service->name . ' x ' . $i->quantity)->join("\n")) !!}
+    };
+</script>
 @endsection

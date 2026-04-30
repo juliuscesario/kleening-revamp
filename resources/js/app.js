@@ -88,6 +88,9 @@ $(function () {
     if (document.getElementById('create-so-form')) {
         import('./pages/service-orders-create.js');
     }
+    if (document.getElementById('service-order-show-page')) {
+        import('./pages/service-orders-show.js');
+    }
     if (document.getElementById('invoices-table')) {
         import('./pages/invoices.js');
     }

@@ -23,7 +23,7 @@ class PlannerController extends Controller
     {
         $user = Auth::user();
         
-        if (strtolower(trim($user->role)) !== 'admin') {
+        if (!in_array(strtolower(trim($user->role)), ['admin', 'owner'])) {
             return redirect()->route('dashboard');
         }
 
@@ -258,6 +258,38 @@ class PlannerController extends Controller
             'success' => true,
             'staff_names' => $staffNames,
             'staff_ids' => $serviceOrder->staff->pluck('id'),
+        ]);
+    }
+
+    /**
+     * AJAX: Update lokasi on the booking's address.
+     */
+    public function updateLokasi(Request $request, ServiceOrder $serviceOrder)
+    {
+        $request->validate([
+            'lokasi' => 'nullable|string|max:100',
+            'address_id' => 'required|exists:addresses,id',
+        ]);
+
+        $lokasi = $request->input('lokasi');
+
+        // Trim whitespace; empty string → null
+        if (is_string($lokasi)) {
+            $lokasi = trim($lokasi);
+            if ($lokasi === '') {
+                $lokasi = null;
+            }
+        }
+
+        $address = Address::withoutGlobalScopes()
+            ->where('id', $request->input('address_id'))
+            ->firstOrFail();
+
+        $address->update(['lokasi' => $lokasi]);
+
+        return response()->json([
+            'success' => true,
+            'lokasi' => $lokasi,
         ]);
     }
 

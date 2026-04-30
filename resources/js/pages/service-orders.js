@@ -21,25 +21,6 @@ const formatDateForServer = (value) => {
     return `${year}-${month}-${day}`;
 };
 
-const normalizeTimeInput = (value) => {
-    const digits = value.replace(/\D/g, '').slice(0, 4);
-    if (digits.length <= 2) return digits;
-    return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-};
-
-const formatTimeForServer = (value) => {
-    if (!value) return '';
-    const parts = value.split(':');
-    if (parts.length !== 2) return '';
-    const [hours, minutes] = parts;
-    if (hours.length !== 2 || minutes.length !== 2) return '';
-    const hourInt = parseInt(hours, 10);
-    const minuteInt = parseInt(minutes, 10);
-    if (isNaN(hourInt) || hourInt < 0 || hourInt > 23) return '';
-    if (isNaN(minuteInt) || minuteInt < 0 || minuteInt > 59) return '';
-    return `${hours}:${minutes}`;
-};
-
 const ajaxUrl = $('#service-orders-table').data('url');
 const updateUrlTemplate = $('#service-orders-table').data('update-url-template');
 
@@ -59,38 +40,25 @@ $(function() {
         });
     });
 
-    document.querySelectorAll('.js-filter-time').forEach((input) => {
-        input.addEventListener('input', (event) => {
-            event.target.value = normalizeTimeInput(event.target.value);
-        });
-
-        input.addEventListener('blur', (event) => {
-            const formatted = formatTimeForServer(event.target.value);
-            event.target.value = formatted;
-        });
-    });
-
     let serviceOrdersTable = $('#service-orders-table').DataTable({
         processing: true,
         serverSide: true,
         responsive: true,
         ajax: {
-            url: ajaxUrl, // Explicitly set the URL here
+            url: ajaxUrl,
             data: function (d) {
                 d.status = $('#service-orders-table').data('current-status-filter');
                 d.start_date = formatDateForServer($('#filter-start-date').val());
-                d.start_time = formatTimeForServer($('#filter-start-time').val());
                 d.end_date = formatDateForServer($('#filter-end-date').val());
-                d.end_time = formatTimeForServer($('#filter-end-time').val());
             }
         },
         columns: [
-            { data: 'so_number', name: 'so_number' },
-            { data: 'customer_name', name: 'customer.name' },
-            { data: 'customer_phone', name: 'customer.phone_number', orderable: false },
-            { data: 'work_date', name: 'work_date' },
-            { data: 'status', name: 'status' },
-            { data: 'action', name: 'action', orderable: false, searchable: false }
+            { data: 'so_number', name: 'so_number', responsivePriority: 1 },
+            { data: 'customer_name', name: 'customer.name', responsivePriority: 2 },
+            { data: 'customer_phone', name: 'customer.phone_number', orderable: false, responsivePriority: 10 },
+            { data: 'work_date', name: 'work_date', responsivePriority: 10 },
+            { data: 'status', name: 'status', responsivePriority: 10 },
+            { data: 'action', name: 'action', orderable: false, searchable: false, responsivePriority: 10 }
         ]
     });
 
@@ -184,9 +152,7 @@ $(function() {
 
     $('#reset-date-filter').on('click', function() {
         $('#filter-start-date').val('');
-        $('#filter-start-time').val('');
         $('#filter-end-date').val('');
-        $('#filter-end-time').val('');
         serviceOrdersTable.ajax.reload();
     });
 

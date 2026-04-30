@@ -21,5 +21,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        view()->composer('*', function ($view) {
+            if (auth()->check() && in_array(auth()->user()->role, ['admin', 'owner'])) {
+                $diskTotal   = disk_total_space('/');
+                $diskFree    = disk_free_space('/');
+                $diskUsed    = $diskTotal - $diskFree;
+                $diskPercent = round(($diskUsed / $diskTotal) * 100);
+                $diskUsedGB  = round($diskUsed / 1073741824, 1);
+                $diskTotalGB = round($diskTotal / 1073741824, 1);
+
+                $view->with(compact('diskPercent', 'diskUsedGB', 'diskTotalGB'));
+            }
+        });
     }
 }

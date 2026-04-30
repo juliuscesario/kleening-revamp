@@ -108,6 +108,12 @@ function getStatusLabel($status) {
     .lokasi-text { color: var(--text-secondary); font-size: .875rem; }
     .notes-text { color: var(--text-secondary); font-size: .8125rem; font-style: italic; }
 
+    /* Lokasi Badge */
+    .lokasi-badge { display: inline-block; font-size: .75rem; font-weight: 500; padding: .2rem .5rem; border-radius: 4px; min-height: 32px; line-height: 1.5; cursor: pointer; }
+    .lokasi-badge { background: rgba(100, 116, 139, 0.1); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.2); }
+    .lokasi-badge-empty { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2) !important; }
+    .alamat-text { font-size: .6875rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
     /* Category Badges */
     .cat-tag { font-size: .6875rem; font-weight: 700; padding: .2rem .4rem; border-radius: 4px; text-transform: uppercase; display: inline-block; margin: .1rem; border: 1px solid transparent; }
     .cat-hv { background: rgba(37, 99, 235, 0.1); color: #3b82f6; border-color: rgba(37, 99, 235, 0.2); }
@@ -332,7 +338,30 @@ function getStatusLabel($status) {
                                     </a>
                                 </div>
                             </td>
-                            <td><span class="lokasi-text">{{ $so->address?->lokasi ?? '—' }}</span></td>
+                            <td>
+                                @php
+                                    $lokasiValue = $so->address?->lokasi;
+                                    $alamatValue = Str::limit($so->address?->full_address ?? '', 30);
+                                @endphp
+                                @if($lokasiValue)
+                                    <span class="lokasi-badge inline-edit" onclick="editLokasi(this, {{ $so->id }}, {{ $so->address?->id ?? 'null' }})" data-value="{{ $lokasiValue }}" data-address-id="{{ $so->address?->id ?? '' }}">
+                                        {{ $lokasiValue }}
+                                    </span>
+                                @else
+                                    <span class="lokasi-badge lokasi-badge-empty inline-edit" onclick="editLokasi(this, {{ $so->id }}, {{ $so->address?->id ?? 'null' }})" data-value="" data-address-id="{{ $so->address?->id ?? '' }}">
+                                        Lokasi?
+                                    </span>
+                                @endif
+                                @if($alamatValue)
+                                    <div class="alamat-text"
+                                         data-bs-toggle="popover"
+                                         data-bs-trigger="click"
+                                         data-bs-content="{{ $so->address?->full_address ?? '' }}"
+                                         style="cursor:pointer;">
+                                        {{ $alamatValue }}
+                                    </div>
+                                @endif
+                            </td>
                             <td>
                                 @foreach($uniqueCodes as $code)
                                     <span class="cat-tag cat-{{ strtolower($code) }}"
@@ -464,7 +493,64 @@ function editNotes(el, soId) {
     input.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
 }
 
-// Staff assignment modal
+// Inline edit: lokasi (address location name)
+function editLokasi(el, soId, addressId) {
+    if (!addressId) return;
+    const current = el.dataset.value || '';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'inline-edit-input';
+    input.value = current;
+    input.placeholder = 'Lokasi...';
+    input.maxLength = 100;
+    el.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function save() {
+        const val = input.value.trim();
+        const saveValue = val === '' ? null : val;
+        fetchJson(`/planner/${soId}/update-lokasi`, {
+            method: 'POST',
+            body: JSON.stringify({ lokasi: saveValue, address_id: addressId }),
+        }).then(data => {
+            if (data.success) {
+                const newLokasi = data.lokasi;
+
+                // Replace input with new badge in current row
+                const newBadge = document.createElement('span');
+                newBadge.className = 'lokasi-badge inline-edit' + (newLokasi ? '' : ' lokasi-badge-empty');
+                newBadge.setAttribute('onclick', `editLokasi(this, ${soId}, ${addressId})`);
+                newBadge.dataset.value = newLokasi || '';
+                newBadge.dataset.addressId = addressId;
+                newBadge.textContent = newLokasi || 'Lokasi?';
+                input.replaceWith(newBadge);
+
+                // Update ALL other badges that share the same address_id
+                document.querySelectorAll(`.lokasi-badge[data-address-id="${addressId}"]`).forEach(badge => {
+                    if (badge === newBadge) return; // skip the one we just created
+                    badge.dataset.value = newLokasi || '';
+                    badge.textContent = newLokasi || 'Lokasi?';
+                    if (newLokasi) {
+                        badge.classList.remove('lokasi-badge-empty');
+                    } else {
+                        badge.classList.add('lokasi-badge-empty');
+                    }
+                });
+            }
+        });
+    }
+
+    function cancel() {
+        input.replaceWith(el);
+    }
+
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); save(); }
+        if (e.key === 'Escape') cancel();
+    });
+}
 function editStaff(el, soId) {
     document.getElementById('staffModalSoId').value = soId;
     const currentIds = (el.dataset.staffIds || '').split(',').filter(Boolean);

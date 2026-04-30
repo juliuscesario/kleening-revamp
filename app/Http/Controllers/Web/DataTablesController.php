@@ -246,24 +246,14 @@ class DataTablesController extends Controller
         }
 
         $startDate = $request->input('start_date');
-        $startTime = $request->input('start_time') ?: null;
         $endDate = $request->input('end_date');
-        $endTime = $request->input('end_time') ?: null;
 
         if ($startDate) {
-            $startDateTime = Carbon::parse($startDate . ' ' . ($startTime ?? '00:00'));
-            $query->whereRaw(
-                "(work_date + COALESCE(work_time, '00:00:00'::time)) >= ?",
-                [$startDateTime->format('Y-m-d H:i:s')]
-            );
+            $query->where('work_date', '>=', Carbon::parse($startDate)->format('Y-m-d'));
         }
 
         if ($endDate) {
-            $endDateTime = Carbon::parse($endDate . ' ' . ($endTime ?? '23:59'));
-            $query->whereRaw(
-                "(work_date + COALESCE(work_time, '23:59:59'::time)) <= ?",
-                [$endDateTime->format('Y-m-d H:i:s')]
-            );
+            $query->where('work_date', '<=', Carbon::parse($endDate)->format('Y-m-d'));
         }
 
         return DataTables::of($query)

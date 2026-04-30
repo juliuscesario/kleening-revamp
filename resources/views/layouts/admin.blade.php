@@ -71,6 +71,11 @@
         box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
       }
     }
+
+    .navbar-vertical .nav-item .alert-sm {
+      font-size: 0.75rem;
+      border-radius: 4px;
+    }
   </style>
 </head>
 
@@ -108,6 +113,27 @@
                 <span class="nav-link-title">Dashboard</span>
               </a>
             </li>
+
+            {{-- OPERATIONAL PLANNER --}}
+            @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'admin']))
+              <li class="nav-item {{ request()->is('planner*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('web.planner.index') }}">
+                  <span class="nav-link-icon d-md-none d-lg-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-event" width="24"
+                      height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                      <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                      <path d="M16 3v4"></path>
+                      <path d="M8 3v4"></path>
+                      <path d="M4 11h16"></path>
+                      <path d="M8 15h2v2h-2z"></path>
+                    </svg>
+                  </span>
+                  <span class="nav-link-title">Operational Planner</span>
+                </a>
+              </li>
+            @endif
 
             {{-- NEW "MASTER" DROPDOWN MENU --}}
             @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'admin', 'co_owner']))
@@ -226,26 +252,7 @@
               </li>
             @endif
 
-            {{-- OPERATIONAL PLANNER --}}
-            @if(strtolower(trim(Auth::user()->role)) === 'admin')
-              <li class="nav-item {{ request()->is('planner*') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('web.planner.index') }}">
-                  <span class="nav-link-icon d-md-none d-lg-inline-block">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-event" width="24"
-                      height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                      stroke-linecap="round" stroke-linejoin="round">
-                      <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                      <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                      <path d="M16 3v4"></path>
-                      <path d="M8 3v4"></path>
-                      <path d="M4 11h16"></path>
-                      <path d="M8 15h2v2h-2z"></path>
-                    </svg>
-                  </span>
-                  <span class="nav-link-title">Operational Planner</span>
-                </a>
-              </li>
-            @endif
+            {{-- END OF ORDER DROPDOWN --}}
 
             {{-- NEW TRANSACTION DROPDOWN --}}
             @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'admin', 'co_owner']))
@@ -340,6 +347,33 @@
                   </div>
                 </div>
               </li>
+            @endif
+
+            {{-- STORAGE USAGE INDICATOR --}}
+            @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'owner']))
+            <li class="nav-item mt-2 px-3">
+              <div class="small text-muted mb-1">Storage VPS</div>
+
+              {{-- Progress bar --}}
+              <div class="progress mb-1" style="height: 6px;">
+                <div class="progress-bar {{ $diskPercent >= 80 ? 'bg-danger' : ($diskPercent >= 60 ? 'bg-warning' : 'bg-success') }}"
+                     role="progressbar"
+                     style="width: {{ $diskPercent }}%">
+                </div>
+              </div>
+
+              {{-- Usage text --}}
+              <div class="small text-muted">
+                {{ $diskUsedGB }} GB / {{ $diskTotalGB }} GB ({{ $diskPercent }}%)
+              </div>
+
+              {{-- Alert if over 80% --}}
+              @if($diskPercent >= 80)
+              <div class="alert alert-danger alert-sm py-1 px-2 mt-1 mb-0 small" role="alert">
+                ⚠️ Storage hampir penuh!
+              </div>
+              @endif
+            </li>
             @endif
 
             {{-- SYSTEM DROPDOWN --}}
