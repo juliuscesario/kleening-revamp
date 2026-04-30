@@ -43,8 +43,15 @@
         @endif
     </div>
     <div class="job-cats">
-        @foreach($so->items as $item)
-            <span class="cat-tag cat-{{ strtolower(getCategoryShortCode($item->service?->category?->name)) }}">{{ getCategoryShortCode($item->service?->category?->name) }}</span>
+        @php
+            $uniqueCategories = $so->items
+                ->map(fn($item) => $item->service?->category?->name)
+                ->filter()
+                ->unique()
+                ->values();
+        @endphp
+        @foreach($uniqueCategories as $catName)
+            <span class="cat-tag cat-{{ strtolower(getCategoryShortCode($catName)) }}">{{ getCategoryShortCode($catName) }}</span>
         @endforeach
     </div>
     @if($showStaffCol ?? true)
@@ -57,9 +64,11 @@
     <div class="job-status-col">
         <span class="status-pill status-{{ $so->lifecycle_status }}">{{ getStatusLabel($so->lifecycle_status) }}</span>
     </div>
+    @if(($viewMode ?? 'staff') === 'list')
     <div class="job-actions">
         <a href="{{ route('web.service-orders.show', $so) }}" class="btn btn-sm btn-ghost-secondary p-1" title="Detail">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h-2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-12a2 2 0 0 0-2-2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>
         </a>
     </div>
+    @endif
 </div>

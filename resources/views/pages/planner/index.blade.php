@@ -128,6 +128,10 @@ function getStatusLabel($status) {
     .status-overdue { background: rgba(29, 78, 216, 0.1); color: #3b82f6; }
     .status-paid { background: rgba(21, 128, 61, 0.1); color: #22c55e; }
     .status-cancelled { background: rgba(190, 18, 60, 0.1); color: #f43f5e; }
+    .status-done { background: rgba(22, 163, 74, 0.1); color: #16a34a; }
+    .status-invoiced { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+    .status-sent { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    .status-inv_cancelled { background: rgba(190, 18, 60, 0.1); color: #be123c; }
 
     .admin-pill { background: var(--bg-canvas); color: var(--text-secondary); border: 1px solid var(--border-color); font-size: .6875rem; font-weight: 600; padding: .2rem .5rem; border-radius: 4px; }
 
@@ -156,6 +160,143 @@ function getStatusLabel($status) {
     @media (max-width: 992px) {
         .planner-nav-container { flex-direction: column; align-items: flex-start; }
         .planner-date-label { font-size: 1.25rem; margin: 0 .5rem; }
+    }
+
+    /* ==========================================
+       MOBILE LAYOUT FIX — Planner Job Cards
+       ========================================== */
+    @media (max-width: 768px) {
+        /* Job row: stack vertically on mobile */
+        .job-row {
+            flex-wrap: wrap !important;
+            gap: 4px 8px;
+            padding: 10px 12px;
+            position: relative;
+        }
+
+        /* Time: small, top-left */
+        .job-row .job-time {
+            width: auto !important;
+            min-width: unset;
+            flex: 0 0 auto;
+            font-size: 0.85rem;
+        }
+
+        /* Main content (name + lokasi + notes): take remaining space on first line */
+        .job-row .job-main {
+            flex: 1 1 0;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .job-row .job-main .job-name-link {
+            display: inline;
+            word-break: break-word;
+        }
+
+        .job-row .job-main .wa-link,
+        .job-row .job-main .btn-outline-success {
+            font-size: 0.7rem;
+        }
+
+        .job-row .job-main .lokasi-badge {
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .job-row .job-main .alamat-text {
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .job-row .job-main .notes-text {
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        /* Category badges: new line, left-aligned */
+        .job-row .job-cats {
+            flex: 0 0 100%;
+            order: 10;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            margin-top: 2px;
+        }
+
+        .job-row .job-cats .cat-tag {
+            font-size: 0.65rem;
+            padding: 1px 5px;
+        }
+
+        /* Status badge: position top-right */
+        .job-row .job-status-col {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: auto !important;
+            flex: none;
+        }
+
+        .job-row .job-status-col .status-pill {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+        }
+
+        /* Staff column in list view: hide on mobile (staff already shown in section header) */
+        .job-row .job-staff-col {
+            display: none;
+        }
+
+        /* Actions: position near status */
+        .job-row .job-actions {
+            position: absolute;
+            top: 10px;
+            right: 80px;
+            width: auto !important;
+            flex: none;
+        }
+
+        /* Staff section header: stack route summary below name */
+        .staff-group-header {
+            flex-wrap: wrap;
+        }
+
+        .staff-group-header .staff-group-route {
+            font-size: 0.75rem;
+            margin-left: 0;
+            margin-top: 2px;
+        }
+
+        /* Inline edit inputs: full width on mobile */
+        .inline-edit-input {
+            width: 100%;
+            max-width: 100%;
+            font-size: 16px; /* Prevents iOS zoom on input focus */
+        }
+
+        /* Make tap targets bigger on mobile */
+        .inline-edit {
+            min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* List view: let columns auto-size on mobile */
+        .table-planner th,
+        .table-planner td {
+            white-space: nowrap;
+            padding: 6px 8px;
+            font-size: 0.8rem;
+        }
     }
 </style>
 @endpush
@@ -249,7 +390,7 @@ function getStatusLabel($status) {
                 <div class="table-planner w-100" style="border-bottom:none; background: #fff5f5; border-color: #feb2b2;">
                     <div style="padding: 0 1rem;">
                         @foreach($unassignedJobs as $so)
-                            @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => true])
+                            @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => true, 'viewMode' => $viewMode])
                         @endforeach
                     </div>
                 </div>
@@ -271,7 +412,7 @@ function getStatusLabel($status) {
                 <div class="staff-group-route mobile-only mb-2">{{ $group['route'] }}</div>
                 <div class="mb-4">
                     @foreach($group['jobs'] as $so)
-                        @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => false])
+                        @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => false, 'viewMode' => $viewMode])
                     @endforeach
                 </div>
             @empty
@@ -286,7 +427,8 @@ function getStatusLabel($status) {
             @endforelse
         @else
             {{-- LIST VIEW --}}
-            <table class="table-planner w-100 mb-4">
+            <div class="table-responsive">
+                <table class="table-planner w-100 mb-4">
                 <thead>
                     <tr>
                         <th style="width:140px">Staff</th>
@@ -384,7 +526,8 @@ function getStatusLabel($status) {
                         <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada pekerjaan untuk tanggal ini.</td></tr>
                     @endforelse
                 </tbody>
-            </table>
+                </table>
+            </div>
         @endif
 
         {{-- Cancelled jobs (collapsed) --}}
@@ -395,7 +538,7 @@ function getStatusLabel($status) {
                 </a>
                 <div class="collapse" id="cancelledPanel">
                     @foreach($cancelledJobs as $so)
-                        @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => true])
+                        @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => true, 'viewMode' => $viewMode])
                     @endforeach
                 </div>
             </div>
@@ -433,9 +576,11 @@ function getStatusLabel($status) {
 @push('scripts')
 <script>
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
+const isMobile = window.innerWidth <= 768;
 
 function fetchJson(url, options = {}) {
     return fetch(url, {
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': CSRF_TOKEN,
@@ -443,113 +588,347 @@ function fetchJson(url, options = {}) {
             ...options.headers,
         },
         ...options,
-    }).then(r => r.json());
+    }).then(r => {
+        if (!r.ok) throw new Error('Request failed: ' + r.status);
+        return r.json();
+    });
+}
+
+function createInlineEditWrapper(input, onSave, onCancel) {
+    if (!isMobile) return input;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'inline-edit-wrapper';
+    wrapper.style.cssText = 'display:flex;align-items:center;gap:4px;width:100%';
+
+    const btnSave = document.createElement('button');
+    btnSave.type = 'button';
+    btnSave.className = 'btn btn-sm btn-success';
+    btnSave.style.cssText = 'padding:2px 8px;font-size:0.75rem;min-height:28px;flex-shrink:0';
+    btnSave.textContent = '✓';
+    btnSave.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onSave();
+    });
+
+    const btnCancel = document.createElement('button');
+    btnCancel.type = 'button';
+    btnCancel.className = 'btn btn-sm btn-outline-secondary';
+    btnCancel.style.cssText = 'padding:2px 8px;font-size:0.75rem;min-height:28px;flex-shrink:0';
+    btnCancel.textContent = '✕';
+    btnCancel.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onCancel();
+    });
+
+    input.style.flex = '1';
+    input.style.minWidth = '0';
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(btnSave);
+    wrapper.appendChild(btnCancel);
+
+    return wrapper;
 }
 
 // Inline edit: work_time
 function editTime(el, soId) {
     const current = el.dataset.value || '';
-    const input = document.createElement('input');
-    input.type = 'time';
-    input.className = 'inline-edit-input';
-    input.value = current;
-    el.replaceWith(input);
-    input.focus();
 
-    function save() {
-        const val = input.value;
-        fetchJson(`/planner/${soId}/update-field`, {
-            method: 'POST',
-            body: JSON.stringify({ field: 'work_time', value: val }),
-        }).then(data => {
-            if (data.success) location.reload();
+    if (isMobile) {
+        Swal.fire({
+            title: 'Edit Jam',
+            input: 'text',
+            inputValue: current,
+            inputPlaceholder: 'HH:MM (contoh: 09:00)',
+            inputAttributes: {
+                type: 'time',
+                style: 'font-size: 18px; text-align: center;'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Simpan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#16a34a',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const val = result.value || '';
+                fetchJson(`/planner/${soId}/update-field`, {
+                    method: 'POST',
+                    body: JSON.stringify({ field: 'work_time', value: val }),
+                }).then(data => {
+                    if (data.success) {
+                        el.textContent = val || '—';
+                        el.dataset.value = val;
+                        Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
+                });
+            }
         });
+    } else {
+        const input = document.createElement('input');
+        input.type = 'time';
+        input.className = 'inline-edit-input';
+        input.value = current;
+        el.replaceWith(input);
+        input.focus();
+
+        function save() {
+            const val = input.value;
+            fetchJson(`/planner/${soId}/update-field`, {
+                method: 'POST',
+                body: JSON.stringify({ field: 'work_time', value: val }),
+            }).then(data => {
+                if (data.success) {
+                    const span = document.createElement('span');
+                    span.className = 'inline-edit';
+                    span.setAttribute('onclick', `editTime(this, ${soId})`);
+                    span.dataset.value = val;
+                    span.textContent = val || '—';
+                    input.replaceWith(span);
+                    Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
+                }
+            }).catch(err => {
+                console.error(err);
+                const span = document.createElement('span');
+                span.className = 'inline-edit';
+                span.setAttribute('onclick', `editTime(this, ${soId})`);
+                span.dataset.value = current;
+                span.textContent = current || '—';
+                input.replaceWith(span);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
+            });
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
     }
-    input.addEventListener('blur', save);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
 }
 
 // Inline edit: notes
 function editNotes(el, soId) {
     const current = el.dataset.value || '';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'inline-edit-input';
-    input.value = current;
-    input.placeholder = 'Tambah catatan...';
-    el.replaceWith(input);
-    input.focus();
 
-    function save() {
-        const val = input.value;
-        fetchJson(`/planner/${soId}/update-field`, {
-            method: 'POST',
-            body: JSON.stringify({ field: 'staff_notes', value: val }),
-        }).then(data => {
-            if (data.success) location.reload();
+    if (isMobile) {
+        Swal.fire({
+            title: 'Edit Catatan',
+            input: 'textarea',
+            inputValue: current,
+            inputPlaceholder: 'Tambah catatan...',
+            inputAttributes: {
+                style: 'font-size: 16px; min-height: 80px;'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Simpan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#16a34a',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const val = result.value || '';
+                fetchJson(`/planner/${soId}/update-field`, {
+                    method: 'POST',
+                    body: JSON.stringify({ field: 'staff_notes', value: val }),
+                }).then(data => {
+                    if (data.success) {
+                        if (val) {
+                            el.textContent = val;
+                            el.dataset.value = val;
+                            el.className = 'inline-edit notes-text';
+                            el.style.color = '';
+                        } else {
+                            el.textContent = '—';
+                            el.dataset.value = '';
+                            el.className = 'inline-edit notes-text';
+                            el.style.color = '';
+                        }
+                        Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
+                });
+            }
         });
+    } else {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'inline-edit-input';
+        input.value = current;
+        input.placeholder = 'Tambah catatan...';
+        el.replaceWith(input);
+        input.focus();
+
+        function save() {
+            const val = input.value;
+            fetchJson(`/planner/${soId}/update-field`, {
+                method: 'POST',
+                body: JSON.stringify({ field: 'staff_notes', value: val }),
+            }).then(data => {
+                if (data.success) {
+                    const span = document.createElement('span');
+                    if (val) {
+                        span.className = 'inline-edit notes-text';
+                        span.setAttribute('onclick', `editNotes(this, ${soId})`);
+                        span.dataset.value = val;
+                        span.textContent = val;
+                    } else {
+                        span.className = 'inline-edit notes-text';
+                        span.setAttribute('onclick', `editNotes(this, ${soId})`);
+                        span.dataset.value = '';
+                        span.textContent = '—';
+                    }
+                    input.replaceWith(span);
+                    Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
+                }
+            }).catch(err => {
+                console.error(err);
+                const span = document.createElement('span');
+                span.className = 'inline-edit notes-text';
+                span.setAttribute('onclick', `editNotes(this, ${soId})`);
+                span.dataset.value = current;
+                span.textContent = current || '—';
+                input.replaceWith(span);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
+            });
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
     }
-    input.addEventListener('blur', save);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
 }
 
 // Inline edit: lokasi (address location name)
 function editLokasi(el, soId, addressId) {
     if (!addressId) return;
     const current = el.dataset.value || '';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'inline-edit-input';
-    input.value = current;
-    input.placeholder = 'Lokasi...';
-    input.maxLength = 100;
-    el.replaceWith(input);
-    input.focus();
-    input.select();
 
-    function save() {
-        const val = input.value.trim();
-        const saveValue = val === '' ? null : val;
-        fetchJson(`/planner/${soId}/update-lokasi`, {
-            method: 'POST',
-            body: JSON.stringify({ lokasi: saveValue, address_id: addressId }),
-        }).then(data => {
-            if (data.success) {
-                const newLokasi = data.lokasi;
+    if (isMobile) {
+        Swal.fire({
+            title: 'Edit Lokasi',
+            input: 'text',
+            inputValue: current,
+            inputPlaceholder: 'Contoh: Cengkareng, Serpong, Kelapa Gading...',
+            inputAttributes: {
+                maxlength: '100',
+                style: 'font-size: 16px;'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Simpan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#16a34a',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const val = result.value.trim();
+                const saveValue = val === '' ? null : val;
+                fetchJson(`/planner/${soId}/update-lokasi`, {
+                    method: 'POST',
+                    body: JSON.stringify({ lokasi: saveValue, address_id: addressId }),
+                }).then(data => {
+                    if (data.success) {
+                        const newLokasi = data.lokasi;
 
-                // Replace input with new badge in current row
-                const newBadge = document.createElement('span');
-                newBadge.className = 'lokasi-badge inline-edit' + (newLokasi ? '' : ' lokasi-badge-empty');
-                newBadge.setAttribute('onclick', `editLokasi(this, ${soId}, ${addressId})`);
-                newBadge.dataset.value = newLokasi || '';
-                newBadge.dataset.addressId = addressId;
-                newBadge.textContent = newLokasi || 'Lokasi?';
-                input.replaceWith(newBadge);
+                        // Update THIS element
+                        el.className = 'lokasi-badge inline-edit' + (newLokasi ? '' : ' lokasi-badge-empty');
+                        el.setAttribute('onclick', `editLokasi(this, ${soId}, ${addressId})`);
+                        el.dataset.value = newLokasi || '';
+                        el.dataset.addressId = addressId;
+                        el.textContent = newLokasi || 'Lokasi?';
 
-                // Update ALL other badges that share the same address_id
-                document.querySelectorAll(`.lokasi-badge[data-address-id="${addressId}"]`).forEach(badge => {
-                    if (badge === newBadge) return; // skip the one we just created
-                    badge.dataset.value = newLokasi || '';
-                    badge.textContent = newLokasi || 'Lokasi?';
-                    if (newLokasi) {
-                        badge.classList.remove('lokasi-badge-empty');
+                        // Update ALL other badges that share the same address_id
+                        document.querySelectorAll(`.lokasi-badge[data-address-id="${addressId}"]`).forEach(badge => {
+                            if (badge === el) return;
+                            badge.dataset.value = newLokasi || '';
+                            badge.textContent = newLokasi || 'Lokasi?';
+                            badge.className = 'lokasi-badge inline-edit' + (newLokasi ? '' : ' lokasi-badge-empty');
+                            badge.setAttribute('onclick', `editLokasi(this, ${soId}, ${addressId})`);
+                        });
+
+                        Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
                     } else {
-                        badge.classList.add('lokasi-badge-empty');
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
                     }
+                }).catch(err => {
+                    console.error(err);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
                 });
             }
         });
-    }
+    } else {
+        // Desktop: inline input (existing behavior)
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'inline-edit-input';
+        input.value = current;
+        input.placeholder = 'Lokasi...';
+        input.maxLength = 100;
+        el.replaceWith(input);
+        input.focus();
+        input.select();
 
-    function cancel() {
-        input.replaceWith(el);
-    }
+        function save() {
+            const val = input.value.trim();
+            const saveValue = val === '' ? null : val;
+            fetchJson(`/planner/${soId}/update-lokasi`, {
+                method: 'POST',
+                body: JSON.stringify({ lokasi: saveValue, address_id: addressId }),
+            }).then(data => {
+                if (data.success) {
+                    const newLokasi = data.lokasi;
 
-    input.addEventListener('blur', save);
-    input.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); save(); }
-        if (e.key === 'Escape') cancel();
-    });
+                    // Replace input with new badge in current row
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'lokasi-badge inline-edit' + (newLokasi ? '' : ' lokasi-badge-empty');
+                    newBadge.setAttribute('onclick', `editLokasi(this, ${soId}, ${addressId})`);
+                    newBadge.dataset.value = newLokasi || '';
+                    newBadge.dataset.addressId = addressId;
+                    newBadge.textContent = newLokasi || 'Lokasi?';
+                    input.replaceWith(newBadge);
+
+                    // Update ALL other badges that share the same address_id
+                    document.querySelectorAll(`.lokasi-badge[data-address-id="${addressId}"]`).forEach(badge => {
+                        if (badge === newBadge) return;
+                        badge.dataset.value = newLokasi || '';
+                        badge.textContent = newLokasi || 'Lokasi?';
+                        if (newLokasi) {
+                            badge.classList.remove('lokasi-badge-empty');
+                        } else {
+                            badge.classList.add('lokasi-badge-empty');
+                        }
+                    });
+
+                    Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
+                }
+            }).catch(err => {
+                console.error(err);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
+                input.replaceWith(el);
+            });
+        }
+
+        function cancel() {
+            input.replaceWith(el);
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); save(); }
+            if (e.key === 'Escape') cancel();
+        });
+    }
 }
 function editStaff(el, soId) {
     document.getElementById('staffModalSoId').value = soId;
@@ -565,14 +944,34 @@ function saveStaffAssignment() {
     const soId = document.getElementById('staffModalSoId').value;
     const selected = [...document.querySelectorAll('.staff-checkbox:checked')].map(cb => cb.value);
     if (selected.length === 0) {
-        alert('Pilih minimal 1 staff');
+        Swal.fire({ icon: 'warning', title: 'Pilih staff', text: 'Pilih minimal 1 staff', timer: 3000, showConfirmButton: false });
         return;
     }
     fetchJson(`/planner/${soId}/update-staff`, {
         method: 'POST',
         body: JSON.stringify({ staff: selected }),
     }).then(data => {
-        if (data.success) location.reload();
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('staffModal')).hide();
+
+            const jobRow = document.querySelector(`[data-so-id="${soId}"]`);
+            if (jobRow) {
+                const staffSpan = jobRow.querySelector('.inline-edit');
+                if (staffSpan) {
+                    const names = data.staff_names || (data.staff && data.staff.map ? data.staff.map(s => s.name).join(', ') : '') || '—';
+                    const ids = (data.staff_ids || (data.staff && data.staff.map ? data.staff.map(s => s.id) : []) || []).join(',');
+                    staffSpan.textContent = names;
+                    staffSpan.dataset.staffIds = ids;
+                }
+            }
+
+            Swal.fire({ icon: 'success', title: 'Staff diperbarui', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
+        }
+    }).catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
     });
 }
 
@@ -586,9 +985,23 @@ function toggleStaffOff(btn) {
     }).then(data => {
         if (data.success) {
             btn.classList.toggle('is-off', data.is_off);
-            // Reload to update summary
-            setTimeout(() => location.reload(), 300);
+
+            const chip = btn.closest('.staff-chip') || btn;
+            if (data.is_off) {
+                chip.classList.add('staff-off');
+                chip.classList.remove('staff-free', 'staff-assigned');
+            } else {
+                chip.classList.remove('staff-off');
+                chip.classList.add('staff-free');
+            }
+
+            Swal.fire({ icon: 'success', title: data.is_off ? 'Staff OFF' : 'Staff Available', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal toggle', timer: 3000, showConfirmButton: false });
         }
+    }).catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
     });
 }
 function toggleStaffOffDirectly(staffId, date) {
@@ -597,8 +1010,50 @@ function toggleStaffOffDirectly(staffId, date) {
         body: JSON.stringify({ staff_id: staffId, date: date }),
     }).then(data => {
         if (data.success) {
-            location.reload();
+            // Find the chip for this staff and update it
+            const chips = document.querySelectorAll('.staff-chip');
+            chips.forEach(chip => {
+                const onclickAttr = chip.getAttribute('onclick') || '';
+                if (onclickAttr.includes(`'${staffId}'`) || onclickAttr.includes(`${staffId}`)) {
+                    chip.classList.toggle('is-off', data.is_off);
+
+                    const dot = chip.querySelector('.staff-chip-status-dot');
+                    const svg = chip.querySelector('svg.text-danger');
+                    if (data.is_off) {
+                        if (dot) dot.remove();
+                        if (!svg) {
+                            const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                            svgEl.setAttribute('width', '12');
+                            svgEl.setAttribute('height', '12');
+                            svgEl.setAttribute('viewBox', '0 0 24 24');
+                            svgEl.setAttribute('fill', 'none');
+                            svgEl.setAttribute('stroke', 'currentColor');
+                            svgEl.setAttribute('stroke-width', '3');
+                            svgEl.setAttribute('stroke-linecap', 'round');
+                            svgEl.setAttribute('stroke-linejoin', 'round');
+                            svgEl.classList.add('text-danger');
+                            svgEl.innerHTML = '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>';
+                            chip.insertBefore(svgEl, chip.firstChild);
+                        }
+                    } else {
+                        if (svg) svg.remove();
+                        if (!dot) {
+                            const dotEl = document.createElement('span');
+                            dotEl.className = 'staff-chip-status-dot dot-available';
+                            chip.insertBefore(dotEl, chip.firstChild);
+                        }
+                    }
+                }
+            });
+
+            Swal.fire({ icon: 'success', title: data.is_off ? 'Staff OFF' : 'Staff Available', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal toggle', timer: 3000, showConfirmButton: false });
         }
+    }).catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
     });
 }
 

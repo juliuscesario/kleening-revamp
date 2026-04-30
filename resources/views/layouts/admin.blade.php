@@ -76,6 +76,88 @@
       font-size: 0.75rem;
       border-radius: 4px;
     }
+
+    /* SweetAlert2 Dark Mode Override */
+    [data-bs-theme="dark"] .swal2-popup,
+    .theme-dark .swal2-popup {
+      background: #1e293b;
+      color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] .swal2-title,
+    .theme-dark .swal2-title {
+      color: #f1f5f9;
+    }
+
+    [data-bs-theme="dark"] .swal2-html-container,
+    .theme-dark .swal2-html-container {
+      color: #cbd5e1;
+    }
+
+    [data-bs-theme="dark"] .swal2-input,
+    [data-bs-theme="dark"] .swal2-textarea,
+    [data-bs-theme="dark"] .swal2-select,
+    .theme-dark .swal2-input,
+    .theme-dark .swal2-textarea,
+    .theme-dark .swal2-select {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-color: #334155;
+    }
+
+    [data-bs-theme="dark"] .swal2-input::placeholder,
+    [data-bs-theme="dark"] .swal2-textarea::placeholder,
+    .theme-dark .swal2-input::placeholder,
+    .theme-dark .swal2-textarea::placeholder {
+      color: #64748b;
+    }
+
+    [data-bs-theme="dark"] .swal2-input:focus,
+    [data-bs-theme="dark"] .swal2-textarea:focus,
+    .theme-dark .swal2-input:focus,
+    .theme-dark .swal2-textarea:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    [data-bs-theme="dark"] .swal2-cancel,
+    .theme-dark .swal2-cancel {
+      background: #334155 !important;
+      color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .swal2-popup.swal2-toast,
+    .theme-dark .swal2-popup.swal2-toast {
+      background: #1e293b;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    [data-bs-theme="dark"] .swal2-close,
+    .theme-dark .swal2-close {
+      color: #94a3b8;
+    }
+
+    [data-bs-theme="dark"] .swal2-close:hover,
+    .theme-dark .swal2-close:hover {
+      color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] .swal2-validation-message,
+    .theme-dark .swal2-validation-message {
+      background: #1e293b;
+      color: #f87171;
+    }
+
+    [data-bs-theme="dark"] .swal2-footer,
+    .theme-dark .swal2-footer {
+      border-color: #334155;
+      color: #94a3b8;
+    }
+
+    [data-bs-theme="dark"] .swal2-backdrop-show,
+    .theme-dark .swal2-backdrop-show {
+      background: rgba(0, 0, 0, 0.6);
+    }
   </style>
 </head>
 

@@ -22,10 +22,16 @@ class PlannerController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
+
         if (!in_array(strtolower(trim($user->role)), ['admin', 'owner'])) {
             return redirect()->route('dashboard');
         }
+
+        $request->validate([
+            'date' => 'nullable|date_format:Y-m-d',
+            'area_id' => 'nullable|integer|exists:areas,id',
+            'view' => 'nullable|in:staff,list',
+        ]);
 
         $date = $request->input('date', now()->toDateString());
         $areaId = $request->input('area_id');
@@ -137,9 +143,6 @@ class PlannerController extends Controller
         // Get all services for quick booking
         $allServices = Service::with('category')->orderBy('name')->get();
 
-        // Service categories for badge display
-        $serviceCategories = \App\Models\ServiceCategory::all()->keyBy('id');
-
         // Navigation dates
         $prevDate = $carbonDate->copy()->subDay()->toDateString();
         $nextDate = $carbonDate->copy()->addDay()->toDateString();
@@ -168,7 +171,6 @@ class PlannerController extends Controller
             'allStaff',
             'offDays',
             'allServices',
-            'serviceCategories',
             'prevDate',
             'nextDate',
             'today',
@@ -228,8 +230,20 @@ class PlannerController extends Controller
             return response()->json(['success' => false, 'message' => 'Field not allowed.'], 400);
         }
 
-        if ($field === 'work_time' && $value) {
-            $value = Carbon::createFromFormat('H:i', $value)->format('H:i:s');
+        if ($field === 'work_time') {
+            if ($value) {
+                try {
+                    $parsed = Carbon::createFromFormat('H:i', $value);
+                    if (!$parsed) {
+                        return response()->json(['success' => false, 'message' => 'Format waktu tidak valid.'], 422);
+                    }
+                    $value = $parsed->format('H:i:s');
+                } catch (\Exception $e) {
+                    return response()->json(['success' => false, 'message' => 'Format waktu tidak valid.'], 422);
+                }
+            } else {
+                $value = null; // Allow clearing the time
+            }
         }
 
         $serviceOrder->$field = $value;
