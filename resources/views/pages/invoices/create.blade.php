@@ -112,11 +112,18 @@
                             <div class="mb-3">
                                 <label class="form-label">Discount</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" id="discount" name="discount" value="0">
-                                    <select class="form-select" id="discount_type" name="discount_type">
-                                        <option value="fixed">Fixed</option>
-                                        <option value="percentage">Percentage</option>
-                                    </select>
+                                    <input type="number" class="form-control" id="discount" name="discount" value="0" min="0">
+                                    <button type="button" class="btn btn-outline-secondary active" id="btn-fixed" onclick="setDiscountType('fixed')">Fixed</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="btn-percent" onclick="setDiscountType('percent')">%</button>
+                                    <input type="hidden" name="discount_type" id="discount_type" value="fixed">
+                                </div>
+                                <div id="discount-prefill-btns" class="d-flex gap-1 mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setDiscount(25000)">25K</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setDiscount(50000)">50K</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setDiscount(100000)">100K</button>
+                                </div>
+                                <div id="discount-percent-preview" class="text-muted small mt-1" style="display:none;">
+                                    Discount: <span id="discount-amount-preview">Rp 0</span>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -133,11 +140,18 @@
                             <div class="mb-3">
                                 <label class="form-label">Down Payment (DP)</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" id="dp_value" name="dp_value" value="{{ $invoice->dp_value ?? 0 }}">
-                                    <select class="form-select" id="dp_type" name="dp_type">
-                                        <option value="fixed">Fixed</option>
-                                        <option value="percentage">Percentage</option>
-                                    </select>
+                                    <input type="number" class="form-control" id="dp_value" name="dp_value" value="{{ $invoice->dp_value ?? 0 }}" min="0">
+                                    <button type="button" class="btn btn-outline-secondary active" id="btn-dp-fixed" onclick="setDPType('fixed')">Fixed</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="btn-dp-percent" onclick="setDPType('percent')">%</button>
+                                    <input type="hidden" name="dp_type" id="dp_type" value="fixed">
+                                </div>
+                                <div id="dp-prefill-btns" class="d-flex gap-1 mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setDP(50000)">50K</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setDP(100000)">100K</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setDP(500000)">500K</button>
+                                </div>
+                                <div id="dp-percent-preview" class="text-muted small mt-1 d-none">
+                                    DP: <span id="dp-amount-preview">Rp 0</span>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -190,6 +204,90 @@ document.addEventListener("DOMContentLoaded", function() {
         return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
     }
 
+    // Discount type toggle
+    window.setDiscountType = function(type) {
+        document.getElementById('discount_type').value = type === 'percent' ? 'percentage' : 'fixed';
+
+        const prefillBtns = document.getElementById('discount-prefill-btns');
+        const percentPreview = document.getElementById('discount-percent-preview');
+
+        if (type === 'fixed') {
+            document.getElementById('btn-fixed').classList.add('active');
+            document.getElementById('btn-percent').classList.remove('active');
+            prefillBtns.classList.remove('d-none');
+            prefillBtns.classList.add('d-flex');
+            percentPreview.classList.add('d-none');
+            percentPreview.classList.remove('d-block');
+        } else {
+            document.getElementById('btn-percent').classList.add('active');
+            document.getElementById('btn-fixed').classList.remove('active');
+            prefillBtns.classList.add('d-none');
+            prefillBtns.classList.remove('d-flex');
+            percentPreview.classList.remove('d-none');
+            percentPreview.classList.add('d-block');
+            updateDiscountPercentPreview();
+        }
+        calculateTotals();
+    };
+
+    window.setDiscount = function(value) {
+        document.getElementById('discount').value = value;
+        updateDiscountPercentPreview();
+        calculateTotals();
+    };
+
+    function updateDiscountPercentPreview() {
+        const type = document.getElementById('discount_type').value;
+        if (type === 'percentage') {
+            const subtotal = parseFloat(subtotalElement.value) || 0;
+            const pct = parseFloat(document.getElementById('discount').value) || 0;
+            const amount = subtotal * pct / 100;
+            document.getElementById('discount-amount-preview').textContent = formatCurrency(amount);
+        }
+    }
+
+    // DP prefill
+    window.setDP = function(value) {
+        document.getElementById('dp_value').value = value;
+        calculateTotals();
+    };
+
+    // DP type toggle
+    window.setDPType = function(type) {
+        document.getElementById('dp_type').value = type === 'percent' ? 'percentage' : 'fixed';
+
+        const prefillBtns = document.getElementById('dp-prefill-btns');
+        const dpPercentPreview = document.getElementById('dp-percent-preview');
+
+        if (type === 'fixed') {
+            document.getElementById('btn-dp-fixed').classList.add('active');
+            document.getElementById('btn-dp-percent').classList.remove('active');
+            prefillBtns.classList.remove('d-none');
+            prefillBtns.classList.add('d-flex');
+            dpPercentPreview.classList.add('d-none');
+            dpPercentPreview.classList.remove('d-block');
+        } else {
+            document.getElementById('btn-dp-percent').classList.add('active');
+            document.getElementById('btn-dp-fixed').classList.remove('active');
+            prefillBtns.classList.add('d-none');
+            prefillBtns.classList.remove('d-flex');
+            dpPercentPreview.classList.remove('d-none');
+            dpPercentPreview.classList.add('d-block');
+            updateDPPercentPreview();
+        }
+        calculateTotals();
+    };
+
+    function updateDPPercentPreview() {
+        const type = document.getElementById('dp_type').value;
+        if (type === 'percentage') {
+            const grandTotal = parseFloat(grandTotalElement.value) || 0;
+            const pct = parseFloat(document.getElementById('dp_value').value) || 0;
+            const amount = grandTotal * pct / 100;
+            document.getElementById('dp-amount-preview').textContent = formatCurrency(amount);
+        }
+    }
+
     function calculateTotals() {
         let subtotal = 0;
         document.querySelectorAll('.item-total').forEach(function(item) {
@@ -232,8 +330,15 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     document.querySelectorAll('#discount, #discount_type, #transport_fee, #dp_value, #dp_type').forEach(function(element) {
-        element.addEventListener('input', calculateTotals);
+        element.addEventListener('input', function() {
+            updateDiscountPercentPreview();
+            updateDPPercentPreview();
+            calculateTotals();
+        });
     });
+
+    // Re-trigger DP type on load to hide/show prefill buttons correctly
+    setDPType('fixed');
 
     function calculateDueDate(issueDateValue, daysToAdd) {
         if (!issueDateValue) {

@@ -22,7 +22,7 @@
                                 Payment</button>
                         @endif
                         @if(
-                                strtolower(auth()->user()->role) === 'owner'
+                                in_array(strtolower(auth()->user()->role), ['owner', 'admin'])
                                 && $invoice->status !== \App\Models\Invoice::STATUS_PAID
                                 && $invoice->status !== \App\Models\Invoice::STATUS_CANCELLED
                             )

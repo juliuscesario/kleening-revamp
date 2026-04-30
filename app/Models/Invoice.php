@@ -17,7 +17,7 @@ class Invoice extends Model
     const STATUS_CANCELLED = 'cancelled';
 
     protected $attributes = [
-        'status' => self::STATUS_NEW,
+        'status' => self::STATUS_SENT,
     ];
 
     /**

@@ -134,7 +134,7 @@ class InvoiceController extends Controller
                 'dp_value' => $dpValue,
                 'total_after_dp' => $totalAfterDp,
                 'paid_amount' => $dpAmount, // Assuming DP is paid upon invoice creation
-                'status' => Invoice::STATUS_NEW,
+                'status' => Invoice::STATUS_SENT,
                 'notes' => $notes,
             ]
         );
