@@ -35,6 +35,12 @@
                             Run: Auto Cancel Old Service Orders
                         </button>
                     </form>
+                    <form action="{{ route('scheduler-logs.delete-photos.preview') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-warning">
+                            Run: Delete Oldest Images
+                        </button>
+                    </form>
                 </div>
 
                 @if (session('success'))

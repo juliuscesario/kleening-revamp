@@ -5,7 +5,8 @@
       "Bash(php *)",
       "Bash(rm *)",
       "Bash(true)",
-      "Bash(ls *)"
+      "Bash(ls *)",
+      "Bash(mkdir *)"
     ]
   },
   "$version": 3

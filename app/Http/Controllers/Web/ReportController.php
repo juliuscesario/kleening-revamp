@@ -36,7 +36,11 @@ class ReportController extends Controller
     public function staffPerformance()
     {
         $areas = Area::all();
-        $staff = \App\Models\Staff::with('user')->get();
+        $staff = \App\Models\Staff::with('user')
+            ->whereHas('user', function ($query) {
+                $query->where('role', 'staff');
+            })
+            ->get();
         return view('pages.reports.staff-performance', compact('areas', 'staff'));
     }
 

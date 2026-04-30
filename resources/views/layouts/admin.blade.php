@@ -327,6 +327,10 @@
                         href="{{ route('web.reports.staff-performance') }}">
                         Laporan Kinerja Staff
                       </a>
+                      <a class="dropdown-item {{ request()->routeIs('web.laporan.kinerja-admin') ? 'active' : '' }}"
+                        href="{{ route('web.laporan.kinerja-admin') }}">
+                        Laporan Kinerja Admin
+                      </a>
                       <a class="dropdown-item {{ request()->is('reports/customer-growth*') ? 'active' : '' }}"
                         href="{{ route('web.reports.customer-growth') }}">
                         Laporan Pertumbuhan Pelanggan

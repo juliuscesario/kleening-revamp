@@ -119,6 +119,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reports/staff-utilization', [\App\Http\Controllers\Web\ReportController::class, 'staffUtilization'])->name('web.reports.staff-utilization');
     Route::get('reports/invoice-aging', [\App\Http\Controllers\Web\ReportController::class, 'invoiceAging'])->name('web.reports.invoice-aging');
 
+    // Laporan Kinerja Admin
+    Route::get('laporan/kinerja-admin', [\App\Http\Controllers\Web\LaporanKinerjaAdminController::class, 'index'])->name('web.laporan.kinerja-admin');
+
 
     // Custom Resource Routes
     Route::put('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('web.invoices.update-status');
@@ -139,6 +142,9 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
     Route::get('scheduler-logs', [SchedulerLogController::class, 'index'])->name('scheduler-logs.index');
     Route::post('scheduler-logs/run', [SchedulerLogController::class, 'runCommand'])->name('scheduler-logs.run');
+    Route::post('scheduler-logs/delete-photos/preview', [SchedulerLogController::class, 'previewDeletePhotos'])->name('scheduler-logs.delete-photos.preview');
+    Route::get('scheduler-logs/delete-photos/download', [SchedulerLogController::class, 'downloadPhotoBackup'])->name('scheduler-logs.delete-photos.download');
+    Route::post('scheduler-logs/delete-photos/confirm', [SchedulerLogController::class, 'confirmDeletePhotos'])->name('scheduler-logs.delete-photos.confirm');
 });
 
 Route::middleware(['auth', 'role:owner'])->group(function () {

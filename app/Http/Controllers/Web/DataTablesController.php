@@ -647,7 +647,11 @@ class DataTablesController extends Controller
     {
         $this->authorize('viewAny', \App\Models\Staff::class);
 
-        $query = \App\Models\Staff::with('user', 'area')->select('staff.*');
+        $query = \App\Models\Staff::with('user', 'area')
+            ->select('staff.*')
+            ->whereHas('user', function ($userQuery) {
+                $userQuery->where('role', 'staff');
+            });
 
         if (auth()->user()->role === 'co_owner') {
             $query->where('area_id', auth()->user()->area_id);
