@@ -50,7 +50,8 @@ Route::middleware(['auth:sanctum', 'role:owner,admin,co_owner,staff'])->group(fu
     // Route untuk mengelola foto di bawah Service Order
     Route::post('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'store']);
     Route::get('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'index']);
-    Route::delete('/photos/{workPhoto}', [WorkPhotoController::class, 'destroy']); // Untuk hapus foto individual
+    Route::delete('/service-orders/{serviceOrder}/photos/{workPhoto}', [WorkPhotoController::class, 'destroy'])
+        ->middleware('role:owner,admin');
     Route::patch('/service-orders/{serviceOrder}/status', [ServiceOrderController::class, 'updateStatus']);
 
     // Notification routes

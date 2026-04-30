@@ -78,10 +78,12 @@ class ServiceOrderController extends Controller
             $q->where('role', 'staff');
         })->get();
 
+        $workPhotos = $serviceOrder->workPhotos->keyBy('type');
+
         if ($isStaff) {
             return view('pages.service-orders.staff-show', compact('serviceOrder', 'isStaff'));
         } else {
-            return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff', 'isStaff'));
+            return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff', 'isStaff', 'workPhotos'));
         }
     }
 
@@ -336,5 +338,25 @@ class ServiceOrderController extends Controller
             ->get();
 
         return view('pages.service-orders.index', ['serviceOrders' => $unassignedServiceOrders]);
+    }
+
+    public function updateStatus(Request $request, ServiceOrder $serviceOrder)
+    {
+        $newStatus = $request->input('status');
+        $user = Auth::user();
+
+        $transition = $serviceOrder->canTransitionTo($newStatus, $user, $request->owner_password);
+
+        if (!$transition['allowed']) {
+            return response()->json(['success' => false, 'message' => $transition['message']], 400);
+        }
+
+        $serviceOrder->status = $newStatus;
+        if ($newStatus === ServiceOrder::STATUS_DONE) {
+            $serviceOrder->work_proof_completed_at = now();
+        }
+        $serviceOrder->save();
+
+        return response()->json(['success' => true, 'message' => 'Status berhasil diubah ke ' . ucfirst($newStatus) . '.']);
     }
 }

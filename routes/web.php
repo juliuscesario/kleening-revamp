@@ -21,6 +21,7 @@ use App\Http\Controllers\Web\FormOrderController;
 use App\Http\Controllers\Web\StaffController;
 use App\Http\Controllers\Web\PlannerController;
 use App\Http\Controllers\Web\NotificationController;
+use App\Http\Controllers\Api\WorkPhotoController;
 
 use App\Http\Controllers\Web\InvoiceController;
 use App\Http\Controllers\Web\PaymentController;
@@ -95,6 +96,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('addresses', AddressController::class)->names('web.addresses');
     Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');
     Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
+    Route::post('service-orders/{serviceOrder}/update-status', [ServiceOrderController::class, 'updateStatus'])->name('web.service-orders.update-status');
 
     // Form Order Parser
     Route::post('form-order/parse', [FormOrderController::class, 'parse'])->name('web.form-order.parse');
@@ -126,6 +128,12 @@ Route::middleware(['auth'])->group(function () {
     // Authentication
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/auth/get-token', [DashboardController::class, 'getToken'])->name('auth.get-token');
+
+    // Work Photos (web routes — called from Blade pages via fetch)
+    Route::post('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'store'])
+        ->middleware('role:owner,admin,staff');
+    Route::delete('/service-orders/{serviceOrder}/photos/{workPhoto}', [WorkPhotoController::class, 'destroy'])
+        ->middleware('role:owner,admin');
 });
 
 Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
