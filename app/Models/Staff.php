@@ -24,6 +24,7 @@ class Staff extends Model
         'name',
         'phone_number',
         'base_harian',
+        'harian_tambahan',
         'is_active',
     ];
 

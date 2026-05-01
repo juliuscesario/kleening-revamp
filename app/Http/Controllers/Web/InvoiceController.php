@@ -198,7 +198,8 @@ class InvoiceController extends Controller
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('pdf.invoice', compact('invoice', 'amountDue', 'photoArrival', 'photoBefore', 'photoAfter'));
 
-        return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
+        $filename = 'invoice-' . str_replace(['/', '\\'], '-', $invoice->invoice_number) . '.pdf';
+        return $pdf->download($filename);
     }
 
     public function viewPdf(Invoice $invoice)
@@ -217,7 +218,8 @@ class InvoiceController extends Controller
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('pdf.invoice', compact('invoice', 'amountDue', 'photoArrival', 'photoBefore', 'photoAfter'));
 
-        return $pdf->stream('invoice-' . $invoice->invoice_number . '.pdf');
+        $filename = 'invoice-' . str_replace(['/', '\\'], '-', $invoice->invoice_number) . '.pdf';
+        return $pdf->stream($filename);
     }
 
     /**

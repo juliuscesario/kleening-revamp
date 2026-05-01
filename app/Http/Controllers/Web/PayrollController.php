@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Models\ServiceCategory;
 use App\Models\ServiceOrder;
+use App\Models\WorkPhoto;
 use App\Services\PayrollExcelGenerator;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Carbon\Carbon;
@@ -160,6 +161,23 @@ class PayrollController extends Controller
             }
             $bookingOrderOnDay = $dayTracker[$dateKey]; // 1 = first, 2+ = subsequent
 
+            // === Arrival photo data ===
+            $arrivalPhoto = WorkPhoto::withoutGlobalScopes()
+                ->where('service_order_id', $order->id)
+                ->where('type', 'arrival')
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            $workTimeStr = $order->work_time ? Carbon::createFromFormat('H:i:s', $order->work_time)->format('H:i') : null;
+            $arrivalTimeStr = $arrivalPhoto ? Carbon::parse($arrivalPhoto->created_at)->format('H:i') : null;
+
+            $lateMinutes = 0;
+            if ($workTimeStr && $arrivalTimeStr) {
+                $workMinutes = (int) Carbon::createFromFormat('H:i', $workTimeStr)->format('H') * 60 + (int) Carbon::createFromFormat('H:i', $workTimeStr)->format('i');
+                $arrivalMinutes = (int) Carbon::parse($arrivalPhoto->created_at)->format('H') * 60 + (int) Carbon::parse($arrivalPhoto->created_at)->format('i');
+                $lateMinutes = max(0, $arrivalMinutes - $workMinutes);
+            }
+
             // Step 2 — Check if split is needed
             if (count($groups) === 1) {
                 // === Single com-rate group: omset = invoice grand_total ===
@@ -181,9 +199,12 @@ class PayrollController extends Controller
                     'transport' => $transport,
                     'kru' => $kruNames,
                     'qty' => $qty,
-                    'harian' => $bookingOrderOnDay === 1 ? (int) $staff->base_harian : 25,
+                    'harian' => $bookingOrderOnDay === 1 ? (int) $staff->base_harian : ($staff->harian_tambahan ?? 25),
                     'com_rate' => $group['com_rate'],
                     'show_tgl' => true, // TGL on single-row bookings
+                    'work_time' => $workTimeStr,
+                    'arrival_time' => $arrivalTimeStr,
+                    'late_minutes' => $lateMinutes,
                 ];
             } else {
                 // === Multiple com-rate groups (split jobs) ===
@@ -242,7 +263,7 @@ class PayrollController extends Controller
                     }
 
                     // Harian only on first row of booking
-                    $harian = $isFirstGroup ? ($bookingOrderOnDay === 1 ? (int) $staff->base_harian : 25) : null;
+                    $harian = $isFirstGroup ? ($bookingOrderOnDay === 1 ? (int) $staff->base_harian : ($staff->harian_tambahan ?? 25)) : null;
 
                     // TGL only on first row of booking
                     $showTgl = $isFirstGroup;
@@ -266,6 +287,9 @@ class PayrollController extends Controller
                         'harian' => $harian,
                         'com_rate' => $group['com_rate'],
                         'show_tgl' => $showTgl,
+                        'work_time' => $isFirstGroup ? $workTimeStr : null,
+                        'arrival_time' => $isFirstGroup ? $arrivalTimeStr : null,
+                        'late_minutes' => $isFirstGroup ? $lateMinutes : 0,
                     ];
 
                     $isFirstGroup = false;

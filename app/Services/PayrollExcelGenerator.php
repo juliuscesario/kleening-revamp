@@ -12,6 +12,10 @@ class PayrollExcelGenerator
     const HEADER_BG = 'D9E2F3';
     const BLUE_TEXT = '0000FF';
     const YELLOW_BG = 'FFFFE6';
+    const LATE_PINK = 'FFB6C1';
+    const LATE_ORANGE = 'FFA500';
+    const LATE_RED = 'FF0000';
+    const LATE_YELLOW = 'FFFF00';
 
     const HEADERS = [
         'B' => 'TGL',
@@ -27,12 +31,17 @@ class PayrollExcelGenerator
         'L' => 'HARIAN',
         'M' => '% COM',
         'N' => 'COM',
+        'O' => 'JAM KERJA',
+        'P' => 'SAMPAI',
+        'Q' => 'TIME',
+        'R' => 'DENDA',
     ];
 
     const COLUMN_WIDTHS = [
         'B' => 5, 'C' => 22, 'D' => 12, 'E' => 10,
         'F' => 14, 'G' => 25, 'H' => 6, 'I' => 10,
         'J' => 10, 'K' => 10, 'L' => 10, 'M' => 8, 'N' => 12,
+        'O' => 10, 'P' => 10, 'Q' => 8, 'R' => 8,
     ];
 
     const TEMPLATE_ROWS_COUNT = 5;
@@ -76,7 +85,7 @@ class PayrollExcelGenerator
             $sheet->setCellValue("{$col}2", $label);
         }
 
-        $sheet->getStyle('B2:N2')->applyFromArray([
+        $sheet->getStyle('B2:R2')->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -150,6 +159,36 @@ class PayrollExcelGenerator
             $sheet->setCellValue("N{$r}", "=IF(H{$r}>0,ROUND(F{$r}*M{$r}/H{$r},0),0)");
             $sheet->getStyle("N{$r}")->getFont()->getColor()->setRGB(self::BLUE_TEXT);
 
+            // === NEW COLUMNS: JAM KERJA, SAMPAI, TIME, DENDA ===
+            // JAM KERJA (O)
+            if (!empty($row['work_time'])) {
+                $sheet->setCellValue("O{$r}", $row['work_time']);
+            } else {
+                $sheet->setCellValueExplicit("O{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            }
+
+            // SAMPAI (P)
+            if (!empty($row['arrival_time'])) {
+                $sheet->setCellValue("P{$r}", $row['arrival_time']);
+            } else {
+                $sheet->setCellValueExplicit("P{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            }
+
+            // TIME (Q) — lateness in minutes
+            $lateMinutes = $row['late_minutes'] ?? 0;
+            $hasArrival = !empty($row['arrival_time']);
+            $sheet->setCellValueExplicit("Q{$r}", (int) $lateMinutes, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+
+            // Apply conditional color to TIME cell
+            $this->applyTimeCellColor($sheet, $r, $lateMinutes, $hasArrival);
+
+            // DENDA (R) — 10 if late > 15 min, else blank
+            if ($lateMinutes > 15) {
+                $sheet->setCellValueExplicit("R{$r}", 10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            } else {
+                $sheet->setCellValueExplicit("R{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            }
+
             $this->applyRowFormatting($sheet, $r);
 
             $this->rowNum++;
@@ -179,6 +218,16 @@ class PayrollExcelGenerator
             $sheet->setCellValue("N{$r}", "=IF(F{$r}=\"\",0,ROUND(F{$r}*M{$r}/H{$r},0))");
             $sheet->getStyle("N{$r}")->getFont()->getColor()->setRGB(self::BLUE_TEXT);
 
+            // Template rows: blank for new columns
+            $sheet->setCellValueExplicit("O{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            $sheet->setCellValueExplicit("P{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            $sheet->setCellValueExplicit("Q{$r}", 0, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            $sheet->getStyle("Q{$r}")->getFill()->applyFromArray([
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => self::LATE_PINK],
+            ]);
+            $sheet->setCellValueExplicit("R{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+
             $this->applyRowFormatting($sheet, $r);
 
             $this->rowNum++;
@@ -197,13 +246,14 @@ class PayrollExcelGenerator
         $sheet->setCellValue("J{$this->rowNum}", "=SUM(J3:J{$templateEndRow})");
         $sheet->setCellValue("L{$this->rowNum}", "=SUM(L3:L{$templateEndRow})");
         $sheet->setCellValue("N{$this->rowNum}", "=SUM(N3:N{$templateEndRow})");
+        $sheet->setCellValue("R{$this->rowNum}", "=SUM(R3:R{$templateEndRow})");
 
-        foreach (['I', 'J', 'L', 'N'] as $col) {
+        foreach (['I', 'J', 'L', 'N', 'R'] as $col) {
             $sheet->getStyle("{$col}{$this->rowNum}")->getFont()->setBold(true);
         }
 
-        $this->applyBorders($sheet, "B{$this->rowNum}:N{$this->rowNum}");
-        foreach (['I', 'J', 'L', 'N'] as $col) {
+        $this->applyBorders($sheet, "B{$this->rowNum}:R{$this->rowNum}");
+        foreach (['I', 'J', 'L', 'N', 'R'] as $col) {
             $sheet->getStyle("{$col}{$this->rowNum}")->getNumberFormat()->setFormatCode('#,##0');
         }
 
@@ -213,11 +263,11 @@ class PayrollExcelGenerator
         // GRAND TOTAL
         $sheet->setCellValue("J{$this->rowNum}", "GRAND TOTAL");
         $sheet->getStyle("J{$this->rowNum}")->getFont()->setBold(true);
-        $sheet->setCellValue("M{$this->rowNum}", "=I{$totalRow}+J{$totalRow}+L{$totalRow}+N{$totalRow}");
+        $sheet->setCellValue("M{$this->rowNum}", "=I{$totalRow}+J{$totalRow}+L{$totalRow}+N{$totalRow}+R{$totalRow}");
         $sheet->getStyle("M{$this->rowNum}")->getFont()->setBold(true);
         $sheet->getStyle("M{$this->rowNum}")->getNumberFormat()->setFormatCode('#,##0');
 
-        $this->applyBorders($sheet, "B{$this->rowNum}:N{$this->rowNum}");
+        $this->applyBorders($sheet, "B{$this->rowNum}:R{$this->rowNum}");
     }
 
     private function setManualInputCells(int $rowNum, $sheet): void
@@ -232,11 +282,34 @@ class PayrollExcelGenerator
         }
     }
 
+    private function applyTimeCellColor($sheet, int $rowNum, int $lateMinutes, bool $hasArrival): void
+    {
+        $color = null;
+
+        if (!$hasArrival) {
+            $color = self::LATE_PINK;
+        } elseif ($lateMinutes > 300) {
+            $color = self::LATE_YELLOW;
+        } elseif ($lateMinutes > 15) {
+            $color = self::LATE_RED;
+        } elseif ($lateMinutes > 0) {
+            $color = self::LATE_ORANGE;
+        }
+        // else: on time or early — no fill (white)
+
+        if ($color !== null) {
+            $sheet->getStyle("Q{$rowNum}")->getFill()->applyFromArray([
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => $color],
+            ]);
+        }
+    }
+
     private function applyRowFormatting($sheet, int $rowNum): void
     {
-        $this->applyBorders($sheet, "B{$rowNum}:N{$rowNum}");
+        $this->applyBorders($sheet, "B{$rowNum}:R{$rowNum}");
 
-        foreach (['D', 'E', 'F', 'I', 'J', 'K', 'L', 'N'] as $col) {
+        foreach (['D', 'E', 'F', 'I', 'J', 'K', 'L', 'N', 'R'] as $col) {
             $sheet->getStyle("{$col}{$rowNum}")->getNumberFormat()->setFormatCode('#,##0');
         }
         $sheet->getStyle("M{$rowNum}")->getNumberFormat()->setFormatCode('0%');

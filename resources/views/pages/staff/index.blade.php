@@ -76,13 +76,13 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Harian Harian (ribu)</label>
-                        <select class="form-select" name="base_harian" id="staff-base_harian">
-                            <option value="75">75</option>
-                            <option value="80" selected>80</option>
-                            <option value="85">85</option>
-                            <option value="90">90</option>
-                        </select>
-                        <small class="form-hint">Base harian per hari dalam ribuan (75 = Rp 75.000).</small>
+                        <input type="number" class="form-control" name="base_harian" id="staff-base_harian" placeholder="Contoh: 80">
+                        <small class="form-hint">Base harian per hari dalam ribuan (80 = Rp 80.000).</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Harian Tambahan (ribu)</label>
+                        <input type="number" class="form-control" name="harian_tambahan" id="staff-harian_tambahan" placeholder="Contoh: 25">
+                        <small class="form-hint">Gaji harian tambahan untuk customer ke-2, ke-3, dst di hari yang sama. Kosongkan jika tidak perlu.</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password</label>

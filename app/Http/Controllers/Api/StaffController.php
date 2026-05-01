@@ -32,7 +32,8 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:15|unique:users,phone_number',
-            'base_harian' => 'nullable|integer|in:75,80,85,90',
+            'base_harian' => 'nullable|integer',
+            'harian_tambahan' => 'nullable|integer',
             'area_id' => 'required|integer|exists:areas,id',
             'role' => 'required|string|in:admin,staff', // Assuming these are the roles
             'password' => 'required|string|min:8',
@@ -52,6 +53,7 @@ class StaffController extends Controller
                 'name' => $validated['name'],
                 'phone_number' => $validated['phone_number'],
                 'base_harian' => $validated['base_harian'] ?? 80,
+                'harian_tambahan' => $validated['harian_tambahan'] ?? null,
                 'area_id' => $validated['area_id'],
                 'user_id' => $user->id,
             ]);
@@ -82,7 +84,8 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'phone_number' => ['sometimes', 'required', 'string', 'max:15', Rule::unique('users', 'phone_number')->ignore($staff->user_id)],
-            'base_harian' => 'sometimes|nullable|integer|in:75,80,85,90',
+            'base_harian' => 'sometimes|nullable|integer',
+            'harian_tambahan' => 'sometimes|nullable|integer',
             'area_id' => 'sometimes|required|integer|exists:areas,id',
             'role' => 'sometimes|required|string|in:admin,staff',
             'password' => 'nullable|string|min:8',
@@ -94,6 +97,7 @@ class StaffController extends Controller
                 'name' => $validated['name'] ?? $staff->name,
                 'phone_number' => $validated['phone_number'] ?? $staff->phone_number,
                 'base_harian' => $validated['base_harian'] ?? $staff->base_harian,
+                'harian_tambahan' => $validated['harian_tambahan'] ?? $staff->harian_tambahan,
                 'area_id' => $validated['area_id'] ?? $staff->area_id,
             ]);
 

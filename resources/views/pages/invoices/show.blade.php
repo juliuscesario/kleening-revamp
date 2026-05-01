@@ -120,6 +120,14 @@
                             <p><strong>Status:</strong> <span
                                     class="badge {{ $statusBadgeClass }} text-bg-secondary">{{ ucfirst($invoice->status) }}</span>
                             </p>
+                            @php
+                                $staffNames = $invoice->serviceOrder->staff->pluck('name');
+                            @endphp
+                            @if($staffNames->isNotEmpty())
+                                <p class="text-muted mb-0" style="font-size: 0.875rem;">
+                                    <strong>Staff:</strong> {{ implode(', ', $staffNames->toArray()) }}
+                                </p>
+                            @endif
 
                         </div>
                     </div>

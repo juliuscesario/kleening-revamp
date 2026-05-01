@@ -48,6 +48,7 @@ $(function () {
             name: $('#staff-name').val(),
             phone_number: $('#staff-phone_number').val(),
             base_harian: $('#staff-base_harian').val(),
+            harian_tambahan: $('#staff-harian_tambahan').val() || null,
             area_id: $('#staff-area_id').val(),
             role: $('#staff-role').val(),
         };
@@ -104,7 +105,8 @@ $(function () {
             $('#staff-id').val(data.data.id);
             $('#staff-name').val(data.data.name);
             $('#staff-phone_number').val(data.data.phone_number);
-            $('#staff-base_harian').val(data.data.base_harian || 80);
+            $('#staff-base_harian').val(data.data.base_harian || '');
+            $('#staff-harian_tambahan').val(data.data.harian_tambahan || '');
             $('#staff-area_id').val(data.data.area.id);
             if (data.data.user_account) {
                 $('#staff-role').val(data.data.user_account.role);
