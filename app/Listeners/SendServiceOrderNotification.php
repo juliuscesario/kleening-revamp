@@ -42,10 +42,15 @@ class SendServiceOrderNotification
 
         $ownerAndCoOwners = User::whereIn('role', ['owner', 'co-owner'])->get();
 
+        $recipients = collect();
         if ($customerUser) {
-            Notification::send($customerUser, new ServiceOrderInvoicedNotification($serviceOrder));
+            $recipients->push($customerUser);
         }
-        Notification::send($ownerAndCoOwners, new ServiceOrderInvoicedNotification($serviceOrder));
+        $recipients = $recipients->concat($ownerAndCoOwners)->unique('id');
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new ServiceOrderInvoicedNotification($serviceOrder));
+        }
     }
 
     private function notifyAdmin(ServiceOrder $serviceOrder)

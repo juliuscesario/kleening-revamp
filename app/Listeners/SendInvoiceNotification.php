@@ -42,10 +42,15 @@ class SendInvoiceNotification
 
         $adminsAndOwners = User::whereIn('role', ['admin', 'owner', 'co-owner'])->get();
 
+        $recipients = collect();
         if ($customerUser) {
-            Notification::send($customerUser, new InvoiceOverdueNotification($invoice));
+            $recipients->push($customerUser);
         }
-        Notification::send($adminsAndOwners, new InvoiceOverdueNotification($invoice));
+        $recipients = $recipients->concat($adminsAndOwners)->unique('id');
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new InvoiceOverdueNotification($invoice));
+        }
     }
 
     private function notifyOwnerCoOwnerAndAdmin(Invoice $invoice)
