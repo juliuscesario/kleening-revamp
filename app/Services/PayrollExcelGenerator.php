@@ -9,12 +9,18 @@ use Carbon\Carbon;
 
 class PayrollExcelGenerator
 {
-    const HEADER_BG = 'D9E2F3';
-    const BLUE_TEXT = '0000FF';
+    const HEADER_ROW_BG = '1F3864';
+    const COLUMN_HEADER_BG = '2E75B6';
+    const COLUMN_HEADER_ALT_BG = '1A4F8A';
+    const PRIMARY_ROW_BG = 'EBF3FB';
+    const SPLIT_ROW_BG = 'F7F7F7';
+    const TOTAL_ROW_BG = '2E75B6';
+    const GRAND_TOTAL_ROW_BG = '1F3864';
     const YELLOW_BG = 'FFFFE6';
-    const LATE_PINK = 'FFB6C1';
+    const BLUE_TEXT = '0000FF';
+    const LATE_PINK = 'FFF0F3';
     const LATE_ORANGE = 'FFA500';
-    const LATE_RED = 'FF0000';
+    const LATE_RED = 'FF6B6B';
     const LATE_YELLOW = 'FFFF00';
 
     const HEADERS = [
@@ -57,7 +63,9 @@ class PayrollExcelGenerator
         $monthName = Carbon::create($year, $month, 1)->locale('id')->isoFormat('MMMM');
         $periodLabel = "{$monthName} {$year} - Periode {$period}";
 
-        $this->writeHeaderInfo($sheet, $staff, $periodLabel);
+        $dateRange = $this->computeDateRange($rows, $monthName, $year);
+
+        $this->writeHeaderInfo($sheet, $staff, $periodLabel, $dateRange);
         $this->writeColumnHeaders($sheet);
         $this->writeDataRows($sheet, $rows);
         $this->writeTemplateRows($sheet);
@@ -67,16 +75,43 @@ class PayrollExcelGenerator
         return $spreadsheet;
     }
 
-    private function writeHeaderInfo($sheet, $staff, string $periodLabel): void
+    private function writeHeaderInfo($sheet, $staff, string $periodLabel, string $dateRange): void
     {
-        $sheet->setCellValue('B1', 'NAMA:');
-        $sheet->setCellValue('C1', $staff->name);
-        $sheet->setCellValue('F1', 'BULAN:');
-        $sheet->setCellValue('G1', $periodLabel);
+        // Single cell: "NAMA: {staffName}" with dark navy bg, white bold text
+        $sheet->setCellValue('B1', 'NAMA: ' . $staff->name);
+        $sheet->getStyle('B1:R1')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => self::HEADER_ROW_BG],
+            ],
+        ]);
 
-        foreach (['B1', 'C1', 'F1', 'G1'] as $cell) {
-            $sheet->getStyle($cell)->getFont()->setBold(true);
+        // PERIODE in E1
+        $sheet->setCellValue('E1', 'PERIODE: ' . $dateRange);
+        $sheet->getStyle('E1')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+        ]);
+    }
+
+    private function computeDateRange(array $rows, string $monthName, int $year): string
+    {
+        $dates = [];
+        foreach ($rows as $row) {
+            $d = $row['date'] ?? null;
+            if ($d !== null) {
+                $dates[] = $d instanceof Carbon ? $d->day : Carbon::parse($d)->day;
+            }
         }
+
+        if (empty($dates)) {
+            return '';
+        }
+
+        $minDay = min($dates);
+        $maxDay = max($dates);
+
+        return sprintf('%02d - %02d %s %d', $minDay, $maxDay, $monthName, $year);
     }
 
     private function writeColumnHeaders($sheet): void
@@ -85,25 +120,22 @@ class PayrollExcelGenerator
             $sheet->setCellValue("{$col}2", $label);
         }
 
+        // All column headers: blue bg, white bold text, font size 14
         $sheet->getStyle('B2:R2')->applyFromArray([
-            'font' => ['bold' => true],
+            'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => 'FFFFFF']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => self::HEADER_BG],
+                'startColor' => ['rgb' => self::COLUMN_HEADER_BG],
             ],
         ]);
 
-        // Blue text for formula columns
-        $sheet->getStyle('F2')->getFont()->getColor()->setRGB(self::BLUE_TEXT);
-        $sheet->getStyle('N2')->getFont()->getColor()->setRGB(self::BLUE_TEXT);
-
-        // Yellow background for manual input columns
-        $manualFill = [
-            'fillType' => Fill::FILL_SOLID,
-            'startColor' => ['rgb' => self::YELLOW_BG],
-        ];
-        foreach (['I', 'J', 'K'] as $col) {
-            $sheet->getStyle("{$col}2")->getFill()->applyFromArray($manualFill);
+        // OMS-TRNS (col F) and COM (col N): darker blue
+        foreach (['F', 'N'] as $col) {
+            $sheet->getStyle("{$col}2")->getFill()->applyFromArray([
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => self::COLUMN_HEADER_ALT_BG],
+            ]);
         }
     }
 
@@ -179,17 +211,25 @@ class PayrollExcelGenerator
             $hasArrival = !empty($row['arrival_time']);
             $sheet->setCellValueExplicit("Q{$r}", (int) $lateMinutes, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
 
-            // Apply conditional color to TIME cell
-            $this->applyTimeCellColor($sheet, $r, $lateMinutes, $hasArrival);
+            // Apply conditional color to TIME cell (saved for re-application after row bg)
+            $timeCellColor = $this->getTimeCellColor($lateMinutes, $hasArrival);
 
-            // DENDA (R) — 10 if late > 15 min, else blank
+            // DENDA (R) — -10 if late > 15 min, else blank
             if ($lateMinutes > 15) {
-                $sheet->setCellValueExplicit("R{$r}", 10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                $sheet->setCellValueExplicit("R{$r}", -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             } else {
                 $sheet->setCellValueExplicit("R{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
             }
 
-            $this->applyRowFormatting($sheet, $r);
+            $this->applyRowFormatting($sheet, $r, $row['is_split_row'] ?? false);
+
+            // Re-apply TIME cell color after row background override
+            if ($timeCellColor !== null) {
+                $sheet->getStyle("Q{$r}")->getFill()->applyFromArray([
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => $timeCellColor],
+                ]);
+            }
 
             $this->rowNum++;
         }
@@ -228,7 +268,7 @@ class PayrollExcelGenerator
             ]);
             $sheet->setCellValueExplicit("R{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
 
-            $this->applyRowFormatting($sheet, $r);
+            $this->applyRowFormatting($sheet, $r, false); // template rows = not split
 
             $this->rowNum++;
         }
@@ -238,34 +278,69 @@ class PayrollExcelGenerator
     {
         $templateEndRow = $this->rowNum - 1;
 
-        // TOTAL
-        $sheet->setCellValue("K{$this->rowNum}", "TOTAL");
-        $sheet->getStyle("K{$this->rowNum}")->getFont()->setBold(true);
+        // No extra blank rows — Total row comes immediately after last data row
+
+        // TOTAL — label in column G (title case), blue bg + white bold
+        $sheet->setCellValue("G{$this->rowNum}", "Total");
+        $sheet->getStyle("G{$this->rowNum}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => self::TOTAL_ROW_BG],
+            ],
+        ]);
+
+        // Apply blue bg + white text to entire Total row
+        $sheet->getStyle("B{$this->rowNum}:R{$this->rowNum}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => self::TOTAL_ROW_BG],
+            ],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ]);
 
         $sheet->setCellValue("I{$this->rowNum}", "=SUM(I3:I{$templateEndRow})");
         $sheet->setCellValue("J{$this->rowNum}", "=SUM(J3:J{$templateEndRow})");
+        $sheet->setCellValue("K{$this->rowNum}", "=SUM(K3:K{$templateEndRow})");
         $sheet->setCellValue("L{$this->rowNum}", "=SUM(L3:L{$templateEndRow})");
         $sheet->setCellValue("N{$this->rowNum}", "=SUM(N3:N{$templateEndRow})");
         $sheet->setCellValue("R{$this->rowNum}", "=SUM(R3:R{$templateEndRow})");
 
-        foreach (['I', 'J', 'L', 'N', 'R'] as $col) {
-            $sheet->getStyle("{$col}{$this->rowNum}")->getFont()->setBold(true);
-        }
-
         $this->applyBorders($sheet, "B{$this->rowNum}:R{$this->rowNum}");
-        foreach (['I', 'J', 'L', 'N', 'R'] as $col) {
+        foreach (['I', 'J', 'K', 'L', 'N', 'R'] as $col) {
             $sheet->getStyle("{$col}{$this->rowNum}")->getNumberFormat()->setFormatCode('#,##0');
         }
 
         $totalRow = $this->rowNum;
         $this->rowNum++;
 
-        // GRAND TOTAL
-        $sheet->setCellValue("J{$this->rowNum}", "GRAND TOTAL");
-        $sheet->getStyle("J{$this->rowNum}")->getFont()->setBold(true);
-        $sheet->setCellValue("M{$this->rowNum}", "=I{$totalRow}+J{$totalRow}+L{$totalRow}+N{$totalRow}+R{$totalRow}");
-        $sheet->getStyle("M{$this->rowNum}")->getFont()->setBold(true);
-        $sheet->getStyle("M{$this->rowNum}")->getNumberFormat()->setFormatCode('#,##0');
+        // GRAND TOTAL — label in column G (title case), dark navy bg + white bold, font size 14
+        $sheet->setCellValue("G{$this->rowNum}", "Grand Total");
+        $sheet->getStyle("G{$this->rowNum}")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => self::GRAND_TOTAL_ROW_BG],
+            ],
+        ]);
+
+        // Apply dark blue bg + white text to entire Grand Total row
+        $sheet->getStyle("B{$this->rowNum}:R{$this->rowNum}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => self::GRAND_TOTAL_ROW_BG],
+            ],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        // Grand Total = JAUH + LEMBUR + PARKIR + HARIAN + COM + DENDA
+        $sheet->setCellValue("I{$this->rowNum}", "=I{$totalRow}+J{$totalRow}+K{$totalRow}+L{$totalRow}+N{$totalRow}+R{$totalRow}");
+        $sheet->getStyle("I{$this->rowNum}")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 14],
+            'numberFormat' => ['formatCode' => '#,##0'],
+        ]);
 
         $this->applyBorders($sheet, "B{$this->rowNum}:R{$this->rowNum}");
     }
@@ -282,31 +357,47 @@ class PayrollExcelGenerator
         }
     }
 
-    private function applyTimeCellColor($sheet, int $rowNum, int $lateMinutes, bool $hasArrival): void
+    private function getTimeCellColor(int $lateMinutes, bool $hasArrival): ?string
     {
-        $color = null;
-
         if (!$hasArrival) {
-            $color = self::LATE_PINK;
-        } elseif ($lateMinutes > 300) {
-            $color = self::LATE_YELLOW;
-        } elseif ($lateMinutes > 15) {
-            $color = self::LATE_RED;
-        } elseif ($lateMinutes > 0) {
-            $color = self::LATE_ORANGE;
+            return self::LATE_PINK;
         }
-        // else: on time or early — no fill (white)
-
-        if ($color !== null) {
-            $sheet->getStyle("Q{$rowNum}")->getFill()->applyFromArray([
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => $color],
-            ]);
+        if ($lateMinutes > 300) {
+            return self::LATE_YELLOW;
         }
+        if ($lateMinutes > 15) {
+            return self::LATE_RED;
+        }
+        if ($lateMinutes > 0) {
+            return self::LATE_ORANGE;
+        }
+        // On time or early — no special color
+        return null;
     }
 
-    private function applyRowFormatting($sheet, int $rowNum): void
+    private function applyRowFormatting($sheet, int $rowNum, bool $isSplitRow = false): void
     {
+        // Row background: primary = PRIMARY_ROW_BG, split = SPLIT_ROW_BG
+        $bgColor = $isSplitRow ? self::SPLIT_ROW_BG : self::PRIMARY_ROW_BG;
+        $sheet->getStyle("B{$rowNum}:R{$rowNum}")->getFill()->applyFromArray([
+            'fillType' => Fill::FILL_SOLID,
+            'startColor' => ['rgb' => $bgColor],
+        ]);
+
+        // Re-apply yellow background for manual input columns (after row bg override)
+        $yellowFill = [
+            'fillType' => Fill::FILL_SOLID,
+            'startColor' => ['rgb' => self::YELLOW_BG],
+        ];
+        foreach (['I', 'J', 'K'] as $col) {
+            $sheet->getStyle("{$col}{$rowNum}")->getFill()->applyFromArray($yellowFill);
+        }
+
+        // Customer name (col C): bold on primary rows, normal on split rows
+        if (!$isSplitRow) {
+            $sheet->getStyle("C{$rowNum}")->getFont()->setBold(true);
+        }
+
         $this->applyBorders($sheet, "B{$rowNum}:R{$rowNum}");
 
         foreach (['D', 'E', 'F', 'I', 'J', 'K', 'L', 'N', 'R'] as $col) {

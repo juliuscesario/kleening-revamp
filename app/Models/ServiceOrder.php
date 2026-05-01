@@ -26,6 +26,13 @@ class ServiceOrder extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new AreaScope);
+
+        static::deleted(function ($serviceOrder) {
+            $serviceOrder->load('customer');
+            if ($serviceOrder->customer) {
+                $serviceOrder->customer->syncLastOrderDate();
+            }
+        });
     }
     
     protected $fillable = [

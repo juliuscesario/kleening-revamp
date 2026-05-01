@@ -23,6 +23,10 @@ class Customer extends Model
 
     protected $fillable = ['name', 'phone_number'];
 
+    protected $casts = [
+        'last_order_date' => 'datetime',
+    ];
+
     /**
      * Mutator untuk nama customer (auto upper case).
      */
@@ -63,13 +67,18 @@ class Customer extends Model
     }
 
     /**
-     * Accessor untuk mendapatkan tanggal order terakhir secara dinamis.
+     * Recalculate and persist last_order_date from related service orders.
+     * Call this after creating/updating/deleting a service order for this customer.
      */
-    protected function lastOrderDate(): Attribute
+    public function syncLastOrderDate(): void
     {
-        return Attribute::make(
-            get: fn() => $this->serviceOrders()->latest('work_date')->first()?->work_date,
-        );
+        $this->withoutEvents(function () {
+            $this->update([
+                'last_order_date' => $this->serviceOrders()
+                    ->whereNotIn('status', ['cancelled'])
+                    ->max('work_date'),
+            ]);
+        });
     }
 
 }

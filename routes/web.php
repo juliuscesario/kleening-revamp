@@ -94,7 +94,7 @@ Route::middleware(['auth'])->group(function () {
     // Resource Routes
     Route::resource('areas', AreaController::class)->names('web.areas');
     Route::resource('service-categories', ServiceCategoriesController::class)->names('web.service-categories');
-    Route::resource('staff', StaffController::class)->names('web.staff');
+    Route::resource('staff', StaffController::class)->middleware('role:owner,admin')->names('web.staff');
     Route::resource('services', ServiceController::class)->names('web.services');
     Route::resource('customers', CustomerController::class)->names('web.customers');
     Route::resource('addresses', AddressController::class)->names('web.addresses');
@@ -145,9 +145,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Work Photos (web routes — called from Blade pages via fetch)
     Route::post('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'store'])
-        ->middleware('role:owner,admin,staff');
+        ->middleware('role:owner,co_owner,admin,staff');
     Route::delete('/service-orders/{serviceOrder}/photos/{workPhoto}', [WorkPhotoController::class, 'destroy'])
-        ->middleware('role:owner,admin');
+        ->middleware('role:owner,co_owner,admin');
 });
 
 Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {

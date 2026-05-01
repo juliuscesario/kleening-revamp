@@ -369,10 +369,6 @@
                         href="{{ route('web.expenses.index') }}">
                         Pengeluaran
                       </a>
-                      <a class="dropdown-item {{ request()->is('payroll*') ? 'active' : '' }}"
-                        href="{{ route('payroll.index') }}">
-                        Payroll
-                      </a>
                     </div>
                   </div>
                 </div>
@@ -409,6 +405,12 @@
                         href="{{ route('web.reports.expenses') }}">
                         Laporan Pengeluaran
                       </a>
+                      @if(strtolower(trim(Auth::user()->role)) === 'owner')
+                      <a class="dropdown-item {{ request()->is('payroll*') ? 'active' : '' }}"
+                        href="{{ route('payroll.index') }}">
+                        Payroll
+                      </a>
+                      @endif
                       <a class="dropdown-item {{ request()->is('reports/staff-performance*') ? 'active' : '' }}"
                         href="{{ route('web.reports.staff-performance') }}">
                         Laporan Kinerja Staff

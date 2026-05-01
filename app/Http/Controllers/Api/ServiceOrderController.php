@@ -88,6 +88,9 @@ class ServiceOrderController extends Controller
             // 3. Tugaskan staff ke service order ini
             $so->staff()->attach($validated['staff_ids']);
 
+            // Update customer's last_order_date
+            $so->customer->syncLastOrderDate();
+
             return $so;
         });
 
@@ -180,6 +183,10 @@ class ServiceOrderController extends Controller
                 $serviceOrder->staff()->sync($validated['staff_ids']);
             }
 
+            // Update customer's last_order_date
+            $serviceOrder->load('customer');
+            $serviceOrder->customer->syncLastOrderDate();
+
             return $serviceOrder;
         });
 
@@ -218,6 +225,10 @@ class ServiceOrderController extends Controller
         }
 
         $serviceOrder->update($validated);
+
+        // Update customer's last_order_date when status changes
+        $serviceOrder->load('customer');
+        $serviceOrder->customer->syncLastOrderDate();
 
         return response()->json(['success' => true, 'message' => 'Service Order status updated successfully.', 'service_order' => new ServiceOrderResource($serviceOrder)]);
     }

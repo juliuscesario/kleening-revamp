@@ -157,7 +157,7 @@
                         <h3 class="card-title">Foto Pekerjaan</h3>
                     </div>
                     <div class="card-body">
-                        @if(in_array(auth()->user()->role, ['admin', 'owner']))
+                        @if(in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']))
                             <div class="row row-cards">
                                 {{-- Arrival Photo --}}
                                 <div class="col-md-4">
@@ -313,7 +313,7 @@
         services: {!! json_encode($serviceOrder->items->map(fn($i, $k) => ($k + 1) . '. ' . $i->service->name . ' x ' . $i->quantity)->join("\n")) !!}
     };
 
-    @if(in_array(auth()->user()->role, ['admin', 'owner']))
+    @if(in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']))
     document.addEventListener('DOMContentLoaded', function () {
         const soId = {{ $serviceOrder->id }};
 

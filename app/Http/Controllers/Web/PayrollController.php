@@ -31,6 +31,9 @@ class PayrollController extends Controller
 
         $staff = Staff::withoutGlobalScopes()
             ->where('is_active', true)
+            ->whereHas('user', function ($q) {
+                $q->whereRaw('LOWER(TRIM(role)) = ?', ['staff']);
+            })
             ->with('area')
             ->orderBy('name')
             ->get();
@@ -168,13 +171,32 @@ class PayrollController extends Controller
                 ->orderBy('created_at', 'asc')
                 ->first();
 
-            $workTimeStr = $order->work_time ? Carbon::createFromFormat('H:i:s', $order->work_time)->format('H:i') : null;
+            // Parse work_time safely — malformed values won't crash the whole generation
+            $workTimeStr = null;
+            $workMinutes = null;
+            if ($order->work_time) {
+                try {
+                    $workCarbon = Carbon::createFromFormat('H:i:s', $order->work_time);
+                    $workTimeStr = $workCarbon->format('H:i');
+                    $workMinutes = $workCarbon->hour * 60 + $workCarbon->minute;
+                } catch (\Exception $e) {
+                    // Malformed work_time — skip timing columns for this row
+                    $workTimeStr = null;
+                    $workMinutes = null;
+                }
+            }
+
             $arrivalTimeStr = $arrivalPhoto ? Carbon::parse($arrivalPhoto->created_at)->format('H:i') : null;
 
             $lateMinutes = 0;
-            if ($workTimeStr && $arrivalTimeStr) {
-                $workMinutes = (int) Carbon::createFromFormat('H:i', $workTimeStr)->format('H') * 60 + (int) Carbon::createFromFormat('H:i', $workTimeStr)->format('i');
+            if ($workMinutes !== null && $arrivalTimeStr) {
                 $arrivalMinutes = (int) Carbon::parse($arrivalPhoto->created_at)->format('H') * 60 + (int) Carbon::parse($arrivalPhoto->created_at)->format('i');
+
+                // Handle midnight crossing: e.g. work_time 23:00, arrival 00:30 next day
+                if ($arrivalMinutes < $workMinutes && ($workMinutes - $arrivalMinutes) > 720) {
+                    $arrivalMinutes += 1440;
+                }
+
                 $lateMinutes = max(0, $arrivalMinutes - $workMinutes);
             }
 
@@ -202,6 +224,7 @@ class PayrollController extends Controller
                     'harian' => $bookingOrderOnDay === 1 ? (int) $staff->base_harian : ($staff->harian_tambahan ?? 25),
                     'com_rate' => $group['com_rate'],
                     'show_tgl' => true, // TGL on single-row bookings
+                    'is_split_row' => false,
                     'work_time' => $workTimeStr,
                     'arrival_time' => $arrivalTimeStr,
                     'late_minutes' => $lateMinutes,
@@ -287,6 +310,7 @@ class PayrollController extends Controller
                         'harian' => $harian,
                         'com_rate' => $group['com_rate'],
                         'show_tgl' => $showTgl,
+                        'is_split_row' => !$isFirstGroup,
                         'work_time' => $isFirstGroup ? $workTimeStr : null,
                         'arrival_time' => $isFirstGroup ? $arrivalTimeStr : null,
                         'late_minutes' => $isFirstGroup ? $lateMinutes : 0,

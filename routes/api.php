@@ -51,7 +51,7 @@ Route::middleware(['auth:sanctum', 'role:owner,admin,co_owner,staff'])->group(fu
     Route::post('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'store']);
     Route::get('/service-orders/{serviceOrder}/photos', [WorkPhotoController::class, 'index']);
     Route::delete('/service-orders/{serviceOrder}/photos/{workPhoto}', [WorkPhotoController::class, 'destroy'])
-        ->middleware('role:owner,admin');
+        ->middleware('role:owner,co_owner,admin');
     Route::patch('/service-orders/{serviceOrder}/status', [ServiceOrderController::class, 'updateStatus']);
 
     // Notification routes

@@ -33,7 +33,7 @@ class StaffController extends Controller
             'name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:15|unique:users,phone_number',
             'base_harian' => 'nullable|integer',
-            'harian_tambahan' => 'nullable|integer',
+            'harian_tambahan' => 'nullable|integer|min:0',
             'area_id' => 'required|integer|exists:areas,id',
             'role' => 'required|string|in:admin,staff', // Assuming these are the roles
             'password' => 'required|string|min:8',
@@ -85,7 +85,7 @@ class StaffController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'phone_number' => ['sometimes', 'required', 'string', 'max:15', Rule::unique('users', 'phone_number')->ignore($staff->user_id)],
             'base_harian' => 'sometimes|nullable|integer',
-            'harian_tambahan' => 'sometimes|nullable|integer',
+            'harian_tambahan' => 'sometimes|nullable|integer|min:0',
             'area_id' => 'sometimes|required|integer|exists:areas,id',
             'role' => 'sometimes|required|string|in:admin,staff',
             'password' => 'nullable|string|min:8',

@@ -179,6 +179,9 @@ class ServiceOrderController extends Controller
                 $so->staff()->attach($request->staff);
             }
 
+            // Update customer's last_order_date
+            $so->customer->syncLastOrderDate();
+
             return $so;
         });
 
@@ -322,6 +325,12 @@ class ServiceOrderController extends Controller
             if ($request->has('staff')) {
                 $serviceOrder->staff()->sync($request->staff);
             }
+
+            // Update customer's last_order_date if work_date changed
+            if ($request->has('work_date') || $request->has('services')) {
+                $serviceOrder->load('customer');
+                $serviceOrder->customer->syncLastOrderDate();
+            }
         });
 
         return response()->json(['success' => true, 'message' => 'Service Order updated successfully.']);
@@ -356,6 +365,10 @@ class ServiceOrderController extends Controller
             $serviceOrder->work_proof_completed_at = now();
         }
         $serviceOrder->save();
+
+        // Update customer's last_order_date when status changes
+        $serviceOrder->load('customer');
+        $serviceOrder->customer->syncLastOrderDate();
 
         return response()->json(['success' => true, 'message' => 'Status berhasil diubah ke ' . ucfirst($newStatus) . '.']);
     }

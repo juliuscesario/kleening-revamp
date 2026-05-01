@@ -50,13 +50,22 @@ class WorkPhotoController extends Controller
         }
 
         // Replace existing photo of the same type
+        // Store new file FIRST, then delete old — so we never have zero photos
         $existingPhoto = $serviceOrder->workPhotos()->where('type', $validated['type'])->first();
+
+        try {
+            $path = $this->imageCompressor->compress($request->file('photo'), 'work_photos');
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses foto: '.$e->getMessage(),
+            ], 500);
+        }
+
         if ($existingPhoto) {
             Storage::disk('public')->delete($existingPhoto->file_path);
             $existingPhoto->delete();
         }
-
-        $path = $this->imageCompressor->compress($request->file('photo'), 'work_photos');
 
         $photo = $serviceOrder->workPhotos()->create([
             'type' => $validated['type'],
