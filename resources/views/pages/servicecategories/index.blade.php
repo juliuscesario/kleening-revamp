@@ -36,6 +36,7 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Nama Kategori Layanan</th>
+                                <th>% Komisi</th>
                                 <th>Dibuat Tanggal</th>
                                 <th>Aksi</th>
                             </tr>
@@ -69,6 +70,12 @@
                         <input type="text" class="form-control" name="name" id="service-category-name" placeholder="Contoh: General Cleaning">
                         {{-- Feedback for validation errors --}}
                         <div class="invalid-feedback" id="name-error"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">% Komisi</label>
+                        <input type="number" class="form-control" name="commission_rate" id="service-category-commission-rate" placeholder="10.00" step="0.01" min="0" max="100">
+                        <div class="form-text">Default: 10.00%. General Cleaning = 30%, Poles = 15%, lainnya = 10%.</div>
+                        <div class="invalid-feedback" id="commission-rate-error"></div>
                     </div>
                 </div>
                 <div class="modal-footer">

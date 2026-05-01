@@ -369,6 +369,10 @@
                         href="{{ route('web.expenses.index') }}">
                         Pengeluaran
                       </a>
+                      <a class="dropdown-item {{ request()->is('payroll*') ? 'active' : '' }}"
+                        href="{{ route('payroll.index') }}">
+                        Payroll
+                      </a>
                     </div>
                   </div>
                 </div>

@@ -23,6 +23,7 @@ class Staff extends Model
         'area_id',
         'name',
         'phone_number',
+        'base_harian',
         'is_active',
     ];
 

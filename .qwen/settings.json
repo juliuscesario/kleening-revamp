@@ -6,7 +6,10 @@
       "Bash(rm *)",
       "Bash(true)",
       "Bash(ls *)",
-      "Bash(mkdir *)"
+      "Bash(mkdir *)",
+      "Bash(composer *)",
+      "Bash(psql *)",
+      "Bash(mysql *)"
     ]
   },
   "$version": 3

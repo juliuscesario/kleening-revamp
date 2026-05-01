@@ -17,6 +17,7 @@ $(function() {
         columns: [
             { data: 'id', name: 'id' },
             { data: 'name', name: 'category_name' },
+            { data: 'commission_rate', name: 'commission_rate' },
             { data: 'created_at', name: 'created_at' },
             { data: 'action', name: 'action', orderable: false, searchable: false }
         ]
@@ -36,6 +37,7 @@ $(function() {
             $('#modal-title').html("Edit Kategori Layanan");
             $('#service-category-id').val(data.data.id);
             $('#service-category-name').val(data.data.name);
+            $('#service-category-commission-rate').val(data.data.commission_rate ?? 10.00);
             $('.form-control').removeClass('is-invalid');
             modalInstance.show(); // Use Bootstrap 5 API
         });
@@ -70,9 +72,13 @@ $(function() {
                     Swal.fire('Akses Ditolak!', jqXHR.responseJSON.message || 'Anda tidak memiliki izin untuk menyimpan data ini.', 'error');
                 } else if (jqXHR.status === 422) {
                     const errors = jqXHR.responseJSON.errors;
-                    if (errors.category_name) {
+                    if (errors.name) {
                         $('#service-category-name').addClass('is-invalid');
-                        $('#name-error').text(errors.category_name[0]);
+                        $('#name-error').text(errors.name[0]);
+                    }
+                    if (errors.commission_rate) {
+                        $('#service-category-commission-rate').addClass('is-invalid');
+                        $('#commission-rate-error').text(errors.commission_rate[0]);
                     }
                 } else {
                     modalInstance.hide();

@@ -20,6 +20,7 @@ use App\Http\Controllers\Web\ServiceOrderController;
 use App\Http\Controllers\Web\FormOrderController;
 use App\Http\Controllers\Web\StaffController;
 use App\Http\Controllers\Web\PlannerController;
+use App\Http\Controllers\Web\PayrollController;
 use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Api\WorkPhotoController;
 
@@ -126,6 +127,11 @@ Route::middleware(['auth'])->group(function () {
     // Laporan Kinerja Admin
     Route::get('laporan/kinerja-admin', [\App\Http\Controllers\Web\LaporanKinerjaAdminController::class, 'index'])->name('web.laporan.kinerja-admin');
 
+    // Payroll
+    Route::prefix('payroll')->name('payroll.')->group(function () {
+        Route::get('/', [PayrollController::class, 'index'])->name('index');
+        Route::get('/download/{staff}/{year}/{month}/{period}', [PayrollController::class, 'download'])->name('download');
+    });
 
     // Custom Resource Routes
     Route::put('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('web.invoices.update-status');

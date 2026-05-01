@@ -47,6 +47,7 @@ $(function () {
         let formData = {
             name: $('#staff-name').val(),
             phone_number: $('#staff-phone_number').val(),
+            base_harian: $('#staff-base_harian').val(),
             area_id: $('#staff-area_id').val(),
             role: $('#staff-role').val(),
         };
@@ -103,6 +104,7 @@ $(function () {
             $('#staff-id').val(data.data.id);
             $('#staff-name').val(data.data.name);
             $('#staff-phone_number').val(data.data.phone_number);
+            $('#staff-base_harian').val(data.data.base_harian || 80);
             $('#staff-area_id').val(data.data.area.id);
             if (data.data.user_account) {
                 $('#staff-role').val(data.data.user_account.role);

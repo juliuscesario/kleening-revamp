@@ -62,9 +62,13 @@ class DataTablesController extends Controller
             ->orderColumn('created_at', function ($query, $order) {
                 $query->orderBy('created_at', $order);
             })
+            ->editColumn('commission_rate', function ($category) {
+                return number_format($category->commission_rate, 1) . '%';
+            })
             ->addColumn('action', function ($category) {
                 $name = htmlspecialchars($category->name, ENT_QUOTES, 'UTF-8');
-                $editBtn = '<button class="btn btn-sm btn-success editServiceCategory" data-id="' . $category->id . '" data-name="' . $name . '">Edit</button>';
+                $rate = $category->commission_rate ?? 10.00;
+                $editBtn = '<button class="btn btn-sm btn-success editServiceCategory" data-id="' . $category->id . '" data-name="' . $name . '" data-commission-rate="' . $rate . '">Edit</button>';
                 // $deleteBtn = '<button class="btn btn-sm btn-danger deleteServiceCategory" data-id="' . $category->id . '">Hapus</button>';
                 return $editBtn;
             })

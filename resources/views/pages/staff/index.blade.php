@@ -75,6 +75,16 @@
                         <div class="invalid-feedback" id="phone_number-error"></div>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Harian Harian (ribu)</label>
+                        <select class="form-select" name="base_harian" id="staff-base_harian">
+                            <option value="75">75</option>
+                            <option value="80" selected>80</option>
+                            <option value="85">85</option>
+                            <option value="90">90</option>
+                        </select>
+                        <small class="form-hint">Base harian per hari dalam ribuan (75 = Rp 75.000).</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Password</label>
                         <input type="password" class="form-control" name="password" id="staff-password" placeholder="Isi untuk mengubah password">
                         <div class="invalid-feedback" id="password-error"></div>

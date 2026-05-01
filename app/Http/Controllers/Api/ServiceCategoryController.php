@@ -32,6 +32,7 @@ class ServiceCategoryController extends Controller
         // 1. Validasi input
         $validated = $request->validate([
             'name' => 'required|string|unique:service_categories|max:255',
+            'commission_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
         // 2. Buat data baru
@@ -70,8 +71,10 @@ class ServiceCategoryController extends Controller
             'name' => [
                 'required',
                 'string',
-                'max:255',Rule::unique('service_categories')->ignore($serviceCategory->id),
+                'max:255',
+                Rule::unique('service_categories')->ignore($serviceCategory->id),
             ],
+            'commission_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
         // Update data 

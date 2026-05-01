@@ -14,7 +14,7 @@ class ServiceCategory extends Model
      *
      * @var array
      */
-    protected $fillable = ['name']; // <-- Ini juga penting untuk method create
+    protected $fillable = ['name', 'commission_rate']; // <-- Ini juga penting untuk method create
 
     public function services()
     {

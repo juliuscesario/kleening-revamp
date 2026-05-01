@@ -19,6 +19,7 @@ class StaffResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'phone_number' => $this->phone_number,
+            'base_harian' => $this->base_harian,
             'is_active' => $this->is_active,
             'area' => [
                 'id' => $this->area->id,
