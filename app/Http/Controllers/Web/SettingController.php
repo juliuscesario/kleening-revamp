@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
+use App\Services\ImageCompressor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
+    public function __construct(protected ImageCompressor $imageCompressor)
+    {
+    }
+
     public function index()
     {
         return view('settings.index', [
@@ -49,7 +54,7 @@ class SettingController extends Controller
                 Storage::disk('public')->delete($oldLogo);
             }
 
-            $path = $request->file('app_logo')->store('custom_branding', 'public');
+            $path = $this->imageCompressor->compress($request->file('app_logo'), 'custom_branding', 'app_logo');
             AppSetting::set('app_logo', $path);
         }
 

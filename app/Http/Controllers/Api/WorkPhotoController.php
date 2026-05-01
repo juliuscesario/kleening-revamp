@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\WorkPhotoResource;
 use App\Models\ServiceOrder; // <-- INI KUNCINYA
 use App\Models\WorkPhoto;
+use App\Services\ImageCompressor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class WorkPhotoController extends Controller
 {
     use \Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
+    public function __construct(protected ImageCompressor $imageCompressor)
+    {
+    }
 
     public function store(Request $request, ServiceOrder $serviceOrder)
     {
@@ -51,7 +56,7 @@ class WorkPhotoController extends Controller
             $existingPhoto->delete();
         }
 
-        $path = $request->file('photo')->store('work_photos', 'public');
+        $path = $this->imageCompressor->compress($request->file('photo'), 'work_photos');
 
         $photo = $serviceOrder->workPhotos()->create([
             'type' => $validated['type'],

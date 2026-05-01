@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ImageCompressor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // <-- PENTING untuk transaksi
 use App\Models\ServiceOrder;
@@ -18,6 +19,11 @@ use Carbon\Carbon;
 class ServiceOrderController extends Controller
 {
     use AuthorizesRequests;
+
+    public function __construct(protected ImageCompressor $imageCompressor)
+    {
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -233,8 +239,8 @@ class ServiceOrderController extends Controller
         }
 
         DB::transaction(function () use ($request, $serviceOrder, $validated) {
-            // Store the photo
-            $path = $request->file('photo')->store('work_photos', 'public');
+            // Store the photo (compressed)
+            $path = $this->imageCompressor->compress($request->file('photo'), 'work_photos');
 
             // Create WorkPhoto record with type 'arrival'
             $serviceOrder->workPhotos()->create([
@@ -269,8 +275,8 @@ class ServiceOrderController extends Controller
         }
 
         DB::transaction(function () use ($request, $serviceOrder, $validated) {
-            // Store the photo
-            $path = $request->file('photo')->store('work_photos', 'public');
+            // Store the photo (compressed)
+            $path = $this->imageCompressor->compress($request->file('photo'), 'work_photos');
 
             // Create WorkPhoto record
             $serviceOrder->workPhotos()->create([

@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Services\ImageCompressor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ExpenseController extends Controller
 {
+    public function __construct(protected ImageCompressor $imageCompressor)
+    {
+    }
+
     public function index()
     {
         $expenses = Expense::with('category', 'user')->latest('date')->paginate(10);
@@ -38,7 +43,7 @@ class ExpenseController extends Controller
 
         $path = null;
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('expenses', 'public');
+            $path = $this->imageCompressor->compress($request->file('photo'), 'expenses');
         }
 
         Expense::create([
