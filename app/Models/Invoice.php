@@ -44,6 +44,7 @@ class Invoice extends Model
         'status',
         'notes',
         'signature',
+        'reissued_from',
     ];
 
     public function serviceOrder()
@@ -54,5 +55,15 @@ class Invoice extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function reissueOrigin()
+    {
+        return $this->belongsTo(Invoice::class, 'reissued_from');
+    }
+
+    public function reissuedInvoice()
+    {
+        return $this->hasOne(Invoice::class, 'reissued_from');
     }
 }

@@ -140,7 +140,10 @@ class ServiceOrder extends Model
      */
     public function invoice() // <-- TAMBAHKAN METHOD INI
     {
-        return $this->hasOne(Invoice::class)->withoutGlobalScope(AreaScope::class);
+        return $this->hasOne(Invoice::class)
+            ->withoutGlobalScope(AreaScope::class)
+            ->where('status', '!=', Invoice::STATUS_CANCELLED)
+            ->latest();
     }
 
     /**

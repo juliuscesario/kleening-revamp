@@ -29,19 +29,31 @@ class InvoiceController extends Controller
     {
         $this->authorize('create', Invoice::class);
         $serviceOrder = ServiceOrder::with(['items.service', 'customer', 'address.area', 'staff', 'workPhotos'])->findOrFail($request->service_order_id);
-        $invoice = Invoice::where('service_order_id', $request->service_order_id)->first();
+        // Fetch the most recent non-cancelled invoice to check if an active one exists
+        $activeInvoice = Invoice::where('service_order_id', $request->service_order_id)
+            ->where('status', '!=', Invoice::STATUS_CANCELLED)
+            ->latest()
+            ->first();
+        // Also fetch any cancelled invoice for the create form context (to reset values)
+        $anyInvoice = Invoice::where('service_order_id', $request->service_order_id)
+            ->latest()
+            ->first();
+        $invoice = $anyInvoice;
 
         if (auth()->user()->role === 'co_owner' && $serviceOrder->address->area_id !== auth()->user()->area_id) {
             abort(403);
         }
 
-        if ($invoice && $invoice->status === Invoice::STATUS_CANCELLED) {
-            // If the invoice was cancelled, we allow creating a new one.
-            // We can reset any values if needed, e.g., DP or transport fee.
+        // If an active invoice exists, redirect to it
+        if ($activeInvoice) {
+            return redirect()->route('web.invoices.show', $activeInvoice);
+        }
+
+        // Reset DP and transport for cancelled invoice context
+        if ($invoice) {
             $invoice->dp_value = 0;
             $invoice->transport_fee = 0;
         }
-
 
         return view('pages.invoices.create', compact('serviceOrder', 'invoice'));
     }
@@ -100,10 +112,13 @@ class InvoiceController extends Controller
         $totalAfterDp = $grandTotal - $dpAmount;
 
         // Check for an existing invoice for this service order
-        $invoice = Invoice::where('service_order_id', $request->service_order_id)->first();
+        $invoice = Invoice::where('service_order_id', $request->service_order_id)
+            ->where('status', '!=', Invoice::STATUS_CANCELLED)
+            ->latest()
+            ->first();
 
-        // If an invoice exists and it's not cancelled, prevent creating a new one
-        if ($invoice && $invoice->status !== Invoice::STATUS_CANCELLED) {
+        // If an active invoice exists, prevent creating a new one
+        if ($invoice) {
             return redirect()->back()->with('error', 'An active invoice for this service order already exists.');
         }
 
@@ -162,7 +177,7 @@ class InvoiceController extends Controller
      */
     public function show(string $id)
     {
-        $invoice = Invoice::with(['serviceOrder.customer', 'serviceOrder.address.area', 'serviceOrder.staff', 'serviceOrder.items.service', 'serviceOrder.workPhotos', 'payments'])->findOrFail($id);
+        $invoice = Invoice::with(['serviceOrder.customer', 'serviceOrder.address.area', 'serviceOrder.staff', 'serviceOrder.items.service', 'serviceOrder.workPhotos', 'payments', 'reissueOrigin', 'reissuedInvoice'])->findOrFail($id);
         $this->authorize('view', $invoice);
         return view('pages.invoices.show', compact('invoice'));
     }
@@ -256,5 +271,133 @@ class InvoiceController extends Controller
         return redirect()
             ->route('web.invoices.show', $invoice->id)
             ->with('success', 'Invoice berhasil dibatalkan dan akan tetap muncul sebagai arsip.');
+    }
+
+    /**
+     * Reissue an invoice: cancel the old one and create a new one with adjusted values.
+     */
+    public function reissue(Request $request, Invoice $invoice)
+    {
+        $this->authorize('update', $invoice);
+
+        $request->validate([
+            'transport_fee' => 'required|numeric|min:0',
+            'discount_type' => 'required|in:none,fixed,percentage',
+            'discount' => 'required_unless:discount_type,none|numeric|min:0',
+        ]);
+
+        // Guard: cannot reissue a paid or already cancelled invoice
+        if ($invoice->status === Invoice::STATUS_PAID) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice yang sudah dibayar tidak bisa di-reissue.',
+            ], 422);
+        }
+
+        if ($invoice->status === Invoice::STATUS_CANCELLED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice yang sudah dibatalkan tidak bisa di-reissue.',
+            ], 422);
+        }
+
+        if ($invoice->payments()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice dengan riwayat pembayaran tidak bisa di-reissue.',
+            ], 422);
+        }
+
+        $newTransportFee = $request->transport_fee;
+        $newDiscountType = $request->discount_type;
+        $newDiscount = $newDiscountType === 'none' ? 0 : $request->discount;
+
+        // Calculate discount amount
+        $discountAmount = 0;
+        if ($newDiscountType === 'percentage') {
+            if ($newDiscount > 100) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Discount percentage cannot exceed 100.',
+                ], 422);
+            }
+            $discountAmount = ($invoice->subtotal * $newDiscount) / 100;
+        } else {
+            $discountAmount = $newDiscount;
+        }
+
+        $newGrandTotal = ($invoice->subtotal - $discountAmount) + $newTransportFee;
+
+        if ($newGrandTotal <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Grand total must be greater than 0.',
+            ], 422);
+        }
+
+        // Generate new invoice number
+        // Use date-based format similar to existing: INV/YYYY/MM/DD
+        $newInvoiceNumber = 'INV/' . now()->format('Y/m/d') . '/' . $invoice->service_order_id . '-' . now()->format('His');
+
+        // Ensure uniqueness
+        $baseNumber = $newInvoiceNumber;
+        $suffix = 1;
+        while (Invoice::where('invoice_number', $newInvoiceNumber)->exists()) {
+            $newInvoiceNumber = $baseNumber . '-' . $suffix;
+            $suffix++;
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. Cancel the original invoice
+            $invoice->update(['status' => Invoice::STATUS_CANCELLED]);
+
+            // Revert service_order status back to done (so we can create new invoice)
+            if ($invoice->serviceOrder) {
+                $invoice->serviceOrder->update(['status' => ServiceOrder::STATUS_DONE]);
+            }
+
+            // 2. Create new invoice
+            $newInvoice = Invoice::create([
+                'service_order_id' => $invoice->service_order_id,
+                'invoice_number' => $newInvoiceNumber,
+                'issue_date' => now()->format('Y-m-d'),
+                'due_date' => $invoice->due_date, // keep same due date
+                'subtotal' => $invoice->subtotal,
+                'discount' => $newDiscount,
+                'discount_type' => $newDiscountType,
+                'transport_fee' => $newTransportFee,
+                'grand_total' => $newGrandTotal,
+                'dp_type' => $invoice->dp_type,
+                'dp_value' => $invoice->dp_value,
+                'total_after_dp' => $newGrandTotal - ($invoice->dp_type === 'percentage'
+                    ? ($newGrandTotal * $invoice->dp_value) / 100
+                    : $invoice->dp_value),
+                'paid_amount' => 0, // reset paid amount for new invoice
+                'status' => Invoice::STATUS_SENT,
+                'notes' => $invoice->notes,
+                'reissued_from' => $invoice->id,
+            ]);
+
+            // 3. Point service_order to the new invoice
+            if ($invoice->serviceOrder) {
+                $invoice->serviceOrder->update(['status' => ServiceOrder::STATUS_INVOICED]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice berhasil di-reissue.',
+                'new_invoice_id' => $newInvoice->id,
+                'new_invoice_number' => $newInvoice->invoice_number,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reissue invoice: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

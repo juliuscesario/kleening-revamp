@@ -108,6 +108,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('invoices', InvoiceController::class)->names('web.invoices');
     Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('web.invoices.download');
     Route::get('/invoices/{invoice}/view-pdf', [InvoiceController::class, 'viewPdf'])->name('web.invoices.view-pdf');
+    Route::post('/invoices/{invoice}/reissue', [InvoiceController::class, 'reissue'])->name('web.invoices.reissue');
     Route::resource('payments', PaymentController::class)->names('web.payments');
 
     Route::resource('expenses', \App\Http\Controllers\Web\ExpenseController::class)->only(['index', 'create', 'store'])->names('web.expenses');

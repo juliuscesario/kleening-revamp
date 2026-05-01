@@ -315,7 +315,7 @@ class DataTablesController extends Controller
                 }
 
                 if ($so->invoice && $so->invoice->status !== \App\Models\Invoice::STATUS_CANCELLED) {
-                    $actions .= '<a href="' . route('web.invoices.show', $so->invoice->id) . '" class="btn btn-sm btn-success">Invoice</a> ';
+                    $actions .= '<a href="' . route('web.invoices.show', $so->invoice) . '" class="btn btn-sm btn-success">Invoice</a> ';
                 } else if ($so->status === \App\Models\ServiceOrder::STATUS_DONE) {
                     $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Buat Invoice</button> ';
                 }
@@ -388,7 +388,7 @@ class DataTablesController extends Controller
                 return '<span class="badge ' . $statusBadgeClass . ' text-bg-secondary">' . ucfirst($invoice->status) . '</span>';
             })
             ->addColumn('action', function ($invoice) {
-                $detailUrl = route('web.invoices.show', $invoice->id);
+                $detailUrl = route('web.invoices.show', $invoice);
                 $actions = '<a href="' . $detailUrl . '" class="btn btn-sm btn-secondary">Detail</a> ';
 
                 switch ($invoice->status) {
@@ -1147,7 +1147,7 @@ class DataTablesController extends Controller
                 return 'Rp 0';
             })
             ->addColumn('invoice_show_url', function ($so) {
-                return $so->invoice ? route('web.invoices.show', $so->invoice->id) : null;
+                return $so->invoice ? route('web.invoices.show', $so->invoice) : null;
             })
             ->addColumn('status_badge_class', function ($so) {
                 switch ($so->status) {
