@@ -5,11 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // <-- IMPORT INI
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable; // <-- TAMBAHKAN INI
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes; // <-- TAMBAHKAN SoftDeletes DI SINI
+
+    /**
+     * Resolve the route binding to prevent SQL errors for non-numeric IDs in PostgreSQL.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field === null || $field === $this->getKeyName()) {
+            if (!is_numeric($value)) {
+                return null;
+            }
+        }
+        return parent::resolveRouteBinding($value, $field);
+    }
 
     /**
      * The attributes that are mass assignable.

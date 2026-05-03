@@ -131,11 +131,18 @@ class StaffController extends Controller
         // Cek izin: apakah user boleh me-resign Staff ini?
         $this->authorize('resign', $staff);
 
-        if ($staff->user) {
-            $staff->user->delete(); // This will set user_id to null because of onDelete('set null')
-            return response()->json(['message' => 'Staff has been resigned and their login has been removed.']);
+        DB::beginTransaction();
+        try {
+            if ($staff->user) {
+                $staff->user->delete();
+            }
+            $staff->delete();
+            
+            DB::commit();
+            return response()->json(['message' => 'Staff has been resigned. Their login has been removed and they will no longer appear in active lists.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to resign staff.', 'error' => $e->getMessage()], 500);
         }
-
-        return response()->json(['message' => 'This staff member does not have a login to remove.'], 404);
     }
 }

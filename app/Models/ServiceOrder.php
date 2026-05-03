@@ -21,6 +21,19 @@ class ServiceOrder extends Model
     public const STATUS_INVOICED = 'invoiced';
 
     /**
+     * Resolve the route binding to prevent SQL errors for non-numeric IDs in PostgreSQL.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field === null || $field === $this->getKeyName()) {
+            if (!is_numeric($value)) {
+                return null;
+            }
+        }
+        return parent::resolveRouteBinding($value, $field);
+    }
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted(): void
