@@ -2,6 +2,7 @@ $(function () {
     const apiUrl = $('#staff-table').data('api-url');
     const staffModal = new bootstrap.Modal(document.getElementById('modal-staff'));
     let showResigned = false;
+    let staffTable;
 
     // Function to reset form and modal
     function resetForm() {
