@@ -1,7 +1,7 @@
 $(function () {
     const apiUrl = $('#staff-table').data('api-url');
     const staffModal = new bootstrap.Modal(document.getElementById('modal-staff'));
-    let staffTable;
+    let showResigned = false;
 
     // Function to reset form and modal
     function resetForm() {
@@ -19,7 +19,12 @@ $(function () {
         processing: true,
         serverSide: true,
         responsive: true,
-        ajax: $('#staff-table').data('url'),
+        ajax: {
+            url: $('#staff-table').data('url'),
+            data: function (d) {
+                d.show_resigned = showResigned;
+            }
+        },
         columns: [
             { data: 'id', name: 'id' },
             { data: 'name', name: 'name' },
@@ -29,6 +34,14 @@ $(function () {
             { data: 'created_at', name: 'created_at' },
             { data: 'action', name: 'action', orderable: false, searchable: false }
         ]
+    });
+
+    // Toggle Resigned Staff
+    $('#toggle-resigned-button').on('click', function () {
+        showResigned = !showResigned;
+        $(this).toggleClass('btn-outline-secondary btn-danger');
+        $('#toggle-text').text(showResigned ? 'Hide Resigned' : 'Show Resigned');
+        staffTable.ajax.reload();
     });
 
     // Show modal for adding a new staff member

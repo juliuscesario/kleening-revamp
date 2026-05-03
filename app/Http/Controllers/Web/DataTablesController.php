@@ -76,11 +76,15 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
-    public function staff()
+    public function staff(Request $request)
     {
         $this->authorize('viewAny', \App\Models\Staff::class);
 
         $query = \App\Models\Staff::with(['area', 'user'])->select('staff.*');
+
+        if ($request->has('show_resigned') && $request->show_resigned == 'true') {
+            $query->withTrashed();
+        }
 
         return DataTables::of($query)
             ->addColumn('phone_number', function ($staff) {
@@ -95,6 +99,13 @@ class DataTablesController extends Controller
                 }
                 return '<span class="badge bg-warning">No Login</span>';
             })
+            ->editColumn('name', function ($staff) {
+                $name = $staff->name;
+                if ($staff->trashed()) {
+                    $name .= ' <span class="badge bg-danger ms-2">Resigned</span>';
+                }
+                return $name;
+            })
             ->editColumn('created_at', function ($staff) {
                 return \Carbon\Carbon::parse($staff->created_at)->format('d M Y');
             })
@@ -102,13 +113,17 @@ class DataTablesController extends Controller
                 $query->orderBy('created_at', $order);
             })
             ->addColumn('action', function ($staff) {
+                if ($staff->trashed()) {
+                    return '<span class="text-muted small">No actions available</span>';
+                }
+                
                 $actions = '<button class="btn btn-sm btn-info edit-button" data-id="' . $staff->id . '">Edit</button>';
                 if ($staff->user) {
                     $actions .= ' <button class="btn btn-sm btn-danger resign-button" data-id="' . $staff->id . '">Resign</button>';
                 }
                 return $actions;
             })
-            ->rawColumns(['action', 'role'])
+            ->rawColumns(['action', 'role', 'name'])
             ->make(true);
     }
 
