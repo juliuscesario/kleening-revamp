@@ -437,6 +437,7 @@ function getStatusLabel($status) {
                         <th>Lokasi</th>
                         <th>Pekerjaan</th>
                         <th>Notes</th>
+                        <th style="width:100px">Phone</th>
                         <th style="width:100px">Admin</th>
                         <th style="width:120px">Status</th>
                     </tr>
@@ -515,9 +516,22 @@ function getStatusLabel($status) {
                                 @endforeach
                             </td>
                             <td>
-                                <span class="inline-edit notes-text" onclick="editNotes(this, {{ $so->id }})" data-value="{{ $so->staff_notes }}">
-                                    {{ $so->staff_notes ?: '—' }}
-                                </span>
+                                @if($so->staff_notes)
+                                    <span class="inline-edit notes-text"
+                                          data-value="{{ e($so->staff_notes) }}"
+                                          data-full="{{ e($so->staff_notes) }}">
+                                        {{ Str::limit($so->staff_notes, 40, '…') }}
+                                    </span>
+                                @else
+                                    <span class="inline-edit notes-text text-muted" data-value="" data-full="" title="">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if(!empty($so->customer->phone_number))
+                                    <span class="copy-phone" data-phone="{{ $so->customer->phone_number }}" title="Tap to copy" style="cursor:pointer;font-size:0.82rem;color:#3b82f6;user-select:none;">{{ $so->customer->phone_number }}</span>
+                                @else
+                                    <span style="color:#94a3b8">—</span>
+                                @endif
                             </td>
                             <td><span class="admin-pill">{{ $so->creator?->name ? Str::limit($so->creator->name, 8) : '—' }}</span></td>
                             <td><span class="status-pill status-{{ $so->lifecycle_status }}">{{ getStatusLabel($so->lifecycle_status) }}</span></td>
@@ -739,14 +753,16 @@ function editNotes(el, soId) {
                 }).then(data => {
                     if (data.success) {
                         if (val) {
-                            el.textContent = val;
+                            el.textContent = val.length > 40 ? val.substring(0, 40) + '…' : val;
                             el.dataset.value = val;
+                            el.dataset.full = val;
                             el.className = 'inline-edit notes-text';
                             el.style.color = '';
                         } else {
                             el.textContent = '—';
                             el.dataset.value = '';
-                            el.className = 'inline-edit notes-text';
+                            el.dataset.full = '';
+                            el.className = 'inline-edit notes-text text-muted';
                             el.style.color = '';
                         }
                         Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
@@ -755,6 +771,9 @@ function editNotes(el, soId) {
                     }
                 }).catch(err => {
                     console.error(err);
+                    el.textContent = current ? (current.length > 40 ? current.substring(0, 40) + '…' : current) : '—';
+                    el.dataset.value = current;
+                    el.dataset.full = current;
                     Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
                 });
             }
@@ -780,11 +799,13 @@ function editNotes(el, soId) {
                         span.className = 'inline-edit notes-text';
                         span.setAttribute('onclick', `editNotes(this, ${soId})`);
                         span.dataset.value = val;
-                        span.textContent = val;
+                        span.dataset.full = val;
+                        span.textContent = val.length > 40 ? val.substring(0, 40) + '…' : val;
                     } else {
-                        span.className = 'inline-edit notes-text';
+                        span.className = 'inline-edit notes-text text-muted';
                         span.setAttribute('onclick', `editNotes(this, ${soId})`);
                         span.dataset.value = '';
+                        span.dataset.full = '';
                         span.textContent = '—';
                     }
                     input.replaceWith(span);
@@ -798,7 +819,8 @@ function editNotes(el, soId) {
                 span.className = 'inline-edit notes-text';
                 span.setAttribute('onclick', `editNotes(this, ${soId})`);
                 span.dataset.value = current;
-                span.textContent = current || '—';
+                span.dataset.full = current;
+                span.textContent = current ? (current.length > 40 ? current.substring(0, 40) + '…' : current) : '—';
                 input.replaceWith(span);
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
             });
@@ -1072,6 +1094,91 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+
+    // Tap to copy phone number
+    $(document).on('click', '.copy-phone', function () {
+        const phone = $(this).data('phone');
+        if (!phone) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(phone).then(() => {
+                showPhoneCopyFeedback($(this));
+            }).catch(() => {
+                fallbackPhoneCopy(phone, $(this));
+            });
+        } else {
+            fallbackPhoneCopy(phone, $(this));
+        }
+    });
+
+    function showPhoneCopyFeedback($el) {
+        const original = $el.text();
+        $el.text('Copied!').css('color', 'var(--tblr-success)');
+        setTimeout(() => {
+            $el.text(original).css('color', '#3b82f6');
+        }, 1500);
+    }
+
+    function fallbackPhoneCopy(text, $el) {
+        const $temp = $('<input>');
+        $('body').append($temp);
+        $temp.val(text).select();
+        try {
+            document.execCommand('copy');
+            showPhoneCopyFeedback($el);
+        } catch (e) {}
+        $temp.remove();
+    }
+
+// Notes: single tap = popover (delayed), double tap = edit
+var _notesClickTimer = null;
+var _notesPopoverTimeout = null;
+document.addEventListener('click', function(e) {
+    var el = e.target.closest('.notes-text');
+    if (!el) return;
+    e.preventDefault();
+
+    var now = Date.now();
+
+    if (_notesClickTimer && (now - _notesClickTimer) < 400) {
+        // Double tap → cancel pending popover, open editor
+        clearTimeout(_notesPopoverTimeout);
+        _notesClickTimer = null;
+        hideNotesPopover();
+        editNotes(el, parseInt(el.closest('[data-so-id]').dataset.soId));
+    } else {
+        // Possible single tap — wait 400ms before showing popover
+        _notesClickTimer = now;
+        var full = el.dataset.full || el.dataset.value || '';
+        if (!full) return;
+
+        _notesPopoverTimeout = setTimeout(function() {
+            showNotesPopover(e.clientX, e.clientY, full);
+            _notesClickTimer = null;
+        }, 400);
+    }
+});
+
+function showNotesPopover(clickX, clickY, text) {
+    hideNotesPopover();
+    var pop = document.createElement('div');
+    pop.id = 'notes-popover';
+    pop.textContent = text;
+    pop.style.cssText = 'position:fixed;background:#1e293b;color:#f8fafc;padding:6px 10px;border-radius:6px;font-size:0.8rem;max-width:260px;box-shadow:0 4px 12px rgba(0,0,0,0.2);white-space:pre-wrap;word-break:break-word;pointer-events:none;z-index:9999;';
+
+    var left = Math.min(clickX, window.innerWidth - 270);
+    var top = clickY + 10;
+    if (top + 80 > window.innerHeight) top = clickY - 90;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    document.body.appendChild(pop);
+    setTimeout(hideNotesPopover, 2000);
+}
+
+function hideNotesPopover() {
+    var existing = document.getElementById('notes-popover');
+    if (existing) existing.remove();
+}
 });
 </script>
 @endpush

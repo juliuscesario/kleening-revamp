@@ -1,5 +1,8 @@
 # Kleening.id — Project Context for Qwen Code
 
+## Auto Context
+- Always read `.context/` files before starting any task.
+
 ## Stack
 - Laravel + Blade (NOT a SPA)
 - Tabler UI framework
