@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Staff;
+use App\Models\OrderSession;
 use App\Models\ServiceCategory;
 use App\Models\ServiceOrder;
+use App\Models\Staff;
 use App\Models\WorkPhoto;
 use App\Services\PayrollExcelGenerator;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -48,24 +49,35 @@ class PayrollController extends Controller
 
         $staff = Staff::withoutGlobalScopes()->findOrFail($staffId);
 
-        $orders = ServiceOrder::withoutGlobalScopes()
-            ->whereHas('staff', function ($q) use ($staffId) {
-                $q->withoutGlobalScopes()->where('staff.id', $staffId);
-            })
-            ->whereNotIn('status', ['cancelled', 'draft'])
-            ->whereBetween('work_date', [$startDate, $endDate])
+        // Query sessions instead of orders — each session = one job/day
+        $sessions = OrderSession::whereHas('staff', function ($q) use ($staffId) {
+            $q->withoutGlobalScopes()->where('staff.id', $staffId);
+        })
+            ->whereIn('status', ['proses', 'done']) // only count sessions that actually happened (exclude booked + cancel)
+            ->whereBetween('tanggal', [$startDate, $endDate])
             ->with([
-                'customer',
-                'items.service.category',
-                'staff',
-                'invoice',
+                'serviceOrder' => function ($q) {
+                    $q->withoutGlobalScopes()
+                        ->with([
+                            'invoice',
+                            'customer',
+                            'items.service.category',
+                            'sessions' => function ($sq) {
+                                // Load ALL sessions of the parent order (not just this staff's)
+                                // We need this to calculate total QTY (man-days)
+                                $sq->whereIn('status', ['proses', 'done'])
+                                    ->with(['staff' => fn($q2) => $q2->withoutGlobalScopes()]);
+                            },
+                        ]);
+                },
+                'staff' => fn($q) => $q->withoutGlobalScopes(), // staff for THIS session
             ])
-            ->orderBy('work_date')
-            ->orderBy('work_time')
+            ->orderBy('tanggal')
+            ->orderBy('jam')
             ->get();
 
-        // Build payroll rows
-        $rows = $this->buildPayrollRows($orders, $staff);
+        // Build payroll rows from sessions
+        $rows = $this->buildPayrollRows($sessions, $staff);
 
         // Generate Excel
         $generator = new PayrollExcelGenerator();
@@ -114,12 +126,32 @@ class PayrollController extends Controller
         return $comRates[$categoryName] ?? 0.10;
     }
 
-    private function buildPayrollRows($orders, $staff)
+    private function buildPayrollRows($sessions, $staff)
     {
         $rows = [];
-        $dayTracker = []; // date => counter (how many bookings on this date)
+        $dayTracker = []; // date => counter (how many jobs on this date)
+        $orderTransportWritten = []; // track by service_order_id — transport written only once per order
 
-        foreach ($orders as $order) {
+        foreach ($sessions as $session) {
+            $order = $session->serviceOrder;
+            if (!$order) {
+                continue; // skip orphaned sessions
+            }
+
+            $orderId = $order->id;
+            $isFirstSessionOfOrder = !isset($orderTransportWritten[$orderId]);
+
+            // QTY = total man-days across ALL sessions of this order
+            $allSessions = $order->sessions ?? collect();
+            $qty = 0;
+            foreach ($allSessions as $s) {
+                $qty += $s->staff->count();
+            }
+            // Fallback: if no sessions loaded or empty, use 1 to avoid division by zero
+            if ($qty === 0) {
+                $qty = 1;
+            }
+
             // Step 1 — Group items by com rate (use string keys to avoid float→int coercion)
             $groups = [];
             foreach ($order->items as $item) {
@@ -149,11 +181,10 @@ class PayrollController extends Controller
             $sortedKeys = array_keys($groups);
             sort($sortedKeys);
 
-            // Staff names for this order
-            $kruNames = $order->staff->pluck('name')->join(', ');
-            $qty = $order->staff->count();
+            // Staff names for THIS session (not all sessions)
+            $kruNames = $session->staff->pluck('name')->join(', ');
 
-            $rowDate = $order->work_date instanceof Carbon ? $order->work_date : Carbon::parse($order->work_date);
+            $rowDate = $session->tanggal instanceof Carbon ? $session->tanggal : Carbon::parse($session->tanggal);
             $dateKey = $rowDate->format('Y-m-d');
 
             // Track booking order on this date for harian logic
@@ -164,23 +195,23 @@ class PayrollController extends Controller
             }
             $bookingOrderOnDay = $dayTracker[$dateKey]; // 1 = first, 2+ = subsequent
 
-            // === Arrival photo data ===
+            // === Arrival photo data (from parent order) ===
             $arrivalPhoto = WorkPhoto::withoutGlobalScopes()
                 ->where('service_order_id', $order->id)
                 ->where('type', 'arrival')
                 ->orderBy('created_at', 'asc')
                 ->first();
 
-            // Parse work_time safely — malformed values won't crash the whole generation
+            // Parse work_time safely — use session's jam field, fallback to order's work_time
             $workTimeStr = null;
             $workMinutes = null;
-            if ($order->work_time) {
+            $timeToUse = $session->jam ?? $order->work_time;
+            if ($timeToUse) {
                 try {
-                    $workCarbon = Carbon::createFromFormat('H:i:s', $order->work_time);
+                    $workCarbon = Carbon::createFromFormat('H:i:s', $timeToUse);
                     $workTimeStr = $workCarbon->format('H:i');
                     $workMinutes = $workCarbon->hour * 60 + $workCarbon->minute;
                 } catch (\Exception $e) {
-                    // Malformed work_time — skip timing columns for this row
                     $workTimeStr = null;
                     $workMinutes = null;
                 }
@@ -200,30 +231,39 @@ class PayrollController extends Controller
                 $lateMinutes = max(0, $arrivalMinutes - $workMinutes);
             }
 
-            // Step 2 — Check if split is needed
+            // === Split-job logic ===
             if (count($groups) === 1) {
-                // === Single com-rate group: omset = invoice grand_total ===
+                // === Single com-rate group ===
                 $group = $groups[$sortedKeys[0]];
 
                 if ($hasInvoice && $invoiceGrandTotal > 0) {
-                    $omset = $invoiceGrandTotal;
+                    $omset = $invoiceGrandTotal; // FULL grand_total, NOT divided by sessions
                 } else {
-                    // Fallback: sum of item totals
                     $omset = $group['item_total'];
                 }
 
-                $transport = $hasTransport ? $transportFee : null;
+                // Transport only on first session of this order (ever)
+                $transport = null;
+                if ($isFirstSessionOfOrder && $hasTransport) {
+                    $transport = $transportFee;
+                    $orderTransportWritten[$orderId] = true;
+                } elseif ($isFirstSessionOfOrder) {
+                    $orderTransportWritten[$orderId] = true;
+                }
+
+                // Customer name: plain name + category shorthand (NO session suffix)
+                $customerName = $order->customer?->name ?? '';
 
                 $rows[] = [
                     'date' => $rowDate,
-                    'customer_name' => $order->customer?->name ?? '',
+                    'customer_name' => $customerName,
                     'omset' => $omset,
                     'transport' => $transport,
                     'kru' => $kruNames,
                     'qty' => $qty,
                     'harian' => $bookingOrderOnDay === 1 ? (int) $staff->base_harian : ($staff->harian_tambahan ?? 25),
                     'com_rate' => $group['com_rate'],
-                    'show_tgl' => true, // TGL on single-row bookings
+                    'show_tgl' => true,
                     'is_split_row' => false,
                     'work_time' => $workTimeStr,
                     'arrival_time' => $arrivalTimeStr,
@@ -244,9 +284,7 @@ class PayrollController extends Controller
                 // Discount ratio based on subtotal
                 $discountRatio = ($subtotal > 0) ? $discountAmount / $subtotal : 0;
 
-                // Step 3 — Calculate omset per group (sorted ascending)
-                // groupTakes = discounted item totals (without transport)
-                // Transport is added separately on first row
+                // Calculate omset per group (sorted ascending)
                 $groupTakes = [];
                 if ($hasInvoice && $invoiceGrandTotal > 0) {
                     $sumAfterDiscount = 0;
@@ -263,7 +301,6 @@ class PayrollController extends Controller
                     $lastKey = $sortedKeys[count($sortedKeys) - 1];
                     $groupTakes[$lastKey] += $diff;
                 } else {
-                    // No invoice: use item totals directly
                     foreach ($sortedKeys as $key) {
                         $groupTakes[$key] = (int) round($groups[$key]['item_total']);
                     }
@@ -276,25 +313,23 @@ class PayrollController extends Controller
                     $groupItemTotal = $groupTakes[$key];
 
                     if ($isFirstGroup) {
-                        // First row: add transport to omset
-                        $omset = $groupItemTotal + ($hasTransport ? $transportFee : 0);
-                        $transport = $hasTransport ? $transportFee : null;
+                        // First row: add transport only on first session of this order
+                        $omset = $groupItemTotal + ($isFirstSessionOfOrder && $hasTransport ? $transportFee : 0);
+                        $transport = ($isFirstSessionOfOrder && $hasTransport) ? $transportFee : null;
                     } else {
-                        // Subsequent rows: just discounted total
                         $omset = $groupItemTotal;
                         $transport = null;
                     }
 
-                    // Harian only on first row of booking
+                    // Harian only on first group
                     $harian = $isFirstGroup ? ($bookingOrderOnDay === 1 ? (int) $staff->base_harian : ($staff->harian_tambahan ?? 25)) : null;
 
-                    // TGL only on first row of booking
-                    $showTgl = $isFirstGroup;
+                    // TGL only on first group of first session
+                    $showTgl = $isFirstGroup && $isFirstSessionOfOrder;
 
                     // Customer name: first row as-is, subsequent append category shorthand
                     $customerName = $order->customer?->name ?? '';
                     if (!$isFirstGroup) {
-                        // Get unique categories for this group
                         $uniqueCats = array_unique($group['categories']);
                         $shorthand = $this->getCategoryShorthand($uniqueCats);
                         $customerName .= ' ' . $shorthand;
@@ -317,6 +352,11 @@ class PayrollController extends Controller
                     ];
 
                     $isFirstGroup = false;
+                }
+
+                // Mark transport as written after processing all groups
+                if ($isFirstSessionOfOrder) {
+                    $orderTransportWritten[$orderId] = true;
                 }
             }
         }

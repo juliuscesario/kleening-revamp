@@ -20,7 +20,17 @@ class InvoiceController extends Controller
      */
     public function storeFromServiceOrder(Request $request, ServiceOrder $serviceOrder)
     {
-        
+
+        // Gate: only allow invoice creation when SO and all sessions are done
+        $allSessionsDone = $serviceOrder->sessions()
+            ->where('status', '!=', 'cancel')
+            ->where('status', '!=', 'done')
+            ->doesntExist();
+
+        if ($serviceOrder->status !== 'done' || !$allSessionsDone) {
+            return response()->json(['error' => 'Invoice hanya bisa dibuat jika semua sesi sudah selesai.'], 422);
+        }
+
         // Cek izin: apakah user boleh melihat daftar Invoice?
         $this->authorize('create', Invoice::class);
         

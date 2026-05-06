@@ -26,7 +26,7 @@ class WorkPhotoPolicy
         }
         // Staff boleh jika ditugaskan ke SO ini
         if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff_id', $user->staff->id)->exists();
+            return $serviceOrder->hasStaffAssigned($user->staff->id);
         }
         return false;
     }

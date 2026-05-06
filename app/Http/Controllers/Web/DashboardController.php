@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\ServiceOrder;
+use App\Models\OrderSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -124,17 +125,16 @@ class DashboardController extends Controller
                 ->get();
 
         } elseif ($role === 'staff') {
-            // Existing staff logic...
             $staffId = $user->staff->id;
             $tomorrow = Carbon::tomorrow();
             $startOfMonth = $today->copy()->subMonthNoOverflow()->startOfMonth();
             $endOfMonth = $today->copy()->endOfMonth();
 
-            $sortBy = $request->input('sort_by', 'work_date');
+            $sortBy = $request->input('sort_by', 'tanggal');
             $sortDir = $request->input('sort_dir', 'asc');
 
-            if (!in_array($sortBy, ['work_date', 'created_at'])) {
-                $sortBy = 'work_date';
+            if (!in_array($sortBy, ['tanggal', 'jam', 'created_at'])) {
+                $sortBy = 'tanggal';
             }
             if (!in_array($sortDir, ['asc', 'desc'])) {
                 $sortDir = 'asc';
@@ -144,50 +144,86 @@ class DashboardController extends Controller
             $viewData['currentSortDir'] = $sortDir;
 
             $applySort = function ($query) use ($sortBy, $sortDir) {
-                if ($sortBy === 'work_date') {
-                    $query->orderBy('work_date', $sortDir)
-                        ->orderByRaw("COALESCE(work_time, '23:59:59') " . $sortDir);
+                if ($sortBy === 'tanggal') {
+                    $query->orderBy('tanggal', $sortDir)
+                        ->orderByRaw("COALESCE(jam, '23:59:59') " . $sortDir);
+                } elseif ($sortBy === 'jam') {
+                    $query->orderByRaw("COALESCE(jam, '23:59:59') " . $sortDir)
+                        ->orderBy('tanggal', $sortDir);
                 } else {
                     $query->orderBy('created_at', $sortDir);
                 }
             };
 
-            $todayServiceOrdersQuery = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
-                ->whereDate('work_date', $today)
-                ->whereIn('status', ['booked', 'proses']);
-            $applySort($todayServiceOrdersQuery);
-            $viewData['todayServiceOrders'] = $todayServiceOrdersQuery->get();
+            $staffQueryBase = fn($q) => $q->withoutGlobalScopes()->where('staff.id', $staffId);
 
-            $tomorrowServiceOrdersQuery = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
-                ->whereDate('work_date', $tomorrow)
-                ->where('status', 'booked');
-            $applySort($tomorrowServiceOrdersQuery);
-            $viewData['tomorrowServiceOrders'] = $tomorrowServiceOrdersQuery->get();
+            $todaySessionsQuery = OrderSession::whereHas('staff', $staffQueryBase)
+                ->whereDate('tanggal', $today)
+                ->whereIn('status', ['booked', 'proses', 'done'])
+                ->with([
+                    'serviceOrder' => function ($q) {
+                        $q->withoutGlobalScopes()
+                            ->with(['customer', 'address', 'items.service.category']);
+                    },
+                ]);
+            $applySort($todaySessionsQuery);
+            $viewData['todaySessions'] = $todaySessionsQuery->get();
 
-            $pastServiceOrdersQuery = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
-                ->whereBetween('work_date', [$today->copy()->subDays(6), $today->copy()->subDay()])
-                ->whereIn('status', ['booked', 'proses']);
-            $applySort($pastServiceOrdersQuery);
-            $viewData['pastServiceOrders'] = $pastServiceOrdersQuery->get();
+            $tomorrowSessionsQuery = OrderSession::whereHas('staff', $staffQueryBase)
+                ->whereDate('tanggal', $tomorrow)
+                ->where('status', 'booked')
+                ->with([
+                    'serviceOrder' => function ($q) {
+                        $q->withoutGlobalScopes()
+                            ->with(['customer', 'address', 'items.service.category']);
+                    },
+                ]);
+            $applySort($tomorrowSessionsQuery);
+            $viewData['tomorrowSessions'] = $tomorrowSessionsQuery->get();
 
-            $viewData['cancelledServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
-                ->where('status', 'cancelled')
-                ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
-                ->orderBy('work_date', 'desc')
-                ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
+            $pastSessionsQuery = OrderSession::whereHas('staff', $staffQueryBase)
+                ->whereBetween('tanggal', [$today->copy()->subDays(6), $today->copy()->subDay()])
+                ->whereIn('status', ['booked', 'proses', 'done'])
+                ->with([
+                    'serviceOrder' => function ($q) {
+                        $q->withoutGlobalScopes()
+                            ->with(['customer', 'address', 'items.service.category']);
+                    },
+                ]);
+            $applySort($pastSessionsQuery);
+            $viewData['pastSessions'] = $pastSessionsQuery->get();
+
+            $viewData['cancelledSessions'] = OrderSession::whereHas('staff', $staffQueryBase)
+                ->where('status', 'cancel')
+                ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+                ->with([
+                    'serviceOrder' => function ($q) {
+                        $q->withoutGlobalScopes()->with('customer');
+                    },
+                ])
+                ->orderBy('tanggal', 'desc')
+                ->orderByRaw("COALESCE(jam, '23:59:59') asc")
                 ->get();
 
-            $viewData['doneServiceOrders'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))
-                ->whereNotIn('status', ['booked', 'proses', 'cancelled'])
-                // ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
-                ->where('work_date', '>=', $today->copy()->subDays(10)) // Last 10 days
-                ->with(['customer', 'address']) // Eager load relations
-                ->orderBy('work_date', 'desc')
-                ->orderByRaw("COALESCE(work_time, '23:59:59') asc")
+            $viewData['doneSessions'] = OrderSession::whereHas('staff', $staffQueryBase)
+                ->where('status', 'done')
+                ->where('tanggal', '>=', $today->copy()->subDays(10))
+                ->with([
+                    'serviceOrder' => function ($q) {
+                        $q->withoutGlobalScopes()
+                            ->with(['customer', 'address']);
+                    },
+                ])
+                ->orderBy('tanggal', 'desc')
+                ->orderByRaw("COALESCE(jam, '23:59:59') asc")
                 ->get();
-            $viewData['totalDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereNotIn('status', ['booked', 'proses', 'cancelled'])->count();
-            $viewData['todayDoneCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->whereNotIn('status', ['booked', 'proses', 'cancelled'])->whereDate('work_date', $today)->count();
-            $viewData['bookedCount'] = ServiceOrder::whereHas('staff', fn($q) => $q->where('staff.id', $staffId))->where('status', 'booked')->whereDate('work_date', '>=', $today)->count();
+
+            $viewData['totalDoneCount'] = OrderSession::whereHas('staff', $staffQueryBase)
+                ->where('status', 'done')->count();
+            $viewData['todayDoneCount'] = OrderSession::whereHas('staff', $staffQueryBase)
+                ->where('status', 'done')->whereDate('tanggal', $today)->count();
+            $viewData['bookedCount'] = OrderSession::whereHas('staff', $staffQueryBase)
+                ->where('status', 'booked')->whereDate('tanggal', '>=', $today)->count();
         }
 
         // Default empty values for keys not set in every role
@@ -197,11 +233,11 @@ class DashboardController extends Controller
             'todaySchedule',
             'unassignedJobs',
             'tomorrowSchedule',
-            'todayServiceOrders',
-            'tomorrowServiceOrders',
-            'pastServiceOrders',
-            'cancelledServiceOrders',
-            'doneServiceOrders'
+            'todaySessions',
+            'tomorrowSessions',
+            'pastSessions',
+            'cancelledSessions',
+            'doneSessions'
         ];
         $numericKeys = [
             'monthlyRevenue',

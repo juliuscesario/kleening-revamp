@@ -4,18 +4,16 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Area;
-use App\Models\Customer;
 use App\Models\Address;
 use App\Models\Invoice;
+use App\Models\OrderSession;
 use App\Models\Service;
 use App\Models\ServiceOrder;
-use App\Models\ServiceOrderItem;
 use App\Models\Staff;
 use App\Models\StaffOffDay;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class PlannerController extends Controller
 {
@@ -40,49 +38,48 @@ class PlannerController extends Controller
 
         $areas = Area::orderBy('name')->get();
 
-        // Build service orders query for the selected date
-        $soQuery = ServiceOrder::with([
-            'customer' => fn($q) => $q->withTrashed(),
-            'address' => fn($q) => $q->withTrashed()->with('area'),
-            'items.service.category',
-            'staff',
-            'invoice',
-            'creator',
-        ])
-            ->whereDate('work_date', $date)
-            ->whereIn('status', [
-                ServiceOrder::STATUS_BOOKED,
-                ServiceOrder::STATUS_PROSES,
-                ServiceOrder::STATUS_DONE,
-                ServiceOrder::STATUS_INVOICED,
-                ServiceOrder::STATUS_CANCELLED,
-            ]);
+        // Build sessions query for the selected date
+        $sessionsQuery = OrderSession::withoutGlobalScopes()
+            ->with([
+                'serviceOrder' => function ($q) {
+                    $q->withoutGlobalScopes()
+                        ->with([
+                            'customer' => fn($cq) => $cq->withTrashed(),
+                            'address' => fn($aq) => $aq->withTrashed()->with('area'),
+                            'items.service.category',
+                            'invoice',
+                            'creator',
+                        ]);
+                },
+                'staff',
+            ])
+            ->whereDate('tanggal', $date)
+            ->whereIn('status', ['booked', 'proses', 'done']);
 
-        // Area filter
+        // Area filter — filter by parent order's address area
         if ($areaId) {
-            $soQuery->whereHas('address', fn($q) => $q->where('area_id', $areaId));
+            $sessionsQuery->whereHas('serviceOrder.address', fn($q) => $q->where('area_id', $areaId));
         }
 
-        $serviceOrders = $soQuery->get();
+        $sessions = $sessionsQuery->get();
 
-        // For list view: sort by staff name (first staff) then by work_time
-        $serviceOrders = $serviceOrders->sortBy([
+        // Compute lifecycle status on each session's parent order
+        $sessions->each(function ($session) {
+            $session->lifecycle_status = $this->computeLifecycleStatus($session->serviceOrder);
+        });
+
+        // Sort sessions: by staff name first, then by jam (time)
+        $sessions = $sessions->sortBy([
             function ($a, $b) {
                 $nameA = $a->staff->first()?->name ?? '';
                 $nameB = $b->staff->first()?->name ?? '';
                 $cmp = strcmp($nameA, $nameB);
                 if ($cmp !== 0) return $cmp;
-                // Same staff (or both unassigned): sort by work_time
-                $timeA = $a->work_time ?? '23:59:59';
-                $timeB = $b->work_time ?? '23:59:59';
+                $timeA = $a->jam ?? '23:59:59';
+                $timeB = $b->jam ?? '23:59:59';
                 return strcmp($timeA, $timeB);
             },
         ])->values();
-
-        // Compute lifecycle status for each SO
-        $serviceOrders->each(function ($so) {
-            $so->lifecycle_status = $this->computeLifecycleStatus($so);
-        });
 
         // Get all active staff (strictly role 'staff' only)
         $staffQuery = Staff::where('is_active', true)
@@ -101,38 +98,46 @@ class PlannerController extends Controller
             ->get()
             ->keyBy('staff_id');
 
-        // Separate unassigned jobs
-        $unassignedJobs = $serviceOrders->filter(fn($so) => $so->staff->isEmpty() && $so->status !== ServiceOrder::STATUS_CANCELLED);
-        $assignedJobs = $serviceOrders->filter(fn($so) => $so->staff->isNotEmpty());
-        $cancelledJobs = $serviceOrders->filter(fn($so) => $so->status === ServiceOrder::STATUS_CANCELLED);
+        // Separate unassigned and assigned sessions
+        $unassignedSessions = $sessions->filter(fn($s) => $s->staff->isEmpty());
+        $assignedSessions = $sessions->filter(fn($s) => $s->staff->isNotEmpty());
 
-        // Group by primary staff (first assigned staff) for staff view
-        $jobsByStaff = collect();
-        foreach ($assignedJobs as $so) {
-            foreach ($so->staff as $staffMember) {
-                if (!$jobsByStaff->has($staffMember->id)) {
-                    $jobsByStaff[$staffMember->id] = collect([
+        // Cancelled sessions (parent order is cancelled)
+        $cancelledSessions = OrderSession::withoutGlobalScopes()
+            ->with(['serviceOrder.customer', 'staff'])
+            ->whereDate('tanggal', $date)
+            ->whereHas('serviceOrder', function ($q) {
+                $q->withoutGlobalScopes()->where('status', ServiceOrder::STATUS_CANCELLED);
+            })
+            ->get();
+
+        // Group by staff for staff view
+        $sessionsByStaff = collect();
+        foreach ($assignedSessions as $session) {
+            foreach ($session->staff as $staffMember) {
+                if (!$sessionsByStaff->has($staffMember->id)) {
+                    $sessionsByStaff[$staffMember->id] = collect([
                         'staff' => $staffMember,
-                        'jobs' => collect(),
+                        'sessions' => collect(),
                     ]);
                 }
-                // Only add if not already added (avoid duplicates when multiple staff on same job)
-                if (!$jobsByStaff[$staffMember->id]['jobs']->contains('id', $so->id)) {
-                    $jobsByStaff[$staffMember->id]['jobs']->push($so);
+                if (!$sessionsByStaff[$staffMember->id]['sessions']->contains('id', $session->id)) {
+                    $sessionsByStaff[$staffMember->id]['sessions']->push($session);
                 }
             }
         }
 
-        // Sort each staff's jobs by time and build route summary
-        $jobsByStaff = $jobsByStaff->map(function ($group) {
-            $group['jobs'] = $group['jobs']->sortBy(function ($so) {
-                return $so->work_time ?? '23:59:59';
+        // Sort each staff's sessions by time and build route summary
+        $sessionsByStaff = $sessionsByStaff->map(function ($group) {
+            $group['sessions'] = $group['sessions']->sortBy(function ($session) {
+                return $session->jam ?? '23:59:59';
             })->values();
 
             // Build route summary
-            $route = $group['jobs']->map(function ($so) {
+            $route = $group['sessions']->map(function ($session) {
+                $so = $session->serviceOrder;
                 $lokasi = $so->address?->lokasi ?? '—';
-                $time = $so->work_time ? Carbon::createFromFormat('H:i:s', $so->work_time)->format('H:i') : '—';
+                $time = $session->jam ? Carbon::parse($session->jam)->format('H:i') : '—';
                 return $lokasi . ' (' . $time . ')';
             })->implode(' → ');
             $group['route'] = $route;
@@ -149,11 +154,13 @@ class PlannerController extends Controller
         $today = now()->toDateString();
 
         // Summary counts
-        $totalJobs = $serviceOrders->where('status', '!=', ServiceOrder::STATUS_CANCELLED)->count();
-        
+        $totalSessions = $sessions->count();
+
         $totalStaffCount = $allStaff->count();
         $offStaffCount = $offDays->count();
-        $assignedStaffIds = $assignedJobs->flatMap(fn($so) => $so->staff->pluck('id'))->unique();
+
+        // Assigned count: count sessions per staff (not orders)
+        $assignedStaffIds = $assignedSessions->flatMap(fn($s) => $s->staff->pluck('id'))->unique();
         $assignedStaffCount = $assignedStaffIds->count();
         $availableStaffCount = max(0, $totalStaffCount - $offStaffCount - $assignedStaffCount);
 
@@ -163,18 +170,18 @@ class PlannerController extends Controller
             'areaId',
             'viewMode',
             'areas',
-            'serviceOrders',
-            'unassignedJobs',
-            'assignedJobs',
-            'cancelledJobs',
-            'jobsByStaff',
+            'sessions',
+            'unassignedSessions',
+            'assignedSessions',
+            'cancelledSessions',
+            'sessionsByStaff',
             'allStaff',
             'offDays',
             'allServices',
             'prevDate',
             'nextDate',
             'today',
-            'totalJobs',
+            'totalSessions',
             'totalStaffCount',
             'offStaffCount',
             'availableStaffCount',
@@ -217,61 +224,72 @@ class PlannerController extends Controller
     }
 
     /**
-     * AJAX: Update a service order field inline.
+     * AJAX: Update a session or its parent order field inline.
      */
-    public function updateField(Request $request, ServiceOrder $serviceOrder)
+    public function updateField(Request $request, OrderSession $orderSession)
     {
         $field = $request->input('field');
         $value = $request->input('value');
 
-        $allowedFields = ['work_notes', 'staff_notes', 'work_time'];
+        // Session-level fields
+        $sessionFields = ['jam', 'notes'];
+        // Order-level fields
+        $orderFields = ['work_notes', 'staff_notes'];
 
-        if (!in_array($field, $allowedFields)) {
+        if (!in_array($field, array_merge($sessionFields, $orderFields))) {
             return response()->json(['success' => false, 'message' => 'Field not allowed.'], 400);
         }
 
-        if ($field === 'work_time') {
-            if ($value) {
-                try {
-                    $parsed = Carbon::createFromFormat('H:i', $value);
-                    if (!$parsed) {
+        if (in_array($field, $sessionFields)) {
+            // Update the session itself
+            if ($field === 'jam') {
+                if ($value) {
+                    try {
+                        $parsed = Carbon::createFromFormat('H:i', $value);
+                        if (!$parsed) {
+                            return response()->json(['success' => false, 'message' => 'Format waktu tidak valid.'], 422);
+                        }
+                        $value = $parsed->format('H:i:s');
+                    } catch (\Exception $e) {
                         return response()->json(['success' => false, 'message' => 'Format waktu tidak valid.'], 422);
                     }
-                    $value = $parsed->format('H:i:s');
-                } catch (\Exception $e) {
-                    return response()->json(['success' => false, 'message' => 'Format waktu tidak valid.'], 422);
+                } else {
+                    $value = null;
                 }
-            } else {
-                $value = null; // Allow clearing the time
             }
-        }
 
-        $serviceOrder->$field = $value;
-        $serviceOrder->save();
+            $orderSession->$field = $value;
+            $orderSession->save();
+        } else {
+            // Update the parent service order
+            $serviceOrder = $orderSession->serviceOrder;
+            $serviceOrder->$field = $value;
+            $serviceOrder->save();
+        }
 
         return response()->json(['success' => true]);
     }
 
     /**
-     * AJAX: Update staff assignment for a service order.
+     * AJAX: Update staff assignment for a session.
      */
-    public function updateStaff(Request $request, ServiceOrder $serviceOrder)
+    public function updateStaff(Request $request, OrderSession $orderSession)
     {
         $request->validate([
             'staff' => 'required|array',
             'staff.*' => 'exists:staff,id',
         ]);
 
-        $serviceOrder->staff()->sync($request->staff);
+        $orderSession->staff()->sync($request->staff);
 
         // Reload and return updated staff list
-        $serviceOrder->load('staff');
-        $staffNames = $serviceOrder->staff->pluck('name')->implode(', ');
+        $orderSession->load('staff');
+        $staffNames = $orderSession->staff->pluck('name')->implode(', ');
 
         return response()->json([
             'success' => true,
             'staff_names' => $staffNames,
-            'staff_ids' => $serviceOrder->staff->pluck('id'),
+            'staff_ids' => $orderSession->staff->pluck('id'),
         ]);
     }
 
@@ -355,40 +373,20 @@ class PlannerController extends Controller
 
         $user = Auth::user();
 
-        $serviceOrder = DB::transaction(function () use ($request, $user) {
-            $so = ServiceOrder::create([
-                'customer_id' => $request->customer_id,
-                'address_id' => $request->address_id,
-                'work_date' => $request->work_date,
-                'work_time' => Carbon::createFromFormat('H:i', $request->work_time)->format('H:i:s'),
-                'work_notes' => $request->work_notes,
-                'status' => 'booked',
-                'created_by' => $user->id,
-                'so_number' => 'SO-' . date('Ymd') . '-' . str_pad(ServiceOrder::withoutGlobalScopes()->count() + 1, 4, '0', STR_PAD_LEFT),
-            ]);
+        $soData = [
+            'customer_id' => $request->customer_id,
+            'address_id' => $request->address_id,
+            'work_date' => $request->work_date,
+            'work_time' => $request->work_time,
+            'work_notes' => $request->work_notes,
+            'services' => $request->services,
+        ];
 
-            $serviceIds = array_column($request->services, 'service_id');
-            $services = Service::whereIn('id', $serviceIds)->get()->keyBy('id');
-
-            foreach ($request->services as $serviceData) {
-                $service = $services->get($serviceData['service_id']);
-                if ($service) {
-                    ServiceOrderItem::create([
-                        'service_order_id' => $so->id,
-                        'service_id' => $service->id,
-                        'price' => $service->price,
-                        'quantity' => $serviceData['quantity'],
-                        'total' => $service->price * $serviceData['quantity'],
-                    ]);
-                }
-            }
-
-            if ($request->has('staff') && !empty($request->staff)) {
-                $so->staff()->attach($request->staff);
-            }
-
-            return $so;
-        });
+        $serviceOrder = app(\App\Actions\CreateServiceOrderAction::class)->execute(
+            $soData,
+            $request->staff ?? [],
+            $user->id
+        );
 
         return response()->json([
             'success' => true,

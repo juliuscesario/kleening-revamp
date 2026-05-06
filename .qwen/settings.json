@@ -10,7 +10,9 @@
       "Bash(composer *)",
       "Bash(psql *)",
       "Bash(mysql *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(find *)",
+      "Bash(cp *)"
     ]
   },
   "$version": 3

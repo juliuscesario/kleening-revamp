@@ -35,12 +35,7 @@ function getStatusLabel($status) {
         'booked' => 'Booked',
         'proses' => 'Proses',
         'done' => 'Done',
-        'invoiced' => 'Invoiced',
-        'sent' => 'Tagih',
-        'overdue' => 'Blm Bayar',
-        'paid' => 'Lunas',
         'cancelled' => 'Cancel',
-        'inv_cancelled' => 'Inv.Cancel',
         default => ucfirst($status),
     };
 }
@@ -129,9 +124,17 @@ function getStatusLabel($status) {
     .status-paid { background: rgba(21, 128, 61, 0.1); color: #22c55e; }
     .status-cancelled { background: rgba(190, 18, 60, 0.1); color: #f43f5e; }
     .status-done { background: rgba(22, 163, 74, 0.1); color: #16a34a; }
-    .status-invoiced { background: rgba(100, 116, 139, 0.1); color: #64748b; }
-    .status-sent { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
     .status-inv_cancelled { background: rgba(190, 18, 60, 0.1); color: #be123c; }
+
+    /* Session badges */
+    .session-num-badge { font-size: .65rem; font-weight: 700; padding: .15rem .4rem; border-radius: 3px; background: rgba(100, 116, 139, 0.1); color: #64748b; white-space: nowrap; }
+    .session-num-badge-mobile { display: none; font-size: .6rem; font-weight: 700; padding: 1px 3px; border-radius: 2px; background: rgba(100, 116, 139, 0.1); color: #64748b; }
+
+    .session-type-badge { font-size: .6rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; text-transform: uppercase; white-space: nowrap; }
+    .session-type-badge.type-pickup { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .session-type-badge.type-delivery { background: rgba(22, 163, 74, 0.1); color: #22c55e; border: 1px solid rgba(22, 163, 74, 0.2); }
+    .session-type-badge.type-survey { background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.2); }
+
 
     .admin-pill { background: var(--bg-canvas); color: var(--text-secondary); border: 1px solid var(--border-color); font-size: .6875rem; font-weight: 600; padding: .2rem .5rem; border-radius: 4px; }
 
@@ -251,6 +254,11 @@ function getStatusLabel($status) {
             padding: 2px 6px;
         }
 
+        /* Session badges: show compact version on mobile */
+        .session-num-badge { display: none !important; }
+        .session-num-badge-mobile { display: inline-block !important; }
+        .session-type-badge { font-size: 0.55rem; padding: 1px 3px; }
+
         /* Staff column in list view: hide on mobile (staff already shown in section header) */
         .job-row .job-staff-col {
             display: none;
@@ -346,7 +354,7 @@ function getStatusLabel($status) {
                     @php
                         $isOff = $offDays->has($s->id);
                         $isAssigned = $assignedStaffIds->contains($s->id);
-                        $jobCount = $isAssigned ? ($jobsByStaff->get($s->id)['jobs']->count() ?? 0) : 0;
+                        $jobCount = $isAssigned ? ($sessionsByStaff->get($s->id)['sessions']->count() ?? 0) : 0;
                         
                         $chipClass = 'is-available';
                         $dotClass = 'dot-available';
@@ -380,17 +388,17 @@ function getStatusLabel($status) {
             </div>
         </div>
 
-        {{-- Unassigned jobs --}}
-        @if($unassignedJobs->count() > 0)
+        {{-- Unassigned sessions --}}
+        @if($unassignedSessions->count() > 0)
             <div class="mb-5">
                 <div class="d-flex align-items-center gap-2 mb-3 text-danger">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    <span class="fw-bold" style="text-transform:uppercase; letter-spacing:1.2px; font-size:.8125rem;">{{ $unassignedJobs->count() }} jobs unassigned</span>
+                    <span class="fw-bold" style="text-transform:uppercase; letter-spacing:1.2px; font-size:.8125rem;">{{ $unassignedSessions->count() }} sessions unassigned</span>
                 </div>
                 <div class="table-planner w-100" style="border-bottom:none; background: #fff5f5; border-color: #feb2b2;">
                     <div style="padding: 0 1rem;">
-                        @foreach($unassignedJobs as $so)
-                            @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => true, 'viewMode' => $viewMode])
+                        @foreach($unassignedSessions as $session)
+                            @include('pages.planner._session_row', ['session' => $session, 'showStaffCol' => true, 'viewMode' => $viewMode])
                         @endforeach
                     </div>
                 </div>
@@ -400,10 +408,10 @@ function getStatusLabel($status) {
         {{-- Main content: Staff view or List view --}}
         @if($viewMode === 'staff')
             {{-- STAFF VIEW --}}
-            @forelse($jobsByStaff as $staffId => $group)
+            @forelse($sessionsByStaff as $staffId => $group)
                 <div class="staff-group-header">
                     <div class="staff-group-name">{{ $group['staff']->name }}</div>
-                    <div class="staff-group-count">{{ $group['jobs']->count() }}</div>
+                    <div class="staff-group-count">{{ $group['sessions']->count() }}</div>
                     @if($offDays->has($staffId))
                         <span class="status-pill status-cancelled">OFF</span>
                     @endif
@@ -411,12 +419,12 @@ function getStatusLabel($status) {
                 </div>
                 <div class="staff-group-route mobile-only mb-2">{{ $group['route'] }}</div>
                 <div class="mb-4">
-                    @foreach($group['jobs'] as $so)
-                        @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => false, 'viewMode' => $viewMode])
+                    @foreach($group['sessions'] as $session)
+                        @include('pages.planner._session_row', ['session' => $session, 'showStaffCol' => false, 'viewMode' => $viewMode])
                     @endforeach
                 </div>
             @empty
-                @if($unassignedJobs->count() === 0)
+                @if($unassignedSessions->count() === 0)
                     <div class="text-center text-muted py-5">
                         <div class="mb-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/><path d="M12 15h.01"/></svg>
@@ -431,20 +439,22 @@ function getStatusLabel($status) {
                 <table class="table-planner w-100 mb-4">
                 <thead>
                     <tr>
-                        <th style="width:140px">Staff</th>
-                        <th style="width:70px">Jam</th>
+                        <th style="width:120px">Staff</th>
+                        <th style="width:65px">Jam</th>
                         <th>Customer</th>
                         <th>Lokasi</th>
-                        <th>Pekerjaan</th>
+                        <th style="width:90px">Pekerjaan</th>
+                        <th>Sesi</th>
                         <th>Notes</th>
-                        <th style="width:100px">Phone</th>
-                        <th style="width:100px">Admin</th>
+                        <th style="width:90px">Phone</th>
+                        <th style="width:80px">Admin</th>
                         <th style="width:120px">Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($serviceOrders->where('status', '!=', 'cancelled') as $so)
+                    @forelse($sessions as $session)
                         @php
+                            $so = $session->serviceOrder;
                             // Deduplicate categories for display
                             $pekerjaanCodes = [];
                             $pekerjaanDetails = [];
@@ -461,15 +471,15 @@ function getStatusLabel($status) {
                             }
                             $popoverContent .= '</ul>';
                         @endphp
-                        <tr data-so-id="{{ $so->id }}">
+                        <tr data-session-id="{{ $session->id }}" data-so-id="{{ $so->id }}">
                             <td>
-                                <span class="inline-edit fw-bold text-dark" onclick="editStaff(this, {{ $so->id }})" data-staff-ids="{{ $so->staff->pluck('id')->implode(',') }}">
-                                    {{ $so->staff->pluck('name')->implode(', ') ?: 'Unassigned' }}
+                                <span class="inline-edit fw-bold text-dark" onclick="editStaff(this, {{ $session->id }})" data-staff-ids="{{ $session->staff->pluck('id')->implode(',') }}">
+                                    {{ $session->staff->pluck('name')->implode(', ') ?: 'Unassigned' }}
                                 </span>
                             </td>
                             <td>
-                                <span class="job-time inline-edit" onclick="editTime(this, {{ $so->id }})" data-value="{{ $so->work_time ? \Carbon\Carbon::createFromFormat('H:i:s', $so->work_time)->format('H:i') : '' }}">
-                                    {{ $so->work_time ? \Carbon\Carbon::createFromFormat('H:i:s', $so->work_time)->format('H:i') : '—' }}
+                                <span class="job-time inline-edit" onclick="editTime(this, {{ $session->id }})" data-value="{{ $session->jam ? \Carbon\Carbon::parse($session->jam)->format('H:i') : '' }}">
+                                    {{ $session->jam ? \Carbon\Carbon::parse($session->jam)->format('H:i') : '—' }}
                                 </span>
                             </td>
                             <td>
@@ -516,11 +526,23 @@ function getStatusLabel($status) {
                                 @endforeach
                             </td>
                             <td>
-                                @if($so->staff_notes)
+                                @if($so->is_multi_session)
+                                    @php $totalSessions = $so->sessions()->count(); @endphp
+                                    <span class="session-num-badge">S{{ $session->session_number }}/{{ $totalSessions }}</span>
+                                @endif
+                                @if($session->type !== 'kerja')
+                                    <span class="session-type-badge type-{{ $session->type }}">{{ strtoupper($session->type) }}</span>
+                                @endif
+                                @if(!$so->is_multi_session && $session->type === 'kerja')
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($session->notes)
                                     <span class="inline-edit notes-text"
-                                          data-value="{{ e($so->staff_notes) }}"
-                                          data-full="{{ e($so->staff_notes) }}">
-                                        {{ Str::limit($so->staff_notes, 40, '…') }}
+                                          data-value="{{ e($session->notes) }}"
+                                          data-full="{{ e($session->notes) }}">
+                                        {{ Str::limit($session->notes, 40, '…') }}
                                     </span>
                                 @else
                                     <span class="inline-edit notes-text text-muted" data-value="" data-full="" title="">—</span>
@@ -534,25 +556,28 @@ function getStatusLabel($status) {
                                 @endif
                             </td>
                             <td><span class="admin-pill">{{ $so->creator?->name ? Str::limit($so->creator->name, 8) : '—' }}</span></td>
-                            <td><span class="status-pill status-{{ $so->lifecycle_status }}">{{ getStatusLabel($so->lifecycle_status) }}</span></td>
+                            <td>
+                                <span class="status-pill status-{{ $session->status }}">{{ getStatusLabel($session->status) }}</span>
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada pekerjaan untuk tanggal ini.</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted py-4">Tidak ada pekerjaan untuk tanggal ini.</td></tr>
                     @endforelse
                 </tbody>
                 </table>
             </div>
         @endif
 
-        {{-- Cancelled jobs (collapsed) --}}
-        @if($cancelledJobs->count() > 0)
+        {{-- Cancelled sessions (collapsed) --}}
+        @if($cancelledSessions->count() > 0)
             <div class="cancelled-section">
                 <a class="text-muted small" data-bs-toggle="collapse" href="#cancelledPanel" role="button">
-                    {{ $cancelledJobs->count() }} cancelled jobs
+                    {{ $cancelledSessions->count() }} cancelled sessions
                 </a>
                 <div class="collapse" id="cancelledPanel">
-                    @foreach($cancelledJobs as $so)
-                        @include('pages.planner._job_row', ['so' => $so, 'showStaffCol' => true, 'viewMode' => $viewMode])
+                    @foreach($cancelledSessions as $session)
+                        @php $so = $session->serviceOrder; @endphp
+                        @include('pages.planner._session_row', ['session' => $session, 'showStaffCol' => true, 'viewMode' => $viewMode])
                     @endforeach
                 </div>
             </div>
@@ -668,9 +693,9 @@ function editTime(el, soId) {
         }).then((result) => {
             if (result.isConfirmed) {
                 const val = result.value || '';
-                fetchJson(`/planner/${soId}/update-field`, {
+                fetchJson(`/planner/session/${soId}/update-field`, {
                     method: 'POST',
-                    body: JSON.stringify({ field: 'work_time', value: val }),
+                    body: JSON.stringify({ field: 'jam', value: val }),
                 }).then(data => {
                     if (data.success) {
                         el.textContent = val || '—';
@@ -695,9 +720,9 @@ function editTime(el, soId) {
 
         function save() {
             const val = input.value;
-            fetchJson(`/planner/${soId}/update-field`, {
+            fetchJson(`/planner/session/${soId}/update-field`, {
                 method: 'POST',
-                body: JSON.stringify({ field: 'work_time', value: val }),
+                body: JSON.stringify({ field: 'jam', value: val }),
             }).then(data => {
                 if (data.success) {
                     const span = document.createElement('span');
@@ -728,7 +753,7 @@ function editTime(el, soId) {
 }
 
 // Inline edit: notes
-function editNotes(el, soId) {
+function editNotes(el, sessionId) {
     const current = el.dataset.value || '';
 
     if (isMobile) {
@@ -747,9 +772,9 @@ function editNotes(el, soId) {
         }).then((result) => {
             if (result.isConfirmed) {
                 const val = result.value || '';
-                fetchJson(`/planner/${soId}/update-field`, {
+                fetchJson(`/planner/session/${sessionId}/update-field`, {
                     method: 'POST',
-                    body: JSON.stringify({ field: 'staff_notes', value: val }),
+                    body: JSON.stringify({ field: 'notes', value: val }),
                 }).then(data => {
                     if (data.success) {
                         if (val) {
@@ -789,21 +814,21 @@ function editNotes(el, soId) {
 
         function save() {
             const val = input.value;
-            fetchJson(`/planner/${soId}/update-field`, {
+            fetchJson(`/planner/session/${sessionId}/update-field`, {
                 method: 'POST',
-                body: JSON.stringify({ field: 'staff_notes', value: val }),
+                body: JSON.stringify({ field: 'notes', value: val }),
             }).then(data => {
                 if (data.success) {
                     const span = document.createElement('span');
                     if (val) {
                         span.className = 'inline-edit notes-text';
-                        span.setAttribute('onclick', `editNotes(this, ${soId})`);
+                        span.setAttribute('onclick', `editNotes(this, ${sessionId})`);
                         span.dataset.value = val;
                         span.dataset.full = val;
                         span.textContent = val.length > 40 ? val.substring(0, 40) + '…' : val;
                     } else {
                         span.className = 'inline-edit notes-text text-muted';
-                        span.setAttribute('onclick', `editNotes(this, ${soId})`);
+                        span.setAttribute('onclick', `editNotes(this, ${sessionId})`);
                         span.dataset.value = '';
                         span.dataset.full = '';
                         span.textContent = '—';
@@ -817,7 +842,7 @@ function editNotes(el, soId) {
                 console.error(err);
                 const span = document.createElement('span');
                 span.className = 'inline-edit notes-text';
-                span.setAttribute('onclick', `editNotes(this, ${soId})`);
+                span.setAttribute('onclick', `editNotes(this, ${sessionId})`);
                 span.dataset.value = current;
                 span.dataset.full = current;
                 span.textContent = current ? (current.length > 40 ? current.substring(0, 40) + '…' : current) : '—';
@@ -969,14 +994,14 @@ function saveStaffAssignment() {
         Swal.fire({ icon: 'warning', title: 'Pilih staff', text: 'Pilih minimal 1 staff', timer: 3000, showConfirmButton: false });
         return;
     }
-    fetchJson(`/planner/${soId}/update-staff`, {
+    fetchJson(`/planner/session/${soId}/update-staff`, {
         method: 'POST',
         body: JSON.stringify({ staff: selected }),
     }).then(data => {
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('staffModal')).hide();
 
-            const jobRow = document.querySelector(`[data-so-id="${soId}"]`);
+            const jobRow = document.querySelector(`[data-session-id="${soId}"]`);
             if (jobRow) {
                 const staffSpan = jobRow.querySelector('.inline-edit');
                 if (staffSpan) {
@@ -1145,7 +1170,7 @@ document.addEventListener('click', function(e) {
         clearTimeout(_notesPopoverTimeout);
         _notesClickTimer = null;
         hideNotesPopover();
-        editNotes(el, parseInt(el.closest('[data-so-id]').dataset.soId));
+        editNotes(el, parseInt(el.closest('[data-session-id]').dataset.sessionId));
     } else {
         // Possible single tap — wait 400ms before showing popover
         _notesClickTimer = now;

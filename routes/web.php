@@ -20,6 +20,7 @@ use App\Http\Controllers\Web\ServiceOrderController;
 use App\Http\Controllers\Web\FormOrderController;
 use App\Http\Controllers\Web\StaffController;
 use App\Http\Controllers\Web\PlannerController;
+use App\Http\Controllers\Web\OrderSessionController;
 use App\Http\Controllers\Web\PayrollController;
 use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Api\WorkPhotoController;
@@ -50,11 +51,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('planner', [PlannerController::class, 'index'])->name('web.planner.index');
 
     Route::middleware(['role:owner,admin'])->group(function () {
-        Route::post('planner/{serviceOrder}/update-field', [PlannerController::class, 'updateField'])->name('web.planner.update-field');
-        Route::post('planner/{serviceOrder}/update-staff', [PlannerController::class, 'updateStaff'])->name('web.planner.update-staff');
+        Route::post('planner/session/{orderSession}/update-field', [PlannerController::class, 'updateField'])->name('web.planner.update-field');
+        Route::post('planner/session/{orderSession}/update-staff', [PlannerController::class, 'updateStaff'])->name('web.planner.update-staff');
         Route::post('planner/{serviceOrder}/update-lokasi', [PlannerController::class, 'updateLokasi'])->name('web.planner.update-lokasi');
         Route::post('planner/toggle-staff-off', [PlannerController::class, 'toggleStaffOff'])->name('web.planner.toggle-staff-off');
         Route::post('planner/quick-store', [PlannerController::class, 'quickStore'])->name('web.planner.quick-store');
+
+        // Order Sessions
+        Route::get('service-orders/{serviceOrder}/sessions', [OrderSessionController::class, 'list'])->name('web.sessions.list');
+        Route::post('service-orders/{serviceOrder}/sessions', [OrderSessionController::class, 'store'])->name('web.sessions.store');
+        Route::put('sessions/{orderSession}', [OrderSessionController::class, 'update'])->name('web.sessions.update');
+        Route::delete('sessions/{orderSession}', [OrderSessionController::class, 'destroy'])->name('web.sessions.destroy');
     });
 
     // DataTables and JSON Data Routes
@@ -100,7 +107,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('addresses', AddressController::class)->names('web.addresses');
     Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');
     Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
-    Route::post('service-orders/{serviceOrder}/update-status', [ServiceOrderController::class, 'updateStatus'])->name('web.service-orders.update-status');
+    Route::post('service-orders/{serviceOrder}/mark-complete', [ServiceOrderController::class, 'markComplete'])->name('web.service-orders.mark-complete');
+    Route::post('service-orders/{serviceOrder}/cancel', [ServiceOrderController::class, 'cancel'])->name('web.service-orders.cancel');
 
     // Form Order Parser
     Route::post('form-order/parse', [FormOrderController::class, 'parse'])->name('web.form-order.parse');

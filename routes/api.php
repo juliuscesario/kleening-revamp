@@ -39,7 +39,8 @@ Route::middleware(['auth:sanctum', 'role:owner,admin,co_owner,staff'])->group(fu
     Route::apiResource('service-orders', ServiceOrderController::class);
     Route::post('/service-orders/{serviceOrder}/start-work', [ServiceOrderController::class, 'startWork']);
     Route::post('/service-orders/{serviceOrder}/upload-work-proof', [ServiceOrderController::class, 'uploadWorkProof']);
-    Route::post('/service-orders/{serviceOrder}/signature', [ServiceOrderController::class, 'uploadSignature']);
+    Route::post('/service-orders/{serviceOrder}/complete-work', [ServiceOrderController::class, 'completeWork']);
+    Route::post('/service-orders/{serviceOrder}/submit-signature', [ServiceOrderController::class, 'submitCustomerSignature']);
 
     // Route khusus untuk membuat Invoice dari Service Order
     Route::post('/service-orders/{serviceOrder}/invoice', [InvoiceController::class, 'storeFromServiceOrder']);

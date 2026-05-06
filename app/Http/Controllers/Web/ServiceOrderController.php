@@ -7,15 +7,14 @@ use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\Staff;
 use App\Models\ServiceOrder;
-use App\Models\ServiceOrderItem;
 use App\Models\Invoice;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Address; // Add this line
 use Carbon\Carbon;
+use App\Actions\CreateServiceOrderAction;
+use App\Actions\UpdateServiceOrderAction;
 
 class ServiceOrderController extends Controller
 {
@@ -60,13 +59,15 @@ class ServiceOrderController extends Controller
             },
             'address.area',
             'items.service',
-            'staff'
+            'sessions.staff',
+            'invoice'
         ];
 
         $isStaff = ($user->role === 'staff');
 
         if ($isStaff) {
             $relationsToLoad[] = 'creator'; // Load creator if user is staff
+            $relationsToLoad[] = 'workPhotos'; // Load work photos for signature/proof display
         } else {
             $relationsToLoad[] = 'workPhotos.uploader'; // Load work photos and their uploaders for non-staff
         }
@@ -87,7 +88,7 @@ class ServiceOrderController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function store(Request $request, CreateServiceOrderAction $action)
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
@@ -141,49 +142,17 @@ class ServiceOrderController extends Controller
                 ->withInput();
         }
 
-        $serviceOrder = DB::transaction(function () use ($request, $user) {
-            $so = ServiceOrder::create([
-                'customer_id' => $request->customer_id,
-                'address_id' => $request->address_id,
-                'work_date' => $request->work_date,
-                'work_time' => Carbon::createFromFormat('H:i', $request->work_time, config('app.timezone'))->format('H:i:s'),
-                'work_notes' => $request->work_notes,
-                'staff_notes' => $request->staff_notes,
-                'status' => 'booked',
-                'created_by' => $user->id,
-                // This SO number generation can have race conditions. Consider a more robust method.
-                'so_number' => 'SO-' . date('Ymd') . '-' . str_pad(ServiceOrder::count() + 1, 4, '0', STR_PAD_LEFT),
-            ]);
+        $soData = [
+            'customer_id' => $request->customer_id,
+            'address_id' => $request->address_id,
+            'work_date' => $request->work_date,
+            'work_time' => $request->work_time, // Action handles H:i → H:i:s conversion
+            'work_notes' => $request->work_notes,
+            'staff_notes' => $request->staff_notes,
+            'services' => $request->input('services', []),
+        ];
 
-            $submittedServices = $request->input('services', []);
-            $serviceIds = array_column($submittedServices, 'service_id');
-            $services = Service::whereIn('id', $serviceIds)->get()->keyBy('id');
-
-            foreach ($submittedServices as $serviceData) {
-                $service = $services->get($serviceData['service_id']);
-                if ($service) {
-                    $quantity = $serviceData['quantity'];
-                    $price = $service->price;
-
-                    ServiceOrderItem::create([
-                        'service_order_id' => $so->id,
-                        'service_id' => $service->id,
-                        'price' => $price,
-                        'quantity' => $quantity,
-                        'total' => $price * $quantity,
-                    ]);
-                }
-            }
-
-            if ($request->has('staff')) {
-                $so->staff()->attach($request->staff);
-            }
-
-            // Update customer's last_order_date
-            $so->customer->syncLastOrderDate();
-
-            return $so;
-        });
+        $serviceOrder = $action->execute($soData, $request->input('staff', []), $user->id);
 
         return redirect()->route('web.service-orders.show', $serviceOrder)->with('success', 'Service Order berhasil dibuat.');
     }
@@ -199,9 +168,7 @@ class ServiceOrderController extends Controller
             },
             'address.area',
             'items.service',
-            'staff' => function ($query) {
-                $query->withPivot('signature_image'); // Load staff signatures
-            },
+            'sessions.staff',
             'workPhotos.uploader' // Load work photos and their uploaders
         ]);
 
@@ -209,7 +176,7 @@ class ServiceOrderController extends Controller
         return $pdf->download('service-order-' . $serviceOrder->so_number . '.pdf');
     }
 
-    public function update(Request $request, ServiceOrder $serviceOrder)
+    public function update(Request $request, ServiceOrder $serviceOrder, UpdateServiceOrderAction $action)
     {
         // Load the invoice relationship to check its status
         $serviceOrder->load('invoice');
@@ -260,78 +227,30 @@ class ServiceOrderController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $serviceOrder, $newStatus) {
-            // Update notes and status
-            $serviceOrder->work_notes = $request->work_notes;
-            $serviceOrder->staff_notes = $request->staff_notes;
-            $serviceOrder->status = $newStatus;
-            if ($request->has('work_date')) {
-                $serviceOrder->work_date = $request->work_date;
-            }
-            if ($request->has('work_time')) {
-                $serviceOrder->work_time = Carbon::createFromFormat('H:i', $request->work_time, config('app.timezone'))->format('H:i:s');
-            }
+        $soData = [
+            'status' => $newStatus,
+        ];
+        if ($request->has('work_notes')) {
+            $soData['work_notes'] = $request->work_notes;
+        }
+        if ($request->has('staff_notes')) {
+            $soData['staff_notes'] = $request->staff_notes;
+        }
+        if ($request->has('work_date')) {
+            $soData['work_date'] = $request->work_date;
+        }
+        if ($request->has('work_time')) {
+            $soData['work_time'] = $request->work_time; // Action handles H:i → H:i:s conversion
+        }
+        if ($request->has('services')) {
+            $soData['services'] = $request->input('services');
+        }
 
-            if ($newStatus === ServiceOrder::STATUS_DONE) {
-                $serviceOrder->work_proof_completed_at = now();
-            }
-
-            $serviceOrder->save();
-
-            // Sync services
-            if ($request->has('services')) {
-                $currentServiceItemIds = $serviceOrder->items->pluck('id')->toArray();
-                $newServiceItemIds = [];
-
-                foreach ($request->services as $serviceData) {
-                    $service = Service::find($serviceData['service_id']);
-                    $quantity = $serviceData['quantity'];
-                    $price = $service->price;
-                    $total = $price * $quantity;
-
-                    // Check if it's an existing item or a new one
-                    if (isset($serviceData['id']) && in_array($serviceData['id'], $currentServiceItemIds)) {
-                        // Update existing item
-                        $item = ServiceOrderItem::find($serviceData['id']);
-                        if ($item) {
-                            $item->service_id = $service->id;
-                            $item->quantity = $quantity;
-                            $item->price = $price;
-                            $item->total = $total;
-                            $item->save();
-                        }
-                        $newServiceItemIds[] = $serviceData['id'];
-                    } else {
-                        // Create new item
-                        $newItem = ServiceOrderItem::create([
-                            'service_order_id' => $serviceOrder->id,
-                            'service_id' => $service->id,
-                            'quantity' => $quantity,
-                            'price' => $price,
-                            'total' => $total,
-                        ]);
-                        // Add the ID of the newly created item to prevent it from being deleted
-                        $newServiceItemIds[] = $newItem->id;
-                    }
-                }
-
-                // Delete removed service items
-                ServiceOrderItem::where('service_order_id', $serviceOrder->id)
-                    ->whereNotIn('id', $newServiceItemIds)
-                    ->delete();
-            }
-
-            // Sync staff
-            if ($request->has('staff')) {
-                $serviceOrder->staff()->sync($request->staff);
-            }
-
-            // Update customer's last_order_date if work_date changed
-            if ($request->has('work_date') || $request->has('services')) {
-                $serviceOrder->load('customer');
-                $serviceOrder->customer->syncLastOrderDate();
-            }
-        });
+        $action->execute(
+            $serviceOrder,
+            $soData,
+            $request->has('staff') ? $request->input('staff') : null
+        );
 
         return response()->json(['success' => true, 'message' => 'Service Order updated successfully.']);
     }
@@ -340,7 +259,7 @@ class ServiceOrderController extends Controller
     {
         $this->authorize('viewAny', ServiceOrder::class);
 
-        $unassignedServiceOrders = ServiceOrder::whereDoesntHave('staff')
+        $unassignedServiceOrders = ServiceOrder::whereDoesntHave('sessions.staff')
             ->where('status', 'booked') // Assuming 'booked' is the status for unassigned jobs
             ->orderBy('work_date', 'asc')
             ->orderBy('work_time', 'asc')
@@ -371,5 +290,36 @@ class ServiceOrderController extends Controller
         $serviceOrder->customer->syncLastOrderDate();
 
         return response()->json(['success' => true, 'message' => 'Status berhasil diubah ke ' . ucfirst($newStatus) . '.']);
+    }
+
+    public function markComplete(ServiceOrder $serviceOrder)
+    {
+        // Only allow if SO is NOT already done
+        if ($serviceOrder->status === 'done') {
+            return back()->with('error', 'Service order sudah berstatus done.');
+        }
+
+        $action = new \App\Actions\CompleteServiceOrderAction();
+        $action->execute($serviceOrder);
+
+        return back()->with('success', 'Service order dan semua sesi telah ditandai selesai.');
+    }
+
+    public function cancel(ServiceOrder $serviceOrder)
+    {
+        // Guard: only cancel if status is booked or proses
+        if (!in_array($serviceOrder->status, ['booked', 'proses'])) {
+            return back()->with('error', 'Order tidak dapat dibatalkan.');
+        }
+
+        // Cancel the SO
+        $serviceOrder->update(['status' => 'cancel']);
+
+        // Cancel all non-done sessions
+        $serviceOrder->sessions()
+            ->whereNotIn('status', ['done'])
+            ->update(['status' => 'cancel']);
+
+        return back()->with('success', 'Order berhasil dibatalkan.');
     }
 }

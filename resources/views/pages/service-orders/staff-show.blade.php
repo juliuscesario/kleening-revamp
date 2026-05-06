@@ -2,16 +2,6 @@
 @section('title', 'Detail Service Order')
 
 @section('content')
-<style>
-    .signature-pad-canvas {
-        width: 100%;
-        max-width: 500px; /* Limit max width for smaller saved images */
-        height: 200px; /* Or any desired height */
-        background-color: #f8f9fa; /* Light background for visibility */
-        border: 1px solid #ced4da;
-        border-radius: .25rem;
-    }
-</style>
 <div class="container-xl">
     <div class="page-header d-print-none">
         <div class="row g-2 align-items-center">
@@ -31,23 +21,39 @@
                     @elseif($serviceOrder->status == 'proses' && !$serviceOrder->work_proof_completed_at)
                         @php
                             $hasBeforePhoto = $serviceOrder->workPhotos()->where('type', 'before')->exists();
+                            $hasAfterPhoto = $serviceOrder->workPhotos()->where('type', 'after')->exists();
+                            $hasSignature = $serviceOrder->workPhotos()->where('type', 'signature')->exists();
                         @endphp
                         @if(!$hasBeforePhoto)
                             <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#uploadBeforeWorkProofModal">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
                                 Upload Foto Sebelum
                             </button>
-                        @else
+                        @elseif(!$hasAfterPhoto)
                             <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#uploadAfterWorkProofModal">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
                                 Upload Foto Sesudah
                             </button>
+                        @elseif(!$hasSignature)
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#signatureModal">
+                                ✍️ TTD Customer
+                            </button>
+                        @else
+                            <div class="alert alert-success mb-0">Pekerjaan selesai.</div>
                         @endif
-                    @elseif($serviceOrder->status == 'proses' && $serviceOrder->work_proof_completed_at && (!$serviceOrder->customer_signature_image || $serviceOrder->staff->whereNull('pivot.signature_image')->isNotEmpty()))
-                        <button class="btn btn-success" id="requestSignatureBtn">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M17 17c1.657 0 3 1.59 3 3s-1.657 3 -3 3s-3 -1.59 -3 -3s1.657 -3 3 -3" /><path d="M7 13v4a3 3 0 0 0 3 3h1" /><path d="M17 13v4a3 3 0 0 0 3 3h1" /><path d="M17 10h-1a2 2 0 0 0 -2 2v2a2 2 0 0 0 2 2h1" /><path d="M7 10h1a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-1" /></svg>
-                            Minta Tanda Tangan
-                        </button>
+                    @elseif($serviceOrder->status == 'proses' && $serviceOrder->work_proof_completed_at)
+                        @php
+                            $hasSignatureProof = $serviceOrder->workPhotos()->where('type', 'signature')->exists();
+                        @endphp
+                        @if(!$hasSignatureProof)
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#signatureModal">
+                                ✍️ TTD Customer
+                            </button>
+                        @else
+                            <div class="alert alert-success mb-0">Pekerjaan selesai.</div>
+                        @endif
+                    @elseif(in_array($serviceOrder->status, ['done', 'invoiced', 'tagih', 'blm_bayar', 'lunas']))
+                        <div class="alert alert-success mb-0">Pekerjaan selesai.</div>
                     @endif
                     <a href="{{ route('dashboard') }}" class="btn btn-secondary">Kembali ke Dashboard</a>
                 </div>
@@ -149,6 +155,104 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                @php
+                    $today = now()->toDateString();
+                    $todaySession = $serviceOrder->sessions
+                        ->filter(fn($s) => $s->tanggal && $s->tanggal->toDateString() === $today)
+                        ->first();
+
+                    $workPhotos     = $serviceOrder->workPhotos->keyBy('type');
+                    $arrivalProof   = $workPhotos->get('arrival');
+                    $beforeProof    = $workPhotos->get('before');
+                    $afterProof     = $workPhotos->get('after');
+                    $signatureProof = $workPhotos->get('signature');
+
+                    $canSign = $afterProof && $todaySession && $todaySession->status === 'proses';
+                    $isDone  = $todaySession && $todaySession->status === 'done';
+                @endphp
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Foto Dokumentasi</h5>
+
+                        <div class="row g-3">
+
+                            {{-- ARRIVAL --}}
+                            <div class="col-6">
+                                <p class="text-muted small mb-1 fw-semibold">📸 Arrival</p>
+                                @if($arrivalProof)
+                                    <a href="{{ Storage::url($arrivalProof->file_path) }}" target="_blank">
+                                        <img src="{{ Storage::url($arrivalProof->file_path) }}"
+                                             class="img-fluid rounded w-100"
+                                             style="object-fit:cover; height:140px;"
+                                             alt="Foto Arrival">
+                                    </a>
+                                @else
+                                    <div class="rounded bg-secondary-lt d-flex align-items-center justify-content-center"
+                                         style="height:140px;">
+                                        <span class="text-muted small">Belum diupload</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- BEFORE --}}
+                            <div class="col-6">
+                                <p class="text-muted small mb-1 fw-semibold">📸 Before</p>
+                                @if($beforeProof)
+                                    <a href="{{ Storage::url($beforeProof->file_path) }}" target="_blank">
+                                        <img src="{{ Storage::url($beforeProof->file_path) }}"
+                                             class="img-fluid rounded w-100"
+                                             style="object-fit:cover; height:140px;"
+                                             alt="Foto Before">
+                                    </a>
+                                @else
+                                    <div class="rounded bg-secondary-lt d-flex align-items-center justify-content-center"
+                                         style="height:140px;">
+                                        <span class="text-muted small">Belum diupload</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- AFTER --}}
+                            <div class="col-6">
+                                <p class="text-muted small mb-1 fw-semibold">📸 After</p>
+                                @if($afterProof)
+                                    <a href="{{ Storage::url($afterProof->file_path) }}" target="_blank">
+                                        <img src="{{ Storage::url($afterProof->file_path) }}"
+                                             class="img-fluid rounded w-100"
+                                             style="object-fit:cover; height:140px;"
+                                             alt="Foto After">
+                                    </a>
+                                @else
+                                    <div class="rounded bg-secondary-lt d-flex align-items-center justify-content-center"
+                                         style="height:140px;">
+                                        <span class="text-muted small">Belum diupload</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- SIGNATURE --}}
+                            <div class="col-6">
+                                <p class="text-muted small mb-1 fw-semibold">✍️ TTD Customer</p>
+                                @if($signatureProof)
+                                    <a href="{{ Storage::url($signatureProof->file_path) }}" target="_blank">
+                                        <img src="{{ Storage::url($signatureProof->file_path) }}"
+                                             class="img-fluid rounded w-100"
+                                             style="object-fit:contain; height:140px; background:#fff;"
+                                             alt="Tanda Tangan">
+                                    </a>
+                                @else
+                                    <div class="rounded bg-secondary-lt d-flex align-items-center justify-content-center"
+                                         style="height:140px;">
+                                        <span class="text-muted small">Belum ada TTD</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             </div>
@@ -309,44 +413,32 @@
     </div>
 </div>
 
-
 <!-- Signature Modal -->
-<div class="modal modal-blur fade" id="signatureModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal modal-blur fade" id="signatureModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="signatureModalTitle">Tanda Tangan untuk Service Order {{ $serviceOrder->so_number }}</h5>
+                <h5 class="modal-title">Tanda Tangan Customer</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="customerSignatureSection">
-                    <h4 class="mb-3">Tanda Tangan Pelanggan</h4>
-                    <div class="mb-3">
-                        <canvas id="customerSignaturePad" class="border signature-pad-canvas"></canvas>
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button type="button" class="btn btn-warning me-2" id="clearCustomerSignature">Clear</button>
-                        <button type="button" class="btn btn-primary" id="saveCustomerSignature">Simpan Tanda Tangan Pelanggan</button>
-                    </div>
-                </div>
-
-                <div id="staffSignatureSection" style="display: none;">
-                    <h4 class="mb-3">Tanda Tangan Staff</h4>
-                    <div id="staffSignaturePads"></div>
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="button" class="btn btn-primary" id="saveStaffSignature" style="display: none;">Simpan Tanda Tangan Staff</button>
-                    </div>
-                </div>
+                <p class="text-muted small mb-2">Minta customer menandatangani di bawah ini.</p>
+                <canvas id="signature-pad" style="border:1px solid #ccc; border-radius:4px; width:100%; height:220px; touch-action:none; background:#fff;"></canvas>
+                <button type="button" id="clear-sig" class="btn btn-sm btn-outline-secondary mt-2">
+                    Ulangi
+                </button>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn" data-bs-dismiss="modal">Batal</button>
+                <button type="button" id="submit-sig" class="btn btn-primary w-100">
+                    Simpan &amp; Selesaikan Pekerjaan
+                </button>
             </div>
         </div>
     </div>
 </div>
+
 @endsection
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -738,235 +830,113 @@
             });
         }
 
-        // --- Signature Pad Logic ---
-        const signatureModalEl = document.getElementById('signatureModal');
-        const signatureModal = new bootstrap.Modal(signatureModalEl);
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script>
+(function() {
+    const modalEl = document.getElementById('signatureModal');
+    if (!modalEl) return;
 
-        signatureModalEl.addEventListener('shown.bs.modal', () => {
-            resizeCanvas(document.getElementById('customerSignaturePad'), customerSignaturePad);
-        });
-        const requestSignatureBtn = document.getElementById('requestSignatureBtn');
+    const canvas = document.getElementById('signature-pad');
+    let pad;
 
-        const clearCustomerSignatureBtn = document.getElementById('clearCustomerSignature');
-        const saveCustomerSignatureBtn = document.getElementById('saveCustomerSignature');
-        const customerSignatureSection = document.getElementById('customerSignatureSection');
+    modalEl.addEventListener('shown.bs.modal', function () {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width  = canvas.offsetWidth  * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext('2d').scale(ratio, ratio);
+        if (pad) pad.clear();
+        else pad = new SignaturePad(canvas, { backgroundColor: 'rgb(255,255,255)' });
+    });
 
-        const staffSignatureSection = document.getElementById('staffSignatureSection');
-        const staffSignaturePadsContainer = document.getElementById('staffSignaturePads');
-        const saveStaffSignatureBtn = document.getElementById('saveStaffSignature');
+    document.getElementById('clear-sig').addEventListener('click', function () {
+        if (pad) pad.clear();
+    });
 
-        let staffMembers = @json($serviceOrder->staff);
-        let staffSignaturePads = {}; // To store SignaturePad instances for each staff
-        let customerSigned = {{ $serviceOrder->customer_signature_image ? 'true' : 'false' }}; // Track customer signature status
-
-        function resizeCanvas(canvas, signaturePadInstance) {
-            if (canvas.offsetWidth === 0 || canvas.offsetHeight === 0) {
-                return;
-            }
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-            if (signaturePadInstance) {
-                signaturePadInstance.clear();
-            }
+    document.getElementById('submit-sig').addEventListener('click', async function () {
+        if (!pad || pad.isEmpty()) {
+            alert('Tanda tangan customer belum diisi.');
+            return;
         }
 
-        // Function to initialize a signature pad for a given canvas ID
-        function initializeSignaturePad(canvasId) {
-            const canvas = document.getElementById(canvasId);
-            const signaturePad = new SignaturePad(canvas);
-            window.addEventListener('resize', () => resizeCanvas(canvas, signaturePad));
-            return signaturePad;
-        }
+        // Clear any previous error alert
+        const existingErr = document.getElementById('sig-error');
+        if (existingErr) existingErr.remove();
 
-        const customerSignaturePad = initializeSignaturePad('customerSignaturePad');
+        this.disabled = true;
+        this.textContent = 'Menyimpan...';
 
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const authToken = localStorage.getItem('auth_token') || '';
+            const serviceOrderId = {{ $serviceOrder->id }};
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            };
+            if (authToken) {
+                headers['Authorization'] = 'Bearer ' + authToken;
+            }
 
-
-        // Event listener for "Minta Tanda Tangan" button
-        if (requestSignatureBtn) {
-            requestSignatureBtn.addEventListener('click', function () {
-                console.log('Minta Tanda Tangan button clicked.');
-                // Reset state
-                customerSignaturePad.clear();
-                staffSignaturePadsContainer.innerHTML = ''; // Clear previous staff pads
-                staffSignaturePads = {};
-                saveStaffSignatureBtn.style.display = 'none';
-
-                // Check if customer has already signed
-                if (customerSigned) {
-                    console.log('Customer already signed. Proceeding to staff signatures.');
-                    customerSignatureSection.style.display = 'none';
-                    staffSignatureSection.style.display = 'block';
-                    renderStaffSignaturePad(); // Start with staff signatures
-                } else {
-                    console.log('Customer has not signed. Displaying customer signature pad.');
-                    customerSignatureSection.style.display = 'block';
-                    staffSignatureSection.style.display = 'none';
-                }
-
-                signatureModal.show();
+            const res = await fetch(`/api/service-orders/${serviceOrderId}/submit-signature`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ signature_image: pad.toDataURL('image/png') })
             });
-        }
+            const data = await res.json();
+            if (data.success) {
+                // Remove any error alert
+                const existing = document.getElementById('sig-error');
+                if (existing) existing.remove();
 
-        // Customer Signature Actions
-        clearCustomerSignatureBtn.addEventListener('click', function () {
-            console.log('Clear Customer Signature button clicked.');
-            customerSignaturePad.clear();
-        });
+                // Close modal
+                const modalInstance = bootstrap.Modal.getInstance(
+                    document.getElementById('signatureModal')
+                );
+                if (modalInstance) modalInstance.hide();
 
-        saveCustomerSignatureBtn.addEventListener('click', function () {
-            console.log('Save Customer Signature button clicked.');
-            if (customerSignaturePad.isEmpty()) {
-                alert('Mohon berikan tanda tangan pelanggan.');
-                return;
-            }
-            const signatureData = customerSignaturePad.toDataURL();
-            uploadSignature(serviceOrderId, signatureData, 'customer', null, function () {
-                alert('Tanda tangan pelanggan berhasil disimpan.');
-                customerSigned = true; // Update status after successful signature
-                customerSignatureSection.style.display = 'none';
-                staffSignatureSection.style.display = 'block';
-                renderStaffSignaturePad(); // Start with staff signatures
-            });
-        });
+                // Show fixed success banner at top of page
+                const banner = document.createElement('div');
+                banner.style.cssText = [
+                    'position:fixed', 'top:16px', 'left:50%', 'transform:translateX(-50%)',
+                    'z-index:99999', 'background:#2fb344', 'color:#fff', 'font-weight:600',
+                    'padding:12px 28px', 'border-radius:8px', 'box-shadow:0 4px 16px rgba(0,0,0,0.2)',
+                    'font-size:15px', 'text-align:center'
+                ].join(';');
+                banner.textContent = '✓ Tanda tangan tersimpan. Pekerjaan selesai!';
+                document.body.appendChild(banner);
 
-        // Staff Signature Actions
-        function renderStaffSignaturePad() {
-            console.log('renderStaffSignaturePad called.');
-            console.log('Current staffMembers state:', staffMembers);
-
-            // Find the first staff member who hasn't signed yet
-            const nextUnsignedStaff = staffMembers.find(staff => !staff.pivot.signature_image || staff.pivot.signature_image === '');
-            console.log('Next unsigned staff:', nextUnsignedStaff);
-
-            if (nextUnsignedStaff) {
-                const staff = nextUnsignedStaff;
-                console.log('Rendering signature pad for staff:', staff.name, '(ID:', staff.id, ')');
-                staffSignaturePadsContainer.innerHTML = `
-                    <h5 class="mb-2">${staff.name}</h5>
-                    <canvas id="staffSignaturePad_${staff.id}" class="border signature-pad-canvas"></canvas>
-                    <div class="d-flex justify-content-end mt-2">
-                        <button type="button" class="btn btn-warning me-2" data-staff-id="${staff.id}" data-action="clear">Clear</button>
-                        <button type="button" class="btn btn-primary" data-staff-id="${staff.id}" data-action="save">Simpan Tanda Tangan Staff</button>
-                    </div>
-                `;
-                staffSignaturePads[staff.id] = initializeSignaturePad(`staffSignaturePad_${staff.id}`);
-                resizeCanvas(document.getElementById(`staffSignaturePad_${staff.id}`), staffSignaturePads[staff.id]);
-
-                // Add event listeners for the dynamically created buttons
-                document.querySelector(`#staffSignaturePads button[data-staff-id="${staff.id}"][data-action="clear"]`).addEventListener('click', function() {
-                    console.log('Clear button clicked for staff:', staff.name);
-                    staffSignaturePads[staff.id].clear();
-                });
-                document.querySelector(`#staffSignaturePads button[data-staff-id="${staff.id}"][data-action="save"]`).addEventListener('click', function() {
-                    console.log('Save button clicked for staff:', staff.name);
-                    saveCurrentStaffSignature(staff.id);
-                });
+                // Reload after 2 seconds
+                setTimeout(() => window.location.reload(), 2000);
 
             } else {
-                console.log('All staff have signed.');
-                alert('Semua tanda tangan staff berhasil disimpan.');
-                signatureModal.hide();
-                // Hide the "Minta Tanda Tangan" button if all signatures are now present
-                if (customerSigned && staffMembers.every(staff => staff.pivot.signature_image && staff.pivot.signature_image !== '')) {
-                    console.log('All signatures complete. Hiding Minta Tanda Tangan button.');
-                    requestSignatureBtn.style.display = 'none';
-                    // Call function to update service order status to 'done'
-                    updateServiceOrderStatus(serviceOrderId, 'done');
+                // SHOW ERROR INSIDE MODAL
+                let errAlert = document.getElementById('sig-error');
+                if (!errAlert) {
+                    errAlert = document.createElement('div');
+                    errAlert.id = 'sig-error';
+                    errAlert.style.cssText = 'background:#d63939;color:#fff;padding:10px 14px;border-radius:6px;margin-bottom:10px;font-size:14px;';
+                    canvas.parentNode.insertBefore(errAlert, canvas);
                 }
+                errAlert.textContent = data.message || 'Gagal menyimpan. Coba lagi.';
+                this.disabled = false;
+                this.textContent = 'Simpan & Selesaikan Pekerjaan';
             }
-        }
-
-        function saveCurrentStaffSignature(staffId) {
-            console.log('saveCurrentStaffSignature called for staff ID:', staffId);
-            const signaturePad = staffSignaturePads[staffId];
-            if (signaturePad.isEmpty()) {
-                alert('Mohon berikan tanda tangan untuk staff ini.');
-                return;
+        } catch (e) {
+            let errAlert = document.getElementById('sig-error');
+            if (!errAlert) {
+                errAlert = document.createElement('div');
+                errAlert.id = 'sig-error';
+                errAlert.style.cssText = 'background:#d63939;color:#fff;padding:10px 14px;border-radius:6px;margin-bottom:10px;font-size:14px;';
+                canvas.parentNode.insertBefore(errAlert, canvas);
             }
-            const signatureData = signaturePad.toDataURL();
-            uploadSignature(serviceOrderId, signatureData, 'staff', staffId, function () {
-                alert('Tanda tangan staff berhasil disimpan.');
-                // Update the specific staff member's signature_image in the local staffMembers array
-                const signedStaffIndex = staffMembers.findIndex(staff => staff.id == staffId);
-                if (signedStaffIndex !== -1) {
-                    staffMembers[signedStaffIndex].pivot.signature_image = signatureData; // Store the actual signature or a placeholder
-                    console.log('Updated staffMembers after staff signature:', staffMembers[signedStaffIndex]);
-                }
-                // After saving, re-render to find the next unsigned staff
-                renderStaffSignaturePad();
-            });
+            errAlert.textContent = 'Koneksi bermasalah. Periksa internet dan coba lagi.';
+            this.disabled = false;
+            this.textContent = 'Simpan & Selesaikan Pekerjaan';
         }
-
-        // Generic upload signature function
-        function uploadSignature(serviceOrderId, signatureData, signerType, staffId, callback) {
-            const payload = {
-                signature_image: signatureData,
-                signer_type: signerType,
-            };
-            if (signerType === 'staff') {
-                payload.staff_id = staffId;
-            }
-
-            fetch(`/api/service-orders/${serviceOrderId}/signature`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
-                },
-                body: JSON.stringify(payload),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    callback();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while uploading signature.');
-            });
-        }
-
-        // Function to update service order status
-        function updateServiceOrderStatus(serviceOrderId, newStatus) {
-            fetch(`/api/service-orders/${serviceOrderId}/status`, {
-                method: 'PATCH',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
-                },
-                body: JSON.stringify({ status: newStatus }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Service Order status updated to ' + newStatus + ' successfully!');
-                    // Optionally, update the status badge on the page without a full reload
-                    const statusBadge = document.querySelector('.badge');
-                    if (statusBadge) {
-                        statusBadge.classList.remove('bg-warning', 'bg-primary', 'bg-danger', 'bg-secondary'); // Remove old status classes
-                        statusBadge.classList.add('bg-success'); // Add new status class
-                        statusBadge.textContent = 'Done'; // Update text
-                    }
-                } else {
-                    alert('Error updating Service Order status: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while updating the Service Order status.');
-            });
-        }
-
     });
+})();
 </script>
 @endpush

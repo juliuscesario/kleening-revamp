@@ -62,4 +62,14 @@ class Staff extends Model
     {
         return $this->hasMany(\App\Models\StaffOffDay::class);
     }
+
+    /**
+     * Sessions this staff is assigned to.
+     */
+    public function orderSessions()
+    {
+        return $this->belongsToMany(OrderSession::class, 'order_session_staff')
+            ->withPivot('signature_image')
+            ->withTimestamps();
+    }
 }

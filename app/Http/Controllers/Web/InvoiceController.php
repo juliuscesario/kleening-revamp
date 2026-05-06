@@ -29,6 +29,17 @@ class InvoiceController extends Controller
     {
         $this->authorize('create', Invoice::class);
         $serviceOrder = ServiceOrder::with(['items.service', 'customer', 'address.area', 'staff', 'workPhotos'])->findOrFail($request->service_order_id);
+
+        // Gate: only allow invoice creation when SO and all sessions are done
+        $allSessionsDone = $serviceOrder->sessions()
+            ->where('status', '!=', 'cancel')
+            ->where('status', '!=', 'done')
+            ->doesntExist();
+
+        if ($serviceOrder->status !== 'done' || !$allSessionsDone) {
+            return redirect()->back()->with('error', 'Invoice hanya bisa dibuat jika semua sesi sudah selesai.');
+        }
+
         // Fetch the most recent non-cancelled invoice to check if an active one exists
         $activeInvoice = Invoice::where('service_order_id', $request->service_order_id)
             ->where('status', '!=', Invoice::STATUS_CANCELLED)
@@ -80,6 +91,16 @@ class InvoiceController extends Controller
         ]);
 
         $serviceOrder = ServiceOrder::findOrFail($request->service_order_id);
+
+        // Gate: only allow invoice creation when SO and all sessions are done
+        $allSessionsDone = $serviceOrder->sessions()
+            ->where('status', '!=', 'cancel')
+            ->where('status', '!=', 'done')
+            ->doesntExist();
+
+        if ($serviceOrder->status !== 'done' || !$allSessionsDone) {
+            return redirect()->back()->with('error', 'Invoice hanya bisa dibuat jika semua sesi sudah selesai.');
+        }
 
         if (auth()->user()->role === 'co_owner' && $serviceOrder->address->area_id !== auth()->user()->area_id) {
             abort(403);

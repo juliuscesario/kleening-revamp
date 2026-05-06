@@ -20,26 +20,38 @@
                 <label class="form-label fw-bold mb-3">Urutkan Berdasarkan</label>
                 <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column gap-2">
                     <label class="form-selectgroup-item flex-fill">
-                        <input type="radio" name="sort_by" value="work_date" class="form-selectgroup-input" {{ ($currentSortBy ?? 'work_date') == 'work_date' ? 'checked' : '' }}>
+                        <input type="radio" name="sort_by" value="tanggal" class="form-selectgroup-input" {{ ($currentSortBy ?? 'tanggal') == 'tanggal' ? 'checked' : '' }}>
                         <span class="form-selectgroup-label d-flex align-items-center p-3">
                             <span class="me-3">
                                 <span class="form-selectgroup-check"></span>
                             </span>
                             <span class="form-selectgroup-label-content">
-                                <span class="d-block fw-bold">Jadwal Pengerjaan</span>
-                                <span class="d-block text-muted mt-1 small">Urutkan berdasarkan tanggal & waktu pengerjaan</span>
+                                <span class="d-block fw-bold">Tanggal Sesi</span>
+                                <span class="d-block text-muted mt-1 small">Urutkan berdasarkan tanggal & waktu sesi</span>
                             </span>
                         </span>
                     </label>
                     <label class="form-selectgroup-item flex-fill">
-                        <input type="radio" name="sort_by" value="created_at" class="form-selectgroup-input" {{ ($currentSortBy ?? 'work_date') == 'created_at' ? 'checked' : '' }}>
+                        <input type="radio" name="sort_by" value="jam" class="form-selectgroup-input" {{ ($currentSortBy ?? 'tanggal') == 'jam' ? 'checked' : '' }}>
+                        <span class="form-selectgroup-label d-flex align-items-center p-3">
+                            <span class="me-3">
+                                <span class="form-selectgroup-check"></span>
+                            </span>
+                            <span class="form-selectgroup-label-content">
+                                <span class="d-block fw-bold">Waktu Sesi</span>
+                                <span class="d-block text-muted mt-1 small">Urutkan berdasarkan jam sesi</span>
+                            </span>
+                        </span>
+                    </label>
+                    <label class="form-selectgroup-item flex-fill">
+                        <input type="radio" name="sort_by" value="created_at" class="form-selectgroup-input" {{ ($currentSortBy ?? 'tanggal') == 'created_at' ? 'checked' : '' }}>
                         <span class="form-selectgroup-label d-flex align-items-center p-3">
                             <span class="me-3">
                                 <span class="form-selectgroup-check"></span>
                             </span>
                             <span class="form-selectgroup-label-content">
                                 <span class="d-block fw-bold">Waktu Dibuat</span>
-                                <span class="d-block text-muted mt-1 small">Urutkan berdasarkan kapan order dibuat</span>
+                                <span class="d-block text-muted mt-1 small">Urutkan berdasarkan kapan sesi dibuat</span>
                             </span>
                         </span>
                     </label>
@@ -85,17 +97,17 @@
 </div>
 
 <div class="row mb-3 g-2">
-    @if($doneServiceOrders->isNotEmpty())
+    @if($doneSessions->isNotEmpty())
         <div class="col">
             <button type="button" class="btn btn-outline-success w-100 text-wrap h-auto py-2" data-bs-toggle="modal" data-bs-target="#doneOrdersModal">
-                <span class="d-none d-sm-inline">Lihat Service Orders </span>Selesai ({{ $doneServiceOrders->count() }})
+                <span class="d-none d-sm-inline">Lihat Sesi </span>Selesai ({{ $doneSessions->count() }})
             </button>
         </div>
     @endif
-    @if($cancelledServiceOrders->isNotEmpty())
+    @if($cancelledSessions->isNotEmpty())
         <div class="col">
             <button type="button" class="btn btn-outline-secondary w-100 text-wrap h-auto py-2" data-bs-toggle="modal" data-bs-target="#cancelledOrdersModal">
-                <span class="d-none d-sm-inline">Lihat Service Orders </span>Dibatalkan ({{ $cancelledServiceOrders->count() }})
+                <span class="d-none d-sm-inline">Lihat Sesi </span>Dibatalkan ({{ $cancelledSessions->count() }})
             </button>
         </div>
     @endif
@@ -171,31 +183,41 @@
         </div>
     </div>
 
-    {{-- Today's Service Orders --}}
+    {{-- Today's Sessions --}}
     <div class="col-lg-4 col-md-12">
         <div class="card h-100">
             <div class="card-header">
-                <h3 class="card-title">Service Orders Hari Ini</h3>
+                <h3 class="card-title">Jadwal Hari Ini</h3>
             </div>
             <div class="card-body card-body-scrollable card-body-scrollable-shadow">
-                @if($todayServiceOrders->isEmpty())
-                    <p>Tidak ada Service Order untuk hari ini.</p>
+                @if($todaySessions->isEmpty())
+                    <p>Tidak ada jadwal untuk hari ini.</p>
                 @else
                     <div class="list-group">
-                        @foreach($todayServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                        @foreach($todaySessions as $session)
+                            <a href="{{ route('web.service-orders.show', $session->serviceOrder->id) }}" class="list-group-item list-group-item-action">
                                 <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
                                     <div class="flex-grow-1 order-2 order-sm-1">
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
-                                            <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
+                                            <h5 class="mb-0">{{ $session->serviceOrder->so_number }}</h5>
+                                            <span class="badge bg-{{ $session->status == 'proses' ? 'info' : ($session->status == 'done' ? 'success' : 'primary') }} text-white">{{ ucfirst($session->status) }}</span>
+                                            @if($session->session_number > 1)
+                                                <span class="badge bg-teal text-white">Sesi {{ $session->session_number }}</span>
+                                            @endif
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $session->serviceOrder->customer->name ?? '-' }}</p>
+                                        @php
+                                            $firstItem = $session->serviceOrder->items->first();
+                                            $categoryName = $firstItem?->service?->category?->name ?? null;
+                                        @endphp
+                                        @if($categoryName)
+                                            <p class="mb-0 text-muted small">{{ $categoryName }}</p>
+                                        @endif
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
-                                        @if($so->work_time_formatted)
-                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($session->tanggal)->format('d M Y') }}</div>
+                                        @if($session->jam)
+                                            <div class="text-primary fw-semibold">{{ $session->jam }} WIB</div>
                                         @endif
                                     </div>
                                 </div>
@@ -207,31 +229,41 @@
         </div>
     </div>
 
-    {{-- Tomorrow's Service Orders --}}
+    {{-- Tomorrow's Sessions --}}
     <div class="col-lg-4 col-md-12">
         <div class="card h-100">
             <div class="card-header">
-                <h3 class="card-title">Service Orders Besok</h3>
+                <h3 class="card-title">Jadwal Besok</h3>
             </div>
             <div class="card-body card-body-scrollable card-body-scrollable-shadow">
-                @if($tomorrowServiceOrders->isEmpty())
-                    <p>Tidak ada Service Order untuk besok.</p>
+                @if($tomorrowSessions->isEmpty())
+                    <p>Tidak ada jadwal untuk besok.</p>
                 @else
                     <div class="list-group">
-                        @foreach($tomorrowServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                        @foreach($tomorrowSessions as $session)
+                            <a href="{{ route('web.service-orders.show', $session->serviceOrder->id) }}" class="list-group-item list-group-item-action">
                                 <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
                                     <div class="flex-grow-1 order-2 order-sm-1">
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
-                                            <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
+                                            <h5 class="mb-0">{{ $session->serviceOrder->so_number }}</h5>
+                                            <span class="badge bg-primary text-white">{{ ucfirst($session->status) }}</span>
+                                            @if($session->session_number > 1)
+                                                <span class="badge bg-teal text-white">Sesi {{ $session->session_number }}</span>
+                                            @endif
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $session->serviceOrder->customer->name ?? '-' }}</p>
+                                        @php
+                                            $firstItem = $session->serviceOrder->items->first();
+                                            $categoryName = $firstItem?->service?->category?->name ?? null;
+                                        @endphp
+                                        @if($categoryName)
+                                            <p class="mb-0 text-muted small">{{ $categoryName }}</p>
+                                        @endif
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
-                                        @if($so->work_time_formatted)
-                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($session->tanggal)->format('d M Y') }}</div>
+                                        @if($session->jam)
+                                            <div class="text-primary fw-semibold">{{ $session->jam }} WIB</div>
                                         @endif
                                     </div>
                                 </div>
@@ -243,31 +275,41 @@
         </div>
     </div>
 
-    {{-- Past Service Orders --}}
+    {{-- Past Sessions --}}
     <div class="col-lg-4 col-md-12">
         <div class="card h-100">
             <div class="card-header">
-                <h3 class="card-title">Service Orders Terlewat</h3>
+                <h3 class="card-title">Jadwal Terlewat</h3>
             </div>
             <div class="card-body card-body-scrollable card-body-scrollable-shadow">
-                @if($pastServiceOrders->isEmpty())
-                    <p>Tidak ada Service Order dari tanggal lalu.</p>
+                @if($pastSessions->isEmpty())
+                    <p>Tidak ada jadwal dari tanggal lalu.</p>
                 @else
                     <div class="list-group">
-                        @foreach($pastServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                        @foreach($pastSessions as $session)
+                            <a href="{{ route('web.service-orders.show', $session->serviceOrder->id) }}" class="list-group-item list-group-item-action">
                                 <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
                                     <div class="flex-grow-1 order-2 order-sm-1">
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
-                                            <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'primary' }} text-white">{{ ucfirst($so->status) }}</span>
+                                            <h5 class="mb-0">{{ $session->serviceOrder->so_number }}</h5>
+                                            <span class="badge bg-{{ $session->status == 'proses' ? 'info' : ($session->status == 'done' ? 'success' : 'primary') }} text-white">{{ ucfirst($session->status) }}</span>
+                                            @if($session->session_number > 1)
+                                                <span class="badge bg-teal text-white">Sesi {{ $session->session_number }}</span>
+                                            @endif
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $session->serviceOrder->customer->name ?? '-' }}</p>
+                                        @php
+                                            $firstItem = $session->serviceOrder->items->first();
+                                            $categoryName = $firstItem?->service?->category?->name ?? null;
+                                        @endphp
+                                        @if($categoryName)
+                                            <p class="mb-0 text-muted small">{{ $categoryName }}</p>
+                                        @endif
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
-                                        @if($so->work_time_formatted)
-                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($session->tanggal)->format('d M Y') }}</div>
+                                        @if($session->jam)
+                                            <div class="text-primary fw-semibold">{{ $session->jam }} WIB</div>
                                         @endif
                                     </div>
                                 </div>
@@ -280,37 +322,40 @@
     </div>
 </div>
 
-{{-- Modals for Done and Cancelled orders --}}
+{{-- Modals for Done and Cancelled sessions --}}
 <div class="modal modal-blur fade" id="doneOrdersModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Service Orders Selesai (10 Hari Terakhir)</h5>
+                <h5 class="modal-title">Sesi Selesai (10 Hari Terakhir)</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                @if($doneServiceOrders->isEmpty())
-                    <p>Tidak ada Service Order yang selesai.</p>
+                @if($doneSessions->isEmpty())
+                    <p>Tidak ada sesi yang selesai.</p>
                 @else
                     <div class="list-group">
-                        @foreach($doneServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                        @foreach($doneSessions as $session)
+                            <a href="{{ route('web.service-orders.show', $session->serviceOrder->id) }}" class="list-group-item list-group-item-action">
                                 <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
                                     <div class="flex-grow-1 order-2 order-sm-1">
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
-                                            <span class="badge bg-{{ $so->status == 'proses' ? 'info' : 'success' }} text-white">{{ ucfirst($so->status) }}</span>
+                                            <h5 class="mb-0">{{ $session->serviceOrder->so_number }}</h5>
+                                            <span class="badge bg-success text-white">{{ ucfirst($session->status) }}</span>
+                                            @if($session->session_number > 1)
+                                                <span class="badge bg-teal text-white">Sesi {{ $session->session_number }}</span>
+                                            @endif
                                         </div>
                                         <p class="mb-0 text-secondary">
-                                            <strong>Pelanggan:</strong> {{ $so->customer->name ?? '-' }}<br>
-                                            <strong>No. HP:</strong> {{ $so->customer->phone_number ?? '-' }}<br>
-                                            <strong>Alamat:</strong> {{ $so->address->full_address ?? '-' }}
+                                            <strong>Pelanggan:</strong> {{ $session->serviceOrder->customer->name ?? '-' }}<br>
+                                            <strong>No. HP:</strong> {{ $session->serviceOrder->customer->phone_number ?? '-' }}<br>
+                                            <strong>Alamat:</strong> {{ $session->serviceOrder->address->full_address ?? '-' }}
                                         </p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
-                                        @if($so->work_time_formatted)
-                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($session->tanggal)->format('d M Y') }}</div>
+                                        @if($session->jam)
+                                            <div class="text-primary fw-semibold">{{ $session->jam }} WIB</div>
                                         @endif
                                     </div>
                                 </div>
@@ -329,28 +374,31 @@
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Service Orders Dibatalkan</h5>
+                <h5 class="modal-title">Sesi Dibatalkan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                @if($cancelledServiceOrders->isEmpty())
-                    <p>Tidak ada Service Order yang dibatalkan.</p>
+                @if($cancelledSessions->isEmpty())
+                    <p>Tidak ada sesi yang dibatalkan.</p>
                 @else
                     <div class="list-group">
-                        @foreach($cancelledServiceOrders as $so)
-                            <a href="{{ route('web.service-orders.show', $so->id) }}" class="list-group-item list-group-item-action">
+                        @foreach($cancelledSessions as $session)
+                            <a href="{{ route('web.service-orders.show', $session->serviceOrder->id) }}" class="list-group-item list-group-item-action">
                                 <div class="d-flex flex-column flex-sm-row w-100 align-items-start gap-2">
                                     <div class="flex-grow-1 order-2 order-sm-1">
                                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                                            <h5 class="mb-0">{{ $so->so_number }}</h5>
-                                            <span class="badge bg-secondary text-white">Cancelled</span>
+                                            <h5 class="mb-0">{{ $session->serviceOrder->so_number }}</h5>
+                                            <span class="badge bg-secondary text-white">{{ ucfirst($session->status) }}</span>
+                                            @if($session->session_number > 1)
+                                                <span class="badge bg-teal text-white">Sesi {{ $session->session_number }}</span>
+                                            @endif
                                         </div>
-                                        <p class="mb-0 text-secondary">Pelanggan: {{ $so->customer->name ?? '-' }}</p>
+                                        <p class="mb-0 text-secondary">Pelanggan: {{ $session->serviceOrder->customer->name ?? '-' }}</p>
                                     </div>
                                     <div class="order-1 order-sm-2 text-sm-end">
-                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($so->work_date)->format('d M Y') }}</div>
-                                        @if($so->work_time_formatted)
-                                            <div class="text-primary fw-semibold">{{ $so->work_time_formatted }} WIB</div>
+                                        <div class="fw-bold fs-5">{{ \Carbon\Carbon::parse($session->tanggal)->format('d M Y') }}</div>
+                                        @if($session->jam)
+                                            <div class="text-primary fw-semibold">{{ $session->jam }} WIB</div>
                                         @endif
                                     </div>
                                 </div>

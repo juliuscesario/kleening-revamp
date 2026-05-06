@@ -18,7 +18,7 @@ class ServiceOrderPolicy
 
         // Staff can only view service orders assigned to them
         if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+            return $serviceOrder->hasStaffAssigned($user->staff->id);
         }
 
         return false;
@@ -31,7 +31,7 @@ class ServiceOrderPolicy
     {
         // Staff can view staff-specific details if they are assigned to the service order
         if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+            return $serviceOrder->hasStaffAssigned($user->staff->id);
         }
         return false;
     }
@@ -50,7 +50,7 @@ class ServiceOrderPolicy
     {
         // Izin diberikan jika user adalah staff DAN namanya ada di daftar staff SO tersebut.
         if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff_id', $user->staff->id)->exists();
+            return $serviceOrder->hasStaffAssigned($user->staff->id);
         }
         return false;
     }
@@ -62,7 +62,7 @@ class ServiceOrderPolicy
     {
         // Only staff assigned to the service order can start work
         if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+            return $serviceOrder->hasStaffAssigned($user->staff->id);
         }
         return false;
     }
@@ -74,7 +74,7 @@ class ServiceOrderPolicy
     {
         // Only staff assigned to the service order can upload work proof
         if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
+            return $serviceOrder->hasStaffAssigned($user->staff->id);
         }
         return false;
     }
@@ -82,17 +82,5 @@ class ServiceOrderPolicy
     public function delete(User $user, ServiceOrder $serviceorder): bool
     {
         return in_array($user->role, ['owner', 'co_owner', 'admin']);
-    }
-
-    /**
-     * Determine whether the user can upload a signature for the service order.
-     */
-    public function uploadSignature(User $user, ServiceOrder $serviceOrder): bool
-    {
-        // Only staff assigned to the service order can upload signatures
-        if ($user->role == 'staff' && $user->staff) {
-            return $serviceOrder->staff()->where('staff.id', $user->staff->id)->exists();
-        }
-        return false;
     }
 }

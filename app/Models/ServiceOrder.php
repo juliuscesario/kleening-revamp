@@ -4,8 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Scopes\AreaScope;
 use App\Models\User; // Import User model
+use App\Models\Staff;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash; // Import Hash facade
 
@@ -60,11 +63,13 @@ class ServiceOrder extends Model
         'created_by',
         'work_proof_completed_at',
         'customer_signature_image',
+        'is_multi_session',
     ];
 
     protected $casts = [
         'work_date' => 'date',
         'work_proof_completed_at' => 'datetime',
+        'is_multi_session' => 'boolean',
     ];
 
     /**
@@ -144,9 +149,38 @@ class ServiceOrder extends Model
         return $this->hasMany(ServiceOrderItem::class);
     }
 
-    public function staff()
+    /**
+     * @deprecated Use hasStaffAssigned() or allAssignedStaff() instead.
+     * This reads from service_order_staff which is deprecated.
+     */
+    public function staff(): BelongsToMany
     {
         return $this->belongsToMany(Staff::class, 'service_order_staff')->withPivot('signature_image');
+    }
+
+    /**
+     * Check if a staff member is assigned to any session of this order.
+     * Used by policies for authorization.
+     */
+    public function hasStaffAssigned(int $staffId): bool
+    {
+        return $this->sessions()
+            ->whereHas('staff', function ($q) use ($staffId) {
+                $q->withoutGlobalScopes()->where('staff.id', $staffId);
+            })
+            ->exists();
+    }
+
+    /**
+     * Get all unique staff assigned across all sessions of this order.
+     */
+    public function allAssignedStaff()
+    {
+        return Staff::withoutGlobalScopes()
+            ->whereHas('orderSessions', function ($q) {
+                $q->where('service_order_id', $this->id);
+            })
+            ->get();
     }
 
     public function creator()
@@ -176,6 +210,22 @@ class ServiceOrder extends Model
     }
 
     /**
+     * Sessions for multi-session orders (Deep Cleaning, pickup+delivery, etc).
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(OrderSession::class)->orderBy('session_number');
+    }
+
+    /**
+     * Photo proofs for this service order.
+     */
+    public function proofs(): HasMany
+    {
+        return $this->hasMany(ServiceOrderProof::class);
+    }
+
+    /**
      * Format stored work_time into HH:MM (WIB) for display.
      */
     public function getWorkTimeFormattedAttribute(): ?string
@@ -189,5 +239,13 @@ class ServiceOrder extends Model
         } catch (\Throwable $e) {
             return $this->work_time;
         }
+    }
+
+    /**
+     * Check if this order has multiple sessions.
+     */
+    public function getIsMultiSessionAttribute(): bool
+    {
+        return $this->attributes['is_multi_session'] ?? false;
     }
 }

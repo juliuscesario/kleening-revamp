@@ -332,7 +332,17 @@ class DataTablesController extends Controller
                 if ($so->invoice && $so->invoice->status !== \App\Models\Invoice::STATUS_CANCELLED) {
                     $actions .= '<a href="' . route('web.invoices.show', $so->invoice) . '" class="btn btn-sm btn-success">Invoice</a> ';
                 } else if ($so->status === \App\Models\ServiceOrder::STATUS_DONE) {
-                    $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Buat Invoice</button> ';
+                    // Check if all non-cancel sessions are done
+                    $allSessionsDone = $so->sessions()
+                        ->where('status', '!=', 'cancel')
+                        ->where('status', '!=', 'done')
+                        ->doesntExist();
+
+                    if ($allSessionsDone) {
+                        $actions .= '<button class="btn btn-sm btn-primary create-invoice" data-id="' . $so->id . '">Buat Invoice</button> ';
+                    } else {
+                        $actions .= '<button class="btn btn-sm btn-secondary" disabled title="Selesaikan semua sesi terlebih dahulu"><i class="ti ti-file-invoice"></i> Invoice</button> ';
+                    }
                 }
 
                 return $actions;
@@ -1018,8 +1028,10 @@ class DataTablesController extends Controller
 
         $query = \App\Models\ServiceOrder::query()
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
-            ->join('service_order_staff', 'service_orders.id', '=', 'service_order_staff.service_order_id')
-            ->where('service_order_staff.staff_id', $staff->id)
+            ->distinct('service_orders.id')
+            ->join('order_sessions', 'order_sessions.service_order_id', '=', 'service_orders.id')
+            ->join('order_session_staff', 'order_session_staff.order_session_id', '=', 'order_sessions.id')
+            ->where('order_session_staff.staff_id', $staff->id)
             ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
             ->whereBetween('work_date', [$request->start_date, $request->end_date]);
 

@@ -5,16 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\ImageCompressor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // <-- PENTING untuk transaksi
+use Illuminate\Support\Facades\DB;
 use App\Models\ServiceOrder;
-use App\Models\Service;
-use App\Http\Resources\ServiceOrderResource; // <-- Tambahkan Http di sini
+use App\Http\Resources\ServiceOrderResource;
 use App\Http\Resources\StaffServiceOrderResource;
 use App\Http\Resources\UserResource;
-use App\Models\Staff; // Import Staff model
-use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
+use App\Models\Staff;
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Carbon\Carbon;
 
 class ServiceOrderController extends Controller
 {
@@ -30,14 +28,27 @@ class ServiceOrderController extends Controller
         $query = ServiceOrder::query();
 
         if ($user->role == 'staff' && $user->staff) {
-            $query->whereHas('staff', function ($q) use ($user) {
-                $q->where('staff.id', $user->staff->id);
+            // Filter orders where this staff is assigned to ANY session
+            $query->whereHas('sessions.staff', function ($q) use ($user) {
+                $q->withoutGlobalScopes()->where('staff.id', $user->staff->id);
             });
-            $serviceOrders = $query->with(['customer', 'address', 'items.service', 'staff', 'creator'])->get();
+            $serviceOrders = $query->with(['customer', 'address', 'items.service', 'sessions.staff', 'creator'])->get();
+
+            // Map session staff to a 'staff' relation so the Resource can read it
+            $serviceOrders->each(function ($so) {
+                $so->setRelation('staff', $so->allAssignedStaff());
+            });
+
             return StaffServiceOrderResource::collection($serviceOrders);
         }
 
-        $serviceOrders = $query->with(['customer', 'address', 'items.service', 'staff'])->get();
+        $serviceOrders = $query->with(['customer', 'address', 'items.service', 'sessions.staff'])->get();
+
+        // Map session staff to a 'staff' relation so the Resource can read it
+        $serviceOrders->each(function ($so) {
+            $so->setRelation('staff', $so->allAssignedStaff());
+        });
+
         return ServiceOrderResource::collection($serviceOrders);
     }
 
@@ -58,44 +69,26 @@ class ServiceOrderController extends Controller
             'staff_ids.*' => 'required|exists:staff,id',
         ]);
 
-        // Kita gunakan DB::transaction untuk memastikan semua query berhasil
-        // atau tidak sama sekali, demi keamanan data.
-        $serviceOrder = DB::transaction(function () use ($validated, $request) {
-            // 1. Buat Service Order utama
-            $so = ServiceOrder::create([
-                'customer_id' => $validated['customer_id'],
-                'address_id' => $validated['address_id'],
-                'work_date' => $validated['work_date'],
-                'work_time' => Carbon::createFromFormat('H:i', $validated['work_time'], config('app.timezone'))->format('H:i:s'),
-                'work_notes' => $validated['work_notes'] ?? null,
-                'staff_notes' => $validated['staff_notes'] ?? null,
-                'so_number' => 'SO-' . time(), // Nanti bisa dibuat lebih canggih
-                'status' => ServiceOrder::STATUS_BOOKED, // Status awal
-                'created_by' => $request->user()->id, // User yang sedang login
-            ]);
+        $soData = [
+            'customer_id' => $validated['customer_id'],
+            'address_id' => $validated['address_id'],
+            'work_date' => $validated['work_date'],
+            'work_time' => $validated['work_time'],
+            'work_notes' => $validated['work_notes'] ?? null,
+            'staff_notes' => $validated['staff_notes'] ?? null,
+            'services' => $validated['items'] ?? [],
+        ];
 
-            // 2. Loop dan simpan item-item layanannya
-            foreach ($validated['items'] as $item) {
-                $service = Service::find($item['service_id']);
-                $so->items()->create([
-                    'service_id' => $item['service_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $service->price, // Ambil harga dari master service
-                    'total' => $item['quantity'] * $service->price,
-                ]);
-            }
-
-            // 3. Tugaskan staff ke service order ini
-            $so->staff()->attach($validated['staff_ids']);
-
-            // Update customer's last_order_date
-            $so->customer->syncLastOrderDate();
-
-            return $so;
-        });
+        $serviceOrder = app(\App\Actions\CreateServiceOrderAction::class)->execute(
+            $soData,
+            $validated['staff_ids'],
+            $request->user()->id
+        );
 
         // Kembalikan data lengkap dengan relasinya
-        return new ServiceOrderResource($serviceOrder->load(['customer', 'address', 'items.service', 'staff']));
+        $serviceOrder->load(['customer', 'address', 'items.service', 'sessions.staff']);
+        $serviceOrder->setRelation('staff', $serviceOrder->allAssignedStaff());
+        return new ServiceOrderResource($serviceOrder);
     }
 
     /**
@@ -107,11 +100,14 @@ class ServiceOrderController extends Controller
 
         if ($user->role == 'staff') {
             $this->authorize('viewStaffDetails', $serviceOrder);
-            return new StaffServiceOrderResource($serviceOrder->load(['customer', 'address', 'items.service', 'staff', 'creator']));
+            $serviceOrder->load(['customer', 'address', 'items.service', 'sessions.staff', 'creator']);
+            $serviceOrder->setRelation('staff', $serviceOrder->allAssignedStaff());
+            return new StaffServiceOrderResource($serviceOrder);
         } else {
             $this->authorize('view', $serviceOrder);
-            // Muat semua relasi yang dibutuhkan untuk ditampilkan
-            return new ServiceOrderResource($serviceOrder->load(['customer', 'address', 'items.service', 'staff', 'creator']));
+            $serviceOrder->load(['customer', 'address', 'items.service', 'sessions.staff', 'creator']);
+            $serviceOrder->setRelation('staff', $serviceOrder->allAssignedStaff());
+            return new ServiceOrderResource($serviceOrder);
         }
     }
 
@@ -134,7 +130,7 @@ class ServiceOrderController extends Controller
             'items.*.quantity' => 'sometimes|required|integer|min:1',
             'staff_ids' => 'sometimes|required|array|min:1',
             'staff_ids.*' => 'required|exists:staff,id',
-            'owner_password' => 'nullable|string', // Default to nullable
+            'owner_password' => 'nullable|string',
         ];
 
         $originalStatus = $serviceOrder->status;
@@ -154,43 +150,28 @@ class ServiceOrderController extends Controller
         }
         // --- End Status Transition Logic ---
 
-        if (isset($validated['work_time'])) {
-            $validated['work_time'] = Carbon::createFromFormat('H:i', $validated['work_time'], config('app.timezone'))->format('H:i:s');
-        }
+        $soData = [
+            'work_notes' => $validated['work_notes'] ?? null,
+            'staff_notes' => $validated['staff_notes'] ?? null,
+            'status' => $newStatus,
+            'services' => $validated['items'] ?? [],
+        ];
 
-        $updatedServiceOrder = DB::transaction(function () use ($validated, $serviceOrder, $newStatus) {
-            // 1. Update data utama Service Order
-            $serviceOrder->update(array_merge($validated, ['status' => $newStatus]));
+        // Only include optional fields when present
+        if (isset($validated['customer_id'])) $soData['customer_id'] = $validated['customer_id'];
+        if (isset($validated['address_id'])) $soData['address_id'] = $validated['address_id'];
+        if (isset($validated['work_date'])) $soData['work_date'] = $validated['work_date'];
+        if (isset($validated['work_time'])) $soData['work_time'] = $validated['work_time'];
 
-            // 2. Jika ada data 'items' yang dikirim, sinkronisasi item-itemnya
-            if (isset($validated['items'])) {
-                // Hapus item lama
-                $serviceOrder->items()->delete();
-                // Buat item baru
-                foreach ($validated['items'] as $item) {
-                    $service = Service::find($item['service_id']);
-                    $serviceOrder->items()->create([
-                        'service_id' => $item['service_id'],
-                        'quantity' => $item['quantity'],
-                        'price' => $service->price,
-                        'total' => $item['quantity'] * $service->price,
-                    ]);
-                }
-            }
+        $updatedServiceOrder = app(\App\Actions\UpdateServiceOrderAction::class)->execute(
+            $serviceOrder,
+            $soData,
+            $validated['staff_ids'] ?? null
+        );
 
-            // 3. Jika ada data 'staff_ids' yang dikirim, sinkronisasi staffnya
-            if (isset($validated['staff_ids'])) {
-                $serviceOrder->staff()->sync($validated['staff_ids']);
-            }
-
-            // Update customer's last_order_date
-            $serviceOrder->load('customer');
-            $serviceOrder->customer->syncLastOrderDate();
-
-            return $serviceOrder;
-        });
-
-        return new ServiceOrderResource($updatedServiceOrder->load(['customer', 'address', 'items.service', 'staff']));
+        $updatedServiceOrder->load(['customer', 'address', 'items.service', 'sessions.staff']);
+        $updatedServiceOrder->setRelation('staff', $updatedServiceOrder->allAssignedStaff());
+        return new ServiceOrderResource($updatedServiceOrder);
     }
 
     /**
@@ -249,20 +230,36 @@ class ServiceOrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Service Order must be in booked status to start work.'], 400);
         }
 
-        DB::transaction(function () use ($request, $serviceOrder, $validated) {
-            // Store the photo (compressed)
+        $staffId = $request->user()->staff?->id;
+
+        if (!$staffId) {
+            return response()->json(['success' => false, 'message' => 'Authenticated user has no staff record.'], 400);
+        }
+
+        DB::transaction(function () use ($request, $serviceOrder, $validated, $staffId) {
+            // Store the arrival photo (compressed)
             $path = $this->imageCompressor->compress($request->file('photo'), 'work_photos');
 
-            // Create WorkPhoto record with type 'arrival'
             $serviceOrder->workPhotos()->create([
-                'uploaded_by' => $request->user()->id, // Corrected from user_id to uploaded_by
+                'uploaded_by' => $request->user()->id,
                 'file_path' => $path,
                 'type' => 'arrival',
             ]);
 
-            // Update service order status to 'proses'
-            $serviceOrder->status = ServiceOrder::STATUS_PROSES;
-            $serviceOrder->save();
+            // Find today's session for this order assigned to this staff
+            $session = \App\Models\OrderSession::where('service_order_id', $serviceOrder->id)
+                ->whereDate('tanggal', today())
+                ->whereHas('staff', function ($q) use ($staffId) {
+                    $q->withoutGlobalScopes()->where('staff.id', $staffId);
+                })
+                ->where('status', 'booked')
+                ->first();
+
+            if ($session) {
+                app(\App\Actions\UpdateOrderSessionAction::class)->execute($session, [
+                    'status' => 'proses',
+                ]);
+            }
         });
 
         return response()->json(['success' => true, 'message' => 'Work started and photo uploaded successfully.']);
@@ -310,35 +307,96 @@ class ServiceOrderController extends Controller
     }
 
     /**
-     * Uploads a signature for a Service Order.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\ServiceOrder  $serviceOrder
-     * @return \Illuminate\Http\JsonResponse
+     * Method khusus untuk staff menyelesaikan pekerjaan (mark today's session as done).
      */
-    public function uploadSignature(Request $request, ServiceOrder $serviceOrder)
+    public function completeWork(Request $request, ServiceOrder $serviceOrder)
     {
-        // Authorize the action (e.g., only staff or owner can upload signatures)
-        $this->authorize('uploadSignature', $serviceOrder);
+        $this->authorize('startWork', $serviceOrder);
 
-        $validated = $request->validate([
-            'signature_image' => 'required|string', // Base64 encoded image
-            'signer_type' => ['required', 'string', Rule::in(['customer', 'staff'])],
-            'staff_id' => 'required_if:signer_type,staff|exists:staff,id',
+        $staffId = $request->user()->staff?->id;
+
+        if (!$staffId) {
+            return response()->json(['success' => false, 'message' => 'Authenticated user has no staff record.'], 400);
+        }
+
+        // Find today's session for this order assigned to this staff that is in 'proses'
+        $session = \App\Models\OrderSession::where('service_order_id', $serviceOrder->id)
+            ->whereDate('tanggal', today())
+            ->whereHas('staff', function ($q) use ($staffId) {
+                $q->withoutGlobalScopes()->where('staff.id', $staffId);
+            })
+            ->where('status', 'proses')
+            ->first();
+
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'No active session found for today.'], 400);
+        }
+
+        app(\App\Actions\UpdateOrderSessionAction::class)->execute($session, [
+            'status' => 'done',
         ]);
 
-        DB::transaction(function () use ($serviceOrder, $validated) {
-            if ($validated['signer_type'] === 'customer') {
-                $serviceOrder->customer_signature_image = $validated['signature_image'];
-                $serviceOrder->save();
-            } elseif ($validated['signer_type'] === 'staff') {
-                $serviceOrder->staff()->updateExistingPivot($validated['staff_id'], [
-                    'signature_image' => $validated['signature_image'],
-                ]);
-            }
-        });
+        return response()->json(['success' => true, 'message' => 'Pekerjaan berhasil diselesaikan.']);
+    }
 
-        return response()->json(['success' => true, 'message' => 'Signature uploaded successfully.']);
+    /**
+     * Method khusus untuk staff menerima tanda tangan customer sebagai bukti selesai kerja.
+     */
+    public function submitCustomerSignature(Request $request, ServiceOrder $serviceOrder)
+    {
+        $this->authorize('startWork', $serviceOrder);
+
+        $validated = $request->validate([
+            'signature_image' => 'required|string',
+        ]);
+
+        $staffId = $request->user()->staff?->id;
+
+        if (!$staffId) {
+            return response()->json(['success' => false, 'message' => 'Authenticated user has no staff record.'], 400);
+        }
+
+        // Decode base64 signature image and save as file
+        $signatureData = $validated['signature_image'];
+
+        // Extract base64 data from data URI
+        if (preg_match('/^data:image\/(\w+);base64,/', $signatureData, $matches)) {
+            $imageData = base64_decode(substr($signatureData, strpos($signatureData, ',') + 1));
+            $extension = $matches[1] === 'jpeg' ? 'jpg' : $matches[1];
+        } else {
+            // Fallback: assume PNG
+            $imageData = base64_decode($signatureData);
+            $extension = 'png';
+        }
+
+        if (!$imageData) {
+            return response()->json(['success' => false, 'message' => 'Gambar tanda tangan tidak valid.'], 400);
+        }
+
+        // Save to storage using public disk (same as ImageCompressor)
+        $fileName = 'signature_' . time() . '_' . uniqid() . '.' . $extension;
+        $path = 'work_photos/' . $fileName;
+        \Illuminate\Support\Facades\Storage::disk('public')->put($path, $imageData);
+
+        // Create WorkPhoto record with type='signature'
+        $serviceOrder->workPhotos()->create([
+            'uploaded_by' => $request->user()->id,
+            'file_path' => $path,
+            'type' => 'signature',
+        ]);
+
+        // Mark ALL incomplete sessions of this order as done
+        $allSessions = \App\Models\OrderSession::where('service_order_id', $serviceOrder->id)
+            ->whereIn('status', ['booked', 'proses'])
+            ->get();
+
+        foreach ($allSessions as $session) {
+            app(\App\Actions\UpdateOrderSessionAction::class)->execute($session, [
+                'status' => 'done',
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Tanda tangan customer berhasil disimpan.']);
     }
 
     /**
