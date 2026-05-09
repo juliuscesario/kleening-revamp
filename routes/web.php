@@ -116,6 +116,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
     Route::post('service-orders/{serviceOrder}/mark-complete', [ServiceOrderController::class, 'markComplete'])->name('web.service-orders.mark-complete');
     Route::post('service-orders/{serviceOrder}/cancel', [ServiceOrderController::class, 'cancel'])->name('web.service-orders.cancel');
+    Route::post('service-orders/{serviceOrder}/final-order', [\App\Http\Controllers\Web\FinalOrderController::class, 'upsert'])
+        ->name('web.final-order.upsert')
+        ->middleware('role:owner,admin,staff');
 
     // Form Order Parser
     Route::post('form-order/parse', [FormOrderController::class, 'parse'])->name('web.form-order.parse');

@@ -67,10 +67,12 @@ class ServiceOrderController extends Controller
         $isStaff = ($user->role === 'staff');
 
         if ($isStaff) {
-            $relationsToLoad[] = 'creator'; // Load creator if user is staff
-            $relationsToLoad[] = 'workPhotos'; // Load work photos for signature/proof display
+            $relationsToLoad[] = 'creator';
+            $relationsToLoad[] = 'workPhotos';
+            $relationsToLoad[] = 'finalOrder';
         } else {
-            $relationsToLoad[] = 'workPhotos.uploader'; // Load work photos and their uploaders for non-staff
+            $relationsToLoad[] = 'workPhotos.uploader';
+            $relationsToLoad[] = 'finalOrder';
         }
 
         $serviceOrder->load($relationsToLoad);

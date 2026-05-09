@@ -2,6 +2,9 @@
 @section('title', 'Detail Service Order')
 
 @section('content')
+@php
+    $finalOrder = $serviceOrder->finalOrder;
+@endphp
 <div class="container-xl">
     <div class="page-header d-print-none">
         <div class="row g-2 align-items-center">
@@ -12,6 +15,9 @@
                 <div class="btn-list">
                     <button type="button" class="btn btn-warning text-dark" onclick="window.location.reload();">
                         Muat Ulang
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSalinOrder">
+                        📋 Salin Detail Order
                     </button>
                     @if($serviceOrder->status == 'booked')
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#startWorkModal"
@@ -40,6 +46,10 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M12.5 21h-6.5a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6.5" /><path d="M4 15l4 -4c.928 -.893 2.072 -.893 3 0l3 3" /><path d="M14 14l1 -1c.699 -.67 1.78 -.825 2.5 -.288" /><path d="M19 22v-6" /><path d="M22 19l-3 -3l-3 3" /></svg>
                                 Upload Foto Sesudah
                             </button>
+                        @elseif(!$finalOrder)
+                            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#finalOrderModal">
+                                📋 Final Order
+                            </button>
                         @elseif(!$hasSignature)
                             <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#signatureModal">
                                 ✍️ TTD Customer
@@ -51,7 +61,11 @@
                         @php
                             $hasSignatureProof = $serviceOrder->workPhotos()->where('type', 'signature')->exists();
                         @endphp
-                        @if(!$hasSignatureProof)
+                        @if(!$finalOrder)
+                            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#finalOrderModal">
+                                📋 Final Order
+                            </button>
+                        @elseif(!$hasSignatureProof)
                             <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#signatureModal">
                                 ✍️ TTD Customer
                             </button>
@@ -178,6 +192,9 @@
 
                     $canSign = $afterProof && $todaySession && $todaySession->status === 'proses';
                     $isDone  = $todaySession && $todaySession->status === 'done';
+
+                    $isLocked   = $serviceOrder->invoice &&
+                                  $serviceOrder->invoice->payment_status !== 'unpaid';
                 @endphp
 
                 <div class="card mt-3">
@@ -261,6 +278,29 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- FINAL ORDER CARD --}}
+                @if($finalOrder)
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h5 class="card-title mb-0">📋 Final Order</h5>
+                            @if(!$isLocked)
+                                <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#finalOrderModal">
+                                    ✏️ Edit
+                                </button>
+                            @else
+                                <span class="badge bg-secondary">🔒 Terkunci</span>
+                            @endif
+                        </div>
+                        <pre class="bg-light rounded p-3 mb-0" style="white-space:pre-wrap; font-size:0.85rem;">{{ $finalOrder->content }}</pre>
+                        <small class="text-muted mt-2 d-block">
+                            Disubmit oleh {{ $finalOrder->submittedBy->name ?? '-' }} pada {{ $finalOrder->submitted_at?->format('d M Y H:i') }}
+                        </small>
+                    </div>
+                </div>
+                @endif
+
             </div>
             <div class="col-lg-4">
                 <div class="card">
@@ -437,6 +477,29 @@
             <div class="modal-footer">
                 <button type="button" id="submit-sig" class="btn btn-primary w-100">
                     Simpan &amp; Selesaikan Pekerjaan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- FINAL ORDER MODAL --}}
+<div class="modal fade" id="finalOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">📋 Final Order Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Salin detail order lalu edit sesuai layanan aktual yang dikerjakan. Hapus atau tambah layanan sesuai kebutuhan.</p>
+                <textarea id="finalOrderContent" class="form-control font-monospace"
+                          rows="12" placeholder="Tempel detail order di sini, lalu edit sesuai kebutuhan...">{{ $finalOrder?->content }}</textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitFinalOrder">
+                    💾 Simpan Final Order
                 </button>
             </div>
         </div>
@@ -977,5 +1040,81 @@
         }
     });
 })();
+</script>
+{{-- Final Order JS --}}
+@php
+    $soDataForJs = [
+        'number'   => $serviceOrder->so_number ?? $serviceOrder->id,
+        'customer' => $serviceOrder->customer->name ?? '-',
+        'phone'    => $serviceOrder->customer->phone ?? '-',
+        'date'     => optional($serviceOrder->sessions->first())->tanggal?->format('d M Y') ?? '-',
+        'hours'    => ($serviceOrder->work_start && $serviceOrder->work_end)
+                        ? $serviceOrder->work_start . ' – ' . $serviceOrder->work_end
+                        : '-',
+        'address'  => optional($serviceOrder->address)->full_address ?? '-',
+        'items'    => $serviceOrder->items->map(fn($i) => $i->service->name ?? 'Layanan')->values()->toArray(),
+    ];
+@endphp
+
+<script>
+// ── Salin Detail Order ──────────────────────────────────────────
+document.getElementById('btnSalinOrder')?.addEventListener('click', function () {
+    const so = @json($soDataForJs);
+
+    let layanan = so.items.map((name, idx) => `${idx + 1}. ${name}`).join('\n');
+
+    const text =
+`Order Detail
+${so.number}
+Kontak : ${so.customer}, ${so.phone}
+Waktu  : ${so.date}, ${so.hours}
+Alamat : ${so.address}
+Layanan :
+
+${layanan}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('btnSalinOrder');
+        btn.textContent = '✅ Tersalin!';
+        setTimeout(() => btn.innerHTML = '📋 Salin Detail Order', 2000);
+    }).catch(() => alert('Gagal menyalin. Pastikan browser mengizinkan clipboard.'));
+});
+
+// ── Submit Final Order ──────────────────────────────────────────
+document.getElementById('btnSubmitFinalOrder')?.addEventListener('click', function () {
+    const content = document.getElementById('finalOrderContent').value.trim();
+    if (!content) {
+        alert('Isi final order tidak boleh kosong.');
+        return;
+    }
+
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    fetch('{{ route('web.final-order.upsert', $serviceOrder) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({ content }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Terjadi kesalahan.');
+            btn.disabled = false;
+            btn.textContent = '💾 Simpan Final Order';
+        }
+    })
+    .catch(() => {
+        alert('Gagal menghubungi server.');
+        btn.disabled = false;
+        btn.textContent = '💾 Simpan Final Order';
+    });
+});
 </script>
 @endpush

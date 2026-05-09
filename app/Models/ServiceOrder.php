@@ -242,6 +242,14 @@ class ServiceOrder extends Model
     }
 
     /**
+     * Final order confirmation (staff-written free-text).
+     */
+    public function finalOrder()
+    {
+        return $this->hasOne(FinalOrderConfirmation::class);
+    }
+
+    /**
      * Check if this order has multiple sessions.
      */
     public function getIsMultiSessionAttribute(): bool

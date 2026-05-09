@@ -405,6 +405,22 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- FINAL ORDER (from staff submission) --}}
+                @if($serviceOrder->finalOrder)
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="card-title">📋 Final Order</h3>
+                    </div>
+                    <div class="card-body">
+                        <pre class="bg-light rounded p-3 mb-2" style="white-space:pre-wrap; font-size:0.85rem;">{{ $serviceOrder->finalOrder->content }}</pre>
+                        <small class="text-muted">
+                            Disubmit oleh {{ $serviceOrder->finalOrder->submittedBy->name ?? '-' }}
+                            pada {{ $serviceOrder->finalOrder->submitted_at?->format('d M Y H:i') }}
+                        </small>
+                    </div>
+                </div>
+                @endif
             </div>
             <div class="col-lg-4">
                 {{-- Financial Status Card --}}
