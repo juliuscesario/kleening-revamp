@@ -1,3 +1,75 @@
+{{-- Machine Attendance Panel --}}
+@if($machineAttendanceStatus !== null)
+<div id="machine-attendance-panel" class="mb-3">
+    @if($machineAttendanceStatus === 'no_attendance')
+        <div class="card card-sm border-warning">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-warning fw-bold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alert-triangle me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
+                            Mesin Pergi
+                        </div>
+                        <small class="text-muted">Wajib upload sebelum mulai kerjaan</small>
+                    </div>
+                    <button class="btn btn-warning" id="btn-mesin-pergi">
+                        📷 Mesin Pergi
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    @elseif($machineAttendanceStatus === 'active')
+        <div class="card card-sm border-success">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="badge bg-success-lt">Mesin aktif</span>
+                        <div class="mt-1">
+                            <small class="text-muted">Pergi: <strong>{{ $machineAttendance->photo_pergi_at->format('H:i') }}</strong></small>
+                        </div>
+                        <div class="mt-1">
+                            @foreach($machineAttendance->machines as $machine)
+                                <span class="badge bg-secondary-lt me-1 mb-1">{{ $machine->code }}</span>
+                            @endforeach
+                        </div>
+                        @if($machineAttendance->catatan)
+                            <div class="mt-1">
+                                <small class="text-muted">{{ $machineAttendance->catatan }}</small>
+                            </div>
+                        @endif
+                    </div>
+                    <button class="btn btn-primary" id="btn-mesin-pulang"
+                            data-attendance-id="{{ $machineAttendance->id }}">
+                        📷 Mesin Pulang
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    @elseif($machineAttendanceStatus === 'completed')
+        <div class="card card-sm">
+            <div class="card-body">
+                <div>
+                    <span class="badge bg-muted">Mesin selesai ✓</span>
+                    <div class="mt-1">
+                        <small class="text-muted">
+                            Pergi: <strong>{{ $machineAttendance->photo_pergi_at->format('H:i') }}</strong>
+                            | Pulang: <strong>{{ $machineAttendance->photo_pulang_at->format('H:i') }}</strong>
+                        </small>
+                    </div>
+                    <div class="mt-1">
+                        @foreach($machineAttendance->machines as $machine)
+                            <span class="badge bg-secondary-lt me-1 mb-1">{{ $machine->code }}</span>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>
+@endif
+
 <div class="d-flex justify-content-end mb-3">
     <button class="btn btn-outline-secondary d-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sortOffcanvas" aria-controls="sortOffcanvas">
         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrows-sort" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -413,3 +485,381 @@
         </div>
     </div>
 </div>
+
+{{-- Mesin Pergi Modal --}}
+<div class="modal modal-blur" id="modal-mesin-pergi" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mesin Pergi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label required">Foto Mesin</label>
+                    <input type="file" accept="image/*" capture="camera"
+                           id="pergi-photo-input" class="form-control">
+                    <div id="pergi-photo-preview" class="mt-2" style="display:none;">
+                        <img id="pergi-preview-img" class="rounded" style="max-width:100%; max-height:200px;">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label required">Pilih Mesin</label>
+                    <div id="machine-checklist">
+                        <div class="text-muted">Memuat daftar mesin...</div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Catatan</label>
+                    <textarea id="pergi-catatan" class="form-control" rows="2"
+                              placeholder="Contoh: hv3 selang bocor"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-warning" id="btn-submit-pergi">
+                    Simpan Mesin Pergi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Mesin Pulang Modal --}}
+<div class="modal modal-blur" id="modal-mesin-pulang" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mesin Pulang</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Mesin yang dikembalikan</label>
+                    <div id="pulang-machine-list"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label required">Foto Mesin</label>
+                    <input type="file" accept="image/*" capture="camera"
+                           id="pulang-photo-input" class="form-control">
+                    <div id="pulang-photo-preview" class="mt-2" style="display:none;">
+                        <img id="pulang-preview-img" class="rounded" style="max-width:100%; max-height:200px;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btn-submit-pulang">
+                    Simpan Mesin Pulang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function() {
+    if (!document.getElementById('machine-attendance-panel')) return;
+
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    function compressImage(file, maxWidth = 800, quality = 0.6) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(resolve, 'image/jpeg', quality);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    document.getElementById('pergi-photo-input')?.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('pergi-preview-img').src = e.target.result;
+                document.getElementById('pergi-photo-preview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    document.getElementById('pulang-photo-input')?.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('pulang-preview-img').src = e.target.result;
+                document.getElementById('pulang-photo-preview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    document.getElementById('btn-mesin-pergi')?.addEventListener('click', function() {
+        document.getElementById('pergi-photo-input').value = '';
+        document.getElementById('pergi-photo-preview').style.display = 'none';
+        document.getElementById('pergi-catatan').value = '';
+
+        fetch('/machine-attendance/available-machines', {
+            headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(grouped => renderMachineChecklist(grouped))
+        .catch(() => {
+            document.getElementById('machine-checklist').innerHTML =
+                '<div class="text-danger">Gagal memuat daftar mesin</div>';
+        });
+
+        new bootstrap.Modal(document.getElementById('modal-mesin-pergi')).show();
+    });
+
+    function renderMachineChecklist(grouped) {
+        let html = '';
+        for (const [category, machines] of Object.entries(grouped)) {
+            // Derive a safe slug from the category name for JS logic
+            const slug = category.toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9\-]/g, '');
+            html += `<div class="mb-2"><strong class="text-muted small">${category}</strong><div class="ms-2">`;
+            machines.forEach(m => {
+                const disabled = !m.available ? 'disabled' : '';
+                const labelClass = !m.available ? 'text-muted' : '';
+                const suffix = !m.available ? ` (dibawa ${m.used_by})` : '';
+                const paired = m.paired_machine_id ? `data-paired="${m.paired_machine_id}"` : '';
+                html += `<label class="form-check">
+                    <input type="checkbox" class="form-check-input machine-checkbox"
+                           value="${m.id}" data-code="${m.code}" data-category-id="${m.category_id}"
+                           data-category-slug="${slug}"
+                           ${paired} ${disabled}>
+                    <span class="form-check-label ${labelClass}">${m.code}${suffix}</span>
+                </label>`;
+            });
+            html += '</div></div>';
+        }
+        document.getElementById('machine-checklist').innerHTML = html;
+        applyAutoSteamRules();
+    }
+
+    function applyAutoSteamRules() {
+        document.querySelectorAll('.machine-checkbox').forEach(cb => {
+            const pairedId = cb.dataset.paired;
+            if (pairedId) {
+                const paired = document.querySelector(`.machine-checkbox[value="${pairedId}"]`);
+                if (paired && paired.disabled && !cb.disabled) {
+                    const label = cb.closest('label').querySelector('.form-check-label');
+                    const pairedCode = paired.dataset.code;
+                    const usedByMatch = paired.closest('label').querySelector('.form-check-label').textContent.match(/dibawa (.+)\)/);
+                    const name = usedByMatch ? usedByMatch[1] : 'staff lain';
+                    label.textContent = `${cb.dataset.code} (steam ${pairedCode} dibawa ${name})`;
+                }
+            }
+        });
+    }
+
+    // ── Bug 1: Enforce max-1-per-category and HV/PW mutual exclusivity ──
+    function getCategorySlug(cb) {
+        return cb.dataset.categorySlug || '';
+    }
+
+    function enforceCategoryRules(checkedCb) {
+        const checkedCategorySlug = getCategorySlug(checkedCb);
+        if (!checkedCategorySlug) return;
+
+        const allCheckboxes = document.querySelectorAll('.machine-checkbox');
+
+        // HV ↔ PW mutual exclusivity
+        if (checkedCategorySlug === 'hydrovacuum') {
+            allCheckboxes.forEach(cb => {
+                const slug = getCategorySlug(cb);
+                if (slug === 'premium-wash') {
+                    cb.checked = false;
+                    cb.disabled = true;
+                }
+            });
+        } else if (checkedCategorySlug === 'premium-wash') {
+            allCheckboxes.forEach(cb => {
+                const slug = getCategorySlug(cb);
+                if (slug === 'hydrovacuum') {
+                    cb.checked = false;
+                    cb.disabled = true;
+                }
+            });
+        }
+
+        // Re-enable both groups if no HV and no PW are checked
+        const anyHVChecked = [...allCheckboxes].some(cb => getCategorySlug(cb) === 'hydrovacuum' && cb.checked);
+        const anyPWChecked = [...allCheckboxes].some(cb => getCategorySlug(cb) === 'premium-wash' && cb.checked);
+        if (!anyHVChecked && !anyPWChecked) {
+            allCheckboxes.forEach(cb => {
+                const slug = getCategorySlug(cb);
+                if (slug === 'hydrovacuum' || slug === 'premium-wash') {
+                    cb.disabled = false;
+                }
+            });
+        }
+
+        // Max 1 per category (HV, Steam, PW, GC): uncheck all others in same category
+        const checkedCategoryId = checkedCb.dataset.categoryId;
+        allCheckboxes.forEach(cb => {
+            if (cb === checkedCb) return;
+            if (cb.dataset.categoryId === checkedCategoryId) {
+                cb.checked = false;
+            }
+        });
+    }
+
+    document.addEventListener('change', function(e) {
+        if (!e.target.classList.contains('machine-checkbox')) return;
+
+        // Bug 2 fix: Only handle HV→Steam direction (not reverse)
+        const pairedId = e.target.dataset.paired;
+        if (pairedId) {
+            const paired = document.querySelector(`.machine-checkbox[value="${pairedId}"]`);
+            if (paired) {
+                const pairedCategorySlug = getCategorySlug(paired);
+                const thisCategorySlug = getCategorySlug(e.target);
+
+                // HV→Steam: when HV is checked/unchecked, mirror to paired steam
+                if (thisCategorySlug === 'hydrovacuum' && pairedCategorySlug === 'steam') {
+                    paired.checked = e.target.checked;
+                }
+                // Steam→HV: do NOT auto-check HV when steam is checked (bug 2 fix)
+            }
+        }
+
+        // Bug 1: enforce max-1-per-category and HV/PW mutual exclusivity
+        if (e.target.checked) {
+            enforceCategoryRules(e.target);
+        } else {
+            // Re-enable HV/PW groups when all are unchecked
+            reEnableMutuallyExclusiveGroups();
+        }
+    });
+
+    function reEnableMutuallyExclusiveGroups() {
+        const allCheckboxes = document.querySelectorAll('.machine-checkbox');
+        const anyHVChecked = [...allCheckboxes].some(cb => getCategorySlug(cb) === 'hydrovacuum' && cb.checked);
+        const anyPWChecked = [...allCheckboxes].some(cb => getCategorySlug(cb) === 'premium-wash' && cb.checked);
+        if (!anyHVChecked && !anyPWChecked) {
+            allCheckboxes.forEach(cb => {
+                const slug = getCategorySlug(cb);
+                if (slug === 'hydrovacuum' || slug === 'premium-wash') {
+                    cb.disabled = false;
+                }
+            });
+        }
+    }
+
+    document.getElementById('btn-submit-pergi')?.addEventListener('click', async function() {
+        const file = document.getElementById('pergi-photo-input').files[0];
+        if (!file) { Swal.fire('Error', 'Foto mesin wajib diupload', 'error'); return; }
+
+        const machineIds = [];
+        document.querySelectorAll('.machine-checkbox:checked').forEach(cb => machineIds.push(cb.value));
+        if (machineIds.length === 0) { Swal.fire('Error', 'Pilih minimal 1 mesin', 'error'); return; }
+
+        this.disabled = true;
+        this.textContent = 'Menyimpan...';
+
+        try {
+            const compressed = await compressImage(file);
+            const formData = new FormData();
+            formData.append('photo', compressed, 'mesin_pergi.jpg');
+            machineIds.forEach(id => formData.append('machine_ids[]', id));
+            const catatan = document.getElementById('pergi-catatan').value;
+            if (catatan) formData.append('catatan', catatan);
+
+            const res = await fetch('/machine-attendance/pergi', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modal-mesin-pergi')).hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => window.location.reload());
+            } else {
+                Swal.fire('Error', data.message, 'error');
+                this.disabled = false;
+                this.textContent = 'Simpan Mesin Pergi';
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Gagal menyimpan', 'error');
+            this.disabled = false;
+            this.textContent = 'Simpan Mesin Pergi';
+        }
+    });
+
+    document.getElementById('btn-mesin-pulang')?.addEventListener('click', function() {
+        document.getElementById('pulang-photo-input').value = '';
+        document.getElementById('pulang-photo-preview').style.display = 'none';
+
+        const machines = [];
+        document.querySelectorAll('#machine-attendance-panel .badge.bg-secondary-lt').forEach(badge => {
+            machines.push(badge.textContent.trim());
+        });
+        document.getElementById('pulang-machine-list').innerHTML =
+            machines.map(code => `<span class="badge bg-secondary-lt me-1 mb-1">${code}</span>`).join('');
+
+        new bootstrap.Modal(document.getElementById('modal-mesin-pulang')).show();
+    });
+
+    document.getElementById('btn-submit-pulang')?.addEventListener('click', async function() {
+        const file = document.getElementById('pulang-photo-input').files[0];
+        if (!file) { Swal.fire('Error', 'Foto mesin wajib diupload', 'error'); return; }
+
+        const attendanceId = document.getElementById('btn-mesin-pulang')?.dataset.attendanceId;
+        if (!attendanceId) { Swal.fire('Error', 'Data attendance tidak ditemukan', 'error'); return; }
+
+        this.disabled = true;
+        this.textContent = 'Menyimpan...';
+
+        try {
+            const compressed = await compressImage(file);
+            const formData = new FormData();
+            formData.append('photo', compressed, 'mesin_pulang.jpg');
+
+            const res = await fetch(`/machine-attendance/${attendanceId}/pulang`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modal-mesin-pulang')).hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => window.location.reload());
+            } else {
+                Swal.fire('Error', data.message, 'error');
+                this.disabled = false;
+                this.textContent = 'Simpan Mesin Pulang';
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Gagal menyimpan', 'error');
+            this.disabled = false;
+            this.textContent = 'Simpan Mesin Pulang';
+        }
+    });
+})();
+</script>
+@endpush

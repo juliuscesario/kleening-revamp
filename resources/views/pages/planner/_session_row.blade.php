@@ -79,8 +79,12 @@
     </div>
     @if($showStaffCol ?? true)
         <div class="job-staff-col" style="width:120px; flex-shrink:0;">
-            <span class="inline-edit fw-medium" style="font-size:.875rem;" onclick="editStaff(this, {{ $session->id }})" data-staff-ids="{{ $session->staff->pluck('id')->implode(',') }}">
-                {{ $session->staff->pluck('name')->implode(', ') ?: 'Unassigned' }}
+            @php
+                $sessionStaffNames = $session->staff->pluck('name')->implode(', ') ?: 'Unassigned';
+                $sessionStaffMachines = $session->staff->filter(fn($s) => isset($activeAttendances[$s->id]) && $activeAttendances[$s->id])->map(fn($s) => $s->name . ': ' . $activeAttendances[$s->id])->join(', ');
+            @endphp
+            <span class="inline-edit fw-medium" style="font-size:.875rem;" onclick="editStaff(this, {{ $session->id }})" data-staff-ids="{{ $session->staff->pluck('id')->implode(',') }}" @if($sessionStaffMachines) title="{{ $sessionStaffMachines }}" @endif>
+                {{ $sessionStaffNames }}
             </span>
         </div>
     @endif

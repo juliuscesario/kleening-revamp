@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             DummyMaster2025Seeder::class, //removed when you already run it first
+            MachineSeeder::class,
             //DailyBookedServiceOrderSeeder::class, // Daily booked service orders for staff
         ]);
         // run php artisan migrate:fresh --seed for dummy seeder 

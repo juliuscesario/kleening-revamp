@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\WorkPhotoResource;
 use App\Models\ServiceOrder; // <-- INI KUNCINYA
 use App\Models\WorkPhoto;
+use App\Models\MachineAttendance;
 use App\Services\ImageCompressor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,19 @@ class WorkPhotoController extends Controller
     public function store(Request $request, ServiceOrder $serviceOrder)
     {
         $this->authorize('create', [WorkPhoto::class, $serviceOrder]);
+
+        // SO Gate: Staff must have Mesin Pergi today before uploading proofs
+        $user = $request->user();
+        if (strtolower(trim($user->role)) === 'staff') {
+            $staff = $user->staff;
+            if ($staff && !MachineAttendance::hasActiveAttendanceToday($staff->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload Mesin Pergi dulu sebelum mulai kerjaan',
+                ], 422);
+            }
+        }
+
         $validated = $request->validate([
             'type' => 'required|string|in:arrival,before,after',
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',

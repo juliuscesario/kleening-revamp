@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\Address;
 use App\Models\Invoice;
+use App\Models\MachineAttendance;
 use App\Models\OrderSession;
 use App\Models\Service;
 use App\Models\ServiceOrder;
@@ -164,6 +165,16 @@ class PlannerController extends Controller
         $assignedStaffCount = $assignedStaffIds->count();
         $availableStaffCount = max(0, $totalStaffCount - $offStaffCount - $assignedStaffCount);
 
+        // Active machine attendances today (pergi done, pulang not done)
+        $activeAttendances = MachineAttendance::whereDate('date', $date)
+            ->whereNotNull('photo_pergi_at')
+            ->whereNull('photo_pulang_at')
+            ->with('machines')
+            ->get()
+            ->mapWithKeys(fn($a) => [
+                $a->staff_id => $a->machines->pluck('code')->join(', ')
+            ]);
+
         return view('pages.planner.index', compact(
             'date',
             'carbonDate',
@@ -187,6 +198,7 @@ class PlannerController extends Controller
             'availableStaffCount',
             'assignedStaffCount',
             'assignedStaffIds',
+            'activeAttendances',
         ));
     }
 

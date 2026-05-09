@@ -66,7 +66,20 @@ class InvoiceController extends Controller
             $invoice->transport_fee = 0;
         }
 
-        return view('pages.invoices.create', compact('serviceOrder', 'invoice'));
+        // Always generate a fresh invoice number for the form
+        // Don't reuse the cancelled invoice's number
+        $suggestedInvoiceNumber = 'INV-' . date('Ymd') . '-' . $serviceOrder->id;
+
+        // If that number is also taken (non-cancelled), append a suffix
+        $suffix = 1;
+        $candidate = $suggestedInvoiceNumber;
+        while (Invoice::where('invoice_number', $candidate)->where('status', '!=', Invoice::STATUS_CANCELLED)->exists()) {
+            $candidate = $suggestedInvoiceNumber . '-' . $suffix;
+            $suffix++;
+        }
+        $suggestedInvoiceNumber = $candidate;
+
+        return view('pages.invoices.create', compact('serviceOrder', 'invoice', 'suggestedInvoiceNumber'));
     }
 
     /**
@@ -143,8 +156,9 @@ class InvoiceController extends Controller
             return redirect()->back()->with('error', 'An active invoice for this service order already exists.');
         }
 
-        // Check if the new invoice number is unique, ignoring the current invoice if it exists
+        // Check if the new invoice number is unique, excluding cancelled invoices
         $uniqueInvoice = Invoice::where('invoice_number', $request->invoice_number)
+            ->where('status', '!=', Invoice::STATUS_CANCELLED)
             ->when($invoice, function ($query) use ($invoice) {
                 return $query->where('id', '!=', $invoice->id);
             })
@@ -198,7 +212,7 @@ class InvoiceController extends Controller
      */
     public function show(string $id)
     {
-        $invoice = Invoice::with(['serviceOrder.customer', 'serviceOrder.address.area', 'serviceOrder.staff', 'serviceOrder.items.service', 'serviceOrder.workPhotos', 'payments', 'reissueOrigin', 'reissuedInvoice'])->findOrFail($id);
+        $invoice = Invoice::with(['serviceOrder.customer', 'serviceOrder.address.area', 'serviceOrder.staff', 'serviceOrder.items.service', 'serviceOrder.workPhotos.uploader', 'payments', 'reissueOrigin', 'reissuedInvoice'])->findOrFail($id);
         $this->authorize('view', $invoice);
         return view('pages.invoices.show', compact('invoice'));
     }

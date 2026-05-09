@@ -245,10 +245,10 @@
                         </div>
                     </div>
                     @php
-                        $wp = $invoice->serviceOrder->workPhotos;
-                        $wpArrival = $wp->where('type', 'arrival')->sortByDesc('created_at')->first();
-                        $wpBefore = $wp->where('type', 'before')->sortByDesc('created_at')->first();
-                        $wpAfter = $wp->where('type', 'after')->sortByDesc('created_at')->first();
+                        $workPhotos = $invoice->serviceOrder->workPhotos;
+                        $wpArrival = $workPhotos->where('type', 'arrival')->sortByDesc('created_at')->first();
+                        $wpBefore = $workPhotos->where('type', 'before')->sortByDesc('created_at')->first();
+                        $wpAfter = $workPhotos->where('type', 'after')->sortByDesc('created_at')->first();
                     @endphp
                     @if($wpArrival && $wpBefore && $wpAfter)
                     <div class="card mt-3" style="{{ $invoice->serviceOrder->items->count() > 5 ? 'page-break-before:always;' : '' }}">
@@ -259,15 +259,33 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <img src="{{ $wpArrival->photo_url }}" class="img-fluid mb-2" alt="Arrival">
-                                    <div class="text-center text-muted small">Arrival</div>
+                                    <div class="text-center">
+                                        <span class="badge bg-primary">Arrival</span>
+                                    </div>
+                                    <div class="text-center text-muted small mt-1">
+                                        <div>{{ $wpArrival->uploader->name ?? 'Unknown' }}</div>
+                                        <div>{{ $wpArrival->created_at->format('d M Y H:i') }}</div>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <img src="{{ $wpBefore->photo_url }}" class="img-fluid mb-2" alt="Before">
-                                    <div class="text-center text-muted small">Before</div>
+                                    <div class="text-center">
+                                        <span class="badge bg-info">Before</span>
+                                    </div>
+                                    <div class="text-center text-muted small mt-1">
+                                        <div>{{ $wpBefore->uploader->name ?? 'Unknown' }}</div>
+                                        <div>{{ $wpBefore->created_at->format('d M Y H:i') }}</div>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <img src="{{ $wpAfter->photo_url }}" class="img-fluid mb-2" alt="After">
-                                    <div class="text-center text-muted small">After</div>
+                                    <div class="text-center">
+                                        <span class="badge bg-success">After</span>
+                                    </div>
+                                    <div class="text-center text-muted small mt-1">
+                                        <div>{{ $wpAfter->uploader->name ?? 'Unknown' }}</div>
+                                        <div>{{ $wpAfter->created_at->format('d M Y H:i') }}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

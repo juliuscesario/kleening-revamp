@@ -220,7 +220,7 @@
             {{-- NEW "MASTER" DROPDOWN MENU --}}
             @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'admin', 'co_owner']))
               <li
-                class="nav-item dropdown {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') || request()->is('services*') || request()->is('expenses/categories*') ? 'active' : '' }}">
+                class="nav-item dropdown {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') || request()->is('services*') || request()->is('expenses/categories*') || request()->is('machine-categories*') || request()->is('machines*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-master" data-bs-toggle="dropdown"
                   data-bs-auto-close="false" role="button" aria-expanded="false">
                   <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -235,7 +235,7 @@
                   <span class="nav-link-title">Master Data</span>
                 </a>
                 <div
-                  class="dropdown-menu {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') || request()->is('services*') ? 'show' : '' }}">
+                  class="dropdown-menu {{ request()->is('areas*') || request()->is('service-categories*') || request()->is('staff*') || request()->is('services*') || request()->is('machine-categories*') || request()->is('machines*') ? 'show' : '' }}">
                   <div class="dropdown-menu-columns">
                     <div class="dropdown-menu-column">
                       <a class="dropdown-item {{ request()->is('areas*') ? 'active' : '' }}"
@@ -258,6 +258,18 @@
                         <a class="dropdown-item {{ request()->is('expenses/categories*') ? 'active' : '' }}"
                           href="{{ route('web.expenses.categories') }}">
                           Kategori Pengeluaran
+                        </a>
+                        <a class="dropdown-item {{ request()->is('machine-categories*') ? 'active' : '' }}"
+                          href="{{ route('web.machine-categories.index') }}">
+                          Kategori Mesin
+                        </a>
+                        <a class="dropdown-item {{ request()->is('machines*') ? 'active' : '' }}"
+                          href="{{ route('web.machines.index') }}">
+                          Manajemen Mesin
+                        </a>
+                        <a class="dropdown-item {{ request()->is('master-data/machine-attendances*') ? 'active' : '' }}"
+                          href="{{ route('web.machine-attendances.index') }}">
+                          Absensi Mesin
                         </a>
                       @endif
                     </div>
@@ -435,6 +447,12 @@
                         href="{{ route('web.reports.invoice-aging') }}">
                         Laporan Umur Piutang
                       </a>
+                      @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'co_owner']))
+                      <a class="dropdown-item {{ request()->is('reports/machine-attendance*') ? 'active' : '' }}"
+                        href="{{ route('web.reports.machine-attendance') }}">
+                        Absensi Mesin
+                      </a>
+                      @endif
                     </div>
                   </div>
                 </div>

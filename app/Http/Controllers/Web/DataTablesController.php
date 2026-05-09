@@ -47,6 +47,85 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
+    public function machineCategories()
+    {
+        $this->authorize('viewAny', \App\Models\MachineCategory::class);
+
+        $query = \App\Models\MachineCategory::withCount('machines');
+
+        return DataTables::of($query)
+            ->editColumn('is_active', function ($category) {
+                if ($category->is_active) {
+                    return '<span class="badge bg-success text-bg-secondary">Aktif</span>';
+                }
+                return '<span class="badge bg-secondary text-bg-secondary">Nonaktif</span>';
+            })
+            ->addColumn('action', function ($category) {
+                return '
+                    <button class="btn btn-sm btn-warning editMachineCategory" data-id="' . $category->id . '" data-name="' . e($category->name) . '" data-code-prefix="' . e($category->code_prefix) . '" data-sort-order="' . $category->sort_order . '" data-is-active="' . ($category->is_active ? '1' : '0') . '">Edit</button>
+                    <button class="btn btn-sm btn-danger deleteMachineCategory" data-id="' . $category->id . '">Hapus</button>
+                ';
+            })
+            ->rawColumns(['action', 'is_active'])
+            ->make(true);
+    }
+
+    public function machines(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\Machine::class);
+
+        $query = \App\Models\Machine::with(['category', 'area', 'pairedMachine']);
+
+        // Support filter parameters
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+        if ($request->filled('area_id')) {
+            $query->where('area_id', $request->area_id);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        return DataTables::of($query)
+            ->addColumn('category_name', function ($machine) {
+                return $machine->category ? $machine->category->name : 'N/A';
+            })
+            ->addColumn('area_name', function ($machine) {
+                return $machine->area ? $machine->area->name : 'N/A';
+            })
+            ->editColumn('status', function ($machine) {
+                $badgeClass = match ($machine->status) {
+                    'active' => 'bg-success',
+                    'maintenance' => 'bg-warning',
+                    'retired' => 'bg-danger',
+                    default => 'bg-secondary',
+                };
+                return '<span class="badge ' . $badgeClass . ' text-bg-secondary">' . ucfirst($machine->status) . '</span>';
+            })
+            ->addColumn('paired_machine', function ($machine) {
+                if ($machine->pairedMachine) {
+                    return '<span title="' . e($machine->pairedMachine->code . ($machine->pairedMachine->name ? ' — ' . $machine->pairedMachine->name : '')) . '">' . e($machine->pairedMachine->code) . '</span>';
+                }
+                return '—';
+            })
+            ->addColumn('notes', function ($machine) {
+                if ($machine->notes) {
+                    $truncated = strlen($machine->notes) > 40 ? substr($machine->notes, 0, 40) . '...' : $machine->notes;
+                    return '<span title="' . e($machine->notes) . '">' . e($truncated) . '</span>';
+                }
+                return '—';
+            })
+            ->addColumn('action', function ($machine) {
+                return '
+                    <button class="btn btn-sm btn-warning editMachine" data-id="' . $machine->id . '" data-code="' . e($machine->code) . '" data-name="' . e($machine->name ?? '') . '" data-category-id="' . $machine->category_id . '" data-area-id="' . $machine->area_id . '" data-status="' . e($machine->status) . '" data-paired-machine-id="' . ($machine->paired_machine_id ?? '') . '" data-notes="' . e($machine->notes ?? '') . '">Edit</button>
+                    <button class="btn btn-sm btn-danger deleteMachine" data-id="' . $machine->id . '">Hapus</button>
+                ';
+            })
+            ->rawColumns(['action', 'status', 'paired_machine', 'notes'])
+            ->make(true);
+    }
+
     // --- ADD THIS NEW SERVICE CATEGORY METHOD ---
     public function serviceCategories()
     {
@@ -1469,6 +1548,260 @@ class DataTablesController extends Controller
                 // This could be made more dynamic in the future.
                 $utilizationRate = (40 > 0) ? ($totalHoursWorked / 40) * 100 : 0;
                 return round($utilizationRate, 2) . '%';
+            })
+            ->make(true);
+    }
+
+    public function machineAttendances(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\MachineAttendance::class);
+
+        $query = \App\Models\MachineAttendance::with(['staff', 'machines'])
+            ->select('machine_attendances.*');
+
+        // Support filter parameters
+        if ($request->filled('date_from')) {
+            $query->whereDate('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('date', '<=', $request->date_to);
+        }
+        if ($request->filled('staff_id')) {
+            $query->where('staff_id', $request->staff_id);
+        }
+        if ($request->filled('area_id')) {
+            $query->whereHas('staff', function ($q) use ($request) {
+                $q->where('area_id', $request->area_id);
+            });
+        }
+        if ($request->filled('status')) {
+            if ($request->status === 'open') {
+                $query->whereNull('photo_pulang_at');
+            } elseif ($request->status === 'closed') {
+                $query->whereNotNull('photo_pulang_at');
+            }
+        }
+
+        return DataTables::of($query)
+            ->editColumn('date', function ($attendance) {
+                return $attendance->date instanceof Carbon
+                    ? $attendance->date->format('d/m/Y')
+                    : Carbon::parse($attendance->date)->format('d/m/Y');
+            })
+            ->addColumn('staff_name', function ($attendance) {
+                return $attendance->staff ? $attendance->staff->name : 'N/A';
+            })
+            ->addColumn('machines', function ($attendance) {
+                return $attendance->machines->pluck('code')->join(', ') ?: '—';
+            })
+            ->editColumn('photo_pergi_at', function ($attendance) {
+                return $attendance->photo_pergi_at
+                    ? $attendance->photo_pergi_at->format('H:i')
+                    : '—';
+            })
+            ->editColumn('photo_pulang_at', function ($attendance) {
+                if ($attendance->photo_pulang_at) {
+                    return $attendance->photo_pulang_at->format('H:i');
+                }
+                return '<span class="badge bg-red-lt">OPEN</span>';
+            })
+            ->addColumn('catatan', function ($attendance) {
+                if ($attendance->catatan) {
+                    $truncated = strlen($attendance->catatan) > 40
+                        ? substr($attendance->catatan, 0, 40) . '...'
+                        : $attendance->catatan;
+                    return '<span title="' . e($attendance->catatan) . '">' . e($truncated) . '</span>';
+                }
+                return '—';
+            })
+            ->addColumn('status', function ($attendance) {
+                if ($attendance->photo_pulang_at) {
+                    return '<span class="badge bg-green-lt">Closed</span>';
+                }
+                return '<span class="badge bg-red-lt">Open</span>';
+            })
+            ->addColumn('action', function ($attendance) {
+                $id = $attendance->id;
+                $actions = '<button class="btn btn-sm btn-info viewAttendance" data-id="' . $id . '"><i class="ti ti-eye"></i> View</button> ';
+                $actions .= '<button class="btn btn-sm btn-warning editAttendance" data-id="' . $id . '"><i class="ti ti-edit"></i> Edit</button> ';
+
+                // Force Close only if open
+                if (!$attendance->photo_pulang_at) {
+                    $actions .= '<button class="btn btn-sm btn-danger forceCloseAttendance" data-id="' . $id . '"><i class="ti ti-lock"></i> Force</button> ';
+                }
+
+                $actions .= '<button class="btn btn-sm btn-danger deleteAttendance" data-id="' . $id . '"><i class="ti ti-trash"></i> Hapus</button>';
+
+                return $actions;
+            })
+            ->rawColumns(['action', 'photo_pulang_at', 'status', 'catatan'])
+            ->order(function ($query) {
+                $query->orderBy('date', 'desc')
+                    ->join('staff', 'staff.id', '=', 'machine_attendances.staff_id')
+                    ->orderBy('staff.name', 'asc');
+            })
+            ->make(true);
+    }
+
+    public function reportMachineAttendances(Request $request)
+    {
+        $this->authorize('viewAny', \App\Models\MachineAttendance::class);
+
+        $query = \App\Models\MachineAttendance::with(['staff.area', 'machines.category'])
+            ->select('machine_attendances.*');
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('date', '<=', $request->date_to);
+        }
+        if ($request->filled('staff_id')) {
+            $query->where('staff_id', $request->staff_id);
+        }
+        if ($request->filled('area_id')) {
+            $query->whereHas('staff', function ($q) use ($request) {
+                $q->where('area_id', $request->area_id);
+            });
+        }
+        if ($request->filled('category_id')) {
+            $query->whereHas('machines', function ($q) use ($request) {
+                $q->where('category_id', $request->category_id);
+            });
+        }
+        if ($request->filled('status')) {
+            if ($request->status === 'open') {
+                $query->whereNull('photo_pulang_at');
+            } elseif ($request->status === 'closed') {
+                $query->whereNotNull('photo_pulang_at')->whereNotNull('photo_pulang');
+            } elseif ($request->status === 'force_closed') {
+                $query->whereNotNull('photo_pulang_at')->whereNull('photo_pulang');
+            }
+        }
+
+        return \Yajra\DataTables\DataTables::of($query)
+            ->editColumn('date', function ($att) {
+                $date = $att->date instanceof Carbon ? $att->date : Carbon::parse($att->date);
+                return $date->format('l, d/m/Y');
+            })
+            ->addColumn('staff_name', function ($att) {
+                return $att->staff ? $att->staff->name : 'N/A';
+            })
+            ->addColumn('area', function ($att) {
+                return $att->staff && $att->staff->area ? $att->staff->area->name : '—';
+            })
+            ->addColumn('machines', function ($att) {
+                return $att->machines->pluck('code')->join(', ') ?: '—';
+            })
+            ->addColumn('categories', function ($att) {
+                return $att->machines->pluck('category.name')->unique()->join(', ') ?: '—';
+            })
+            ->addColumn('jam_pergi', function ($att) {
+                if ($att->photo_pergi_at && $att->photo_pergi) {
+                    $url = \Illuminate\Support\Facades\Storage::url($att->photo_pergi);
+                    $time = $att->photo_pergi_at->format('H:i');
+                    return '<div>'
+                        . '<span>' . $time . '</span>'
+                        . '<img src="' . $url . '" class="rounded ms-1 photo-thumb" '
+                        . 'data-full="' . $url . '" '
+                        . 'style="width:30px; height:30px; object-fit:cover; cursor:pointer;" '
+                        . 'title="Klik untuk lihat foto">'
+                        . '</div>';
+                }
+                return $att->photo_pergi_at ? $att->photo_pergi_at->format('H:i') : '—';
+            })
+            ->addColumn('jam_pulang', function ($att) {
+                if ($att->photo_pulang_at && $att->photo_pulang) {
+                    $url = \Illuminate\Support\Facades\Storage::url($att->photo_pulang);
+                    $time = $att->photo_pulang_at->format('H:i');
+                    return '<div>'
+                        . '<span>' . $time . '</span>'
+                        . '<img src="' . $url . '" class="rounded ms-1 photo-thumb" '
+                        . 'data-full="' . $url . '" '
+                        . 'style="width:30px; height:30px; object-fit:cover; cursor:pointer;" '
+                        . 'title="Klik untuk lihat foto">'
+                        . '</div>';
+                }
+                if ($att->photo_pulang_at && !$att->photo_pulang) {
+                    return '<span class="badge bg-yellow-lt">Force closed</span> '
+                        . $att->photo_pulang_at->format('H:i');
+                }
+                if ($att->photo_pulang_at) {
+                    return $att->photo_pulang_at->format('H:i');
+                }
+                return '<span class="badge bg-red-lt">OPEN</span>';
+            })
+            ->addColumn('durasi', function ($att) {
+                if ($att->photo_pergi_at && $att->photo_pulang_at) {
+                    $diff = $att->photo_pergi_at->diff($att->photo_pulang_at);
+                    return $diff->format('%Hj %Im');
+                }
+                if ($att->photo_pergi_at && !$att->photo_pulang_at) {
+                    $diff = $att->photo_pergi_at->diff(now(config('app.timezone')));
+                    return $diff->format('%Hj %Im') . ' (aktif)';
+                }
+                return '—';
+            })
+            ->addColumn('catatan', function ($att) {
+                if ($att->catatan) {
+                    $truncated = strlen($att->catatan) > 40
+                        ? substr($att->catatan, 0, 40) . '...'
+                        : $att->catatan;
+                    return '<span title="' . e($att->catatan) . '">' . e($truncated) . '</span>';
+                }
+                return '—';
+            })
+            ->addColumn('status', function ($att) {
+                if ($att->photo_pulang_at && $att->photo_pulang) {
+                    return '<span class="badge bg-green-lt">Closed</span>';
+                }
+                if ($att->photo_pulang_at && !$att->photo_pulang) {
+                    return '<span class="badge bg-yellow-lt">Force Closed</span>';
+                }
+                return '<span class="badge bg-red-lt">Open</span>';
+            })
+            ->addColumn('warning', function ($att) {
+                $warnings = [];
+
+                // 1. Staff area doesn't match machine area
+                if ($att->staff) {
+                    $staffAreaId = $att->staff->area_id;
+                    $mismatchMachines = $att->machines->filter(fn($m) => $m->area_id !== $staffAreaId);
+                    if ($mismatchMachines->isNotEmpty()) {
+                        $codes = $mismatchMachines->pluck('code')->join(', ');
+                        $warnings[] = '⚠ Area mismatch: ' . $codes;
+                    }
+                }
+
+                // 2. HV taken without paired steam
+                $hvMachines = $att->machines->filter(function ($m) {
+                    return $m->paired_machine_id !== null
+                        && $m->category
+                        && $m->category->slug === 'hydrovacuum';
+                });
+                foreach ($hvMachines as $hv) {
+                    if (!$att->machines->contains('id', $hv->paired_machine_id)) {
+                        $warnings[] = '⚠ ' . $hv->code . ' tanpa steam pair';
+                    }
+                }
+
+                // 3. Still open (no pulang)
+                if (!$att->photo_pulang_at) {
+                    $warnings[] = '⚠ Belum pulang';
+                }
+
+                if (empty($warnings)) {
+                    return '—';
+                }
+
+                return '<span class="text-danger" title="' . e(implode('; ', $warnings)) . '">'
+                    . e($warnings[0])
+                    . (count($warnings) > 1 ? ' +' . (count($warnings) - 1) : '')
+                    . '</span>';
+            })
+            ->rawColumns(['jam_pergi', 'jam_pulang', 'status', 'catatan', 'warning'])
+            ->order(function ($query) {
+                $query->orderBy('date', 'desc');
             })
             ->make(true);
     }

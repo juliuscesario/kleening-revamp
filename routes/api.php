@@ -21,6 +21,23 @@ Route::middleware(['auth:sanctum', 'role:owner,admin,co_owner,staff'])->group(fu
     //SET ROUTES
     Route::apiResource('areas', AreaController::class);
     Route::apiResource('service-categories', ServiceCategoryController::class);
+    Route::apiResource('machine-categories', \App\Http\Controllers\Api\MachineCategoryController::class);
+    Route::get('machines/next-code', [\App\Http\Controllers\Api\MachineController::class, 'nextCode']);
+    Route::apiResource('machines', \App\Http\Controllers\Api\MachineController::class);
+
+    // Machine Attendance
+    Route::get('machine-attendance/status', [\App\Http\Controllers\Api\MachineAttendanceController::class, 'status']);
+    Route::get('machine-attendance/available-machines', [\App\Http\Controllers\Api\MachineAttendanceController::class, 'availableMachines']);
+    Route::post('machine-attendance/pergi', [\App\Http\Controllers\Api\MachineAttendanceController::class, 'pergi']);
+    Route::post('machine-attendance/{id}/pulang', [\App\Http\Controllers\Api\MachineAttendanceController::class, 'pulang']);
+
+    // Machine Attendance Management (Owner/Co-owner)
+    Route::get('machine-attendances', [\App\Http\Controllers\Api\MachineAttendanceManageController::class, 'index']);
+    Route::get('machine-attendances/{id}', [\App\Http\Controllers\Api\MachineAttendanceManageController::class, 'show']);
+    Route::put('machine-attendances/{id}', [\App\Http\Controllers\Api\MachineAttendanceManageController::class, 'update']);
+    Route::post('machine-attendances/{id}/force-close', [\App\Http\Controllers\Api\MachineAttendanceManageController::class, 'forceClose']);
+    Route::delete('machine-attendances/{id}', [\App\Http\Controllers\Api\MachineAttendanceManageController::class, 'destroy']);
+
     Route::apiResource('services', ServiceController::class);
     Route::apiResource('customers', CustomerController::class);
 

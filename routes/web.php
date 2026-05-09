@@ -67,6 +67,9 @@ Route::middleware(['auth'])->group(function () {
     // DataTables and JSON Data Routes
     Route::get('data/areas', [DataTablesController::class, 'areas'])->name('data.areas');
     Route::get('data/service-categories', [DataTablesController::class, 'serviceCategories'])->name('data.service-categories');
+    Route::get('data/machine-categories', [DataTablesController::class, 'machineCategories'])->name('data.machine-categories');
+    Route::get('data/machines', [DataTablesController::class, 'machines'])->name('data.machines');
+    Route::get('data/machine-attendances', [DataTablesController::class, 'machineAttendances'])->name('data.machine-attendances');
     Route::get('data/staff', [DataTablesController::class, 'staff'])->name('data.staff');
     Route::get('data/services', [DataTablesController::class, 'services'])->name('data.services');
     Route::get('data/customers', [DataTablesController::class, 'customers'])->name('data.customers');
@@ -96,11 +99,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/reports/customer/drilldown/{customer}/key-metrics', [DataTablesController::class, 'customerKeyMetricsData'])->name('data.reports.customer.key-metrics');
     Route::get('data/reports/customer/drilldown/{customer}/service-frequency', [DataTablesController::class, 'customerServiceFrequencyData'])->name('data.reports.customer.service-frequency');
     Route::get('data/reports/customer/drilldown/{customer}/order-history', [DataTablesController::class, 'customerOrderHistoryData'])->name('data.reports.customer.order-history');
+    Route::get('data/reports/machine-attendance', [DataTablesController::class, 'reportMachineAttendances'])->name('data.reports.machine-attendance');
 
 
     // Resource Routes
     Route::resource('areas', AreaController::class)->names('web.areas');
     Route::resource('service-categories', ServiceCategoriesController::class)->names('web.service-categories');
+    Route::resource('machine-categories', \App\Http\Controllers\Web\MachineCategoryController::class)->middleware('role:owner')->names('web.machine-categories');
+    Route::resource('machines', \App\Http\Controllers\Web\MachineController::class)->middleware('role:owner')->names('web.machines');
+    Route::get('master-data/machine-attendances', [\App\Http\Controllers\Web\MachineAttendanceManageController::class, 'index'])->middleware('role:owner')->name('web.machine-attendances.index');
     Route::resource('staff', StaffController::class)->middleware('role:owner,admin')->names('web.staff');
     Route::resource('services', ServiceController::class)->names('web.services');
     Route::resource('customers', CustomerController::class)->names('web.customers');
@@ -132,6 +139,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reports/profitability', [\App\Http\Controllers\Web\ReportController::class, 'profitability'])->name('web.reports.profitability');
     Route::get('reports/staff-utilization', [\App\Http\Controllers\Web\ReportController::class, 'staffUtilization'])->name('web.reports.staff-utilization');
     Route::get('reports/invoice-aging', [\App\Http\Controllers\Web\ReportController::class, 'invoiceAging'])->name('web.reports.invoice-aging');
+    Route::get('reports/machine-attendance', [\App\Http\Controllers\Web\ReportMachineAttendanceController::class, 'index'])->middleware('role:owner,co_owner')->name('web.reports.machine-attendance');
 
     // Laporan Kinerja Admin
     Route::get('laporan/kinerja-admin', [\App\Http\Controllers\Web\LaporanKinerjaAdminController::class, 'index'])->name('web.laporan.kinerja-admin');
@@ -156,6 +164,16 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('role:owner,co_owner,admin,staff');
     Route::delete('/service-orders/{serviceOrder}/photos/{workPhoto}', [WorkPhotoController::class, 'destroy'])
         ->middleware('role:owner,co_owner,admin');
+
+    // Machine Attendance (web routes — staff dashboard via fetch, session auth)
+    Route::get('/machine-attendance/status', [\App\Http\Controllers\Api\MachineAttendanceController::class, 'status'])
+        ->middleware('role:owner,co_owner,admin,staff');
+    Route::get('/machine-attendance/available-machines', [\App\Http\Controllers\Api\MachineAttendanceController::class, 'availableMachines'])
+        ->middleware('role:owner,co_owner,admin,staff');
+    Route::post('/machine-attendance/pergi', [\App\Http\Controllers\Api\MachineAttendanceController::class, 'pergi'])
+        ->middleware('role:owner,co_owner,admin,staff');
+    Route::post('/machine-attendance/{id}/pulang', [\App\Http\Controllers\Api\MachineAttendanceController::class, 'pulang'])
+        ->middleware('role:owner,co_owner,admin,staff');
 });
 
 Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {

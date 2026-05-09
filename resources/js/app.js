@@ -67,6 +67,12 @@ $(function () {
     if (document.getElementById('service-categories-table')) {
         import('./pages/service-categories.js');
     }
+    if (document.getElementById('machine-categories-table')) {
+        import('./pages/machine-categories.js');
+    }
+    if (document.getElementById('machines-table')) {
+        import('./pages/machines.js');
+    }
     if (document.getElementById('staff-table')) {
         import('./pages/staff.js');
     }
@@ -133,5 +139,13 @@ $(function () {
     }
     if (document.getElementById('staff-utilization-report-page')) {
         import('./pages/report-staff-utilization.js');
+    }
+
+    if (document.getElementById('machine-attendance-report-page')) {
+        import('./pages/report-machine-attendance.js');
+    }
+
+    if (document.getElementById('machine-attendances-table')) {
+        import('./pages/machine-attendances.js');
     }
 });

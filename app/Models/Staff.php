@@ -72,4 +72,9 @@ class Staff extends Model
             ->withPivot('signature_image')
             ->withTimestamps();
     }
+
+    public function machineAttendances()
+    {
+        return $this->hasMany(MachineAttendance::class);
+    }
 }

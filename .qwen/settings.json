@@ -12,7 +12,13 @@
       "Bash(mysql *)",
       "Bash(python3 *)",
       "Bash(find *)",
-      "Bash(cp *)"
+      "Bash(cp *)",
+      "Bash(xargs *)",
+      "Bash(grep *)",
+      "Bash(sleep *)",
+      "Bash(curl *)",
+      "Bash(pkill *)",
+      "Bash(crontab *)"
     ]
   },
   "$version": 3

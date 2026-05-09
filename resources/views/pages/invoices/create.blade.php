@@ -17,6 +17,15 @@
 <div class="page-body" id="create-invoice-page">
     <div class="container-xl">
         <form action="{{ route('web.invoices.store') }}" method="POST">
+        @if ($errors->any())
+            <div class="alert alert-danger mb-3">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         <div class="row">
             <div class="col-md-8">
                 <div class="card mb-3">
@@ -103,7 +112,7 @@
                             <input type="hidden" name="service_order_id" value="{{ $serviceOrder->id }}">
                             <div class="mb-3">
                                 <label class="form-label">Invoice Number</label>
-                                <input type="text" class="form-control" name="invoice_number" value="{{ $invoice->invoice_number ?? 'INV-' . date('Ymd') . '-' . $serviceOrder->id }}" readonly>
+                                <input type="text" class="form-control" name="invoice_number" value="{{ $suggestedInvoiceNumber }}" readonly>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Issue Date</label>

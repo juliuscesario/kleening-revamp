@@ -376,7 +376,12 @@ function getStatusLabel($status) {
                         @else
                             <span class="staff-chip-status-dot {{ $dotClass }}"></span>
                         @endif
-                        {{ $s->name }} {{ $suffix }}
+                        <span>
+                            {{ $s->name }} {{ $suffix }}
+                            @if(isset($activeAttendances[$s->id]) && $activeAttendances[$s->id])
+                                <small class="text-muted d-block" style="font-size:.75rem;">{{ $activeAttendances[$s->id] }}</small>
+                            @endif
+                        </span>
                     </div>
                 @endforeach
             </div>
@@ -410,7 +415,12 @@ function getStatusLabel($status) {
             {{-- STAFF VIEW --}}
             @forelse($sessionsByStaff as $staffId => $group)
                 <div class="staff-group-header">
-                    <div class="staff-group-name">{{ $group['staff']->name }}</div>
+                    <div class="staff-group-name">
+                        {{ $group['staff']->name }}
+                        @if(isset($activeAttendances[$staffId]) && $activeAttendances[$staffId])
+                            <small class="text-muted d-block" style="font-size:.75rem; font-weight:500;">{{ $activeAttendances[$staffId] }}</small>
+                        @endif
+                    </div>
                     <div class="staff-group-count">{{ $group['sessions']->count() }}</div>
                     @if($offDays->has($staffId))
                         <span class="status-pill status-cancelled">OFF</span>
@@ -473,8 +483,12 @@ function getStatusLabel($status) {
                         @endphp
                         <tr data-session-id="{{ $session->id }}" data-so-id="{{ $so->id }}">
                             <td>
-                                <span class="inline-edit fw-bold text-dark" onclick="editStaff(this, {{ $session->id }})" data-staff-ids="{{ $session->staff->pluck('id')->implode(',') }}">
-                                    {{ $session->staff->pluck('name')->implode(', ') ?: 'Unassigned' }}
+                                @php
+                                    $staffNames = $session->staff->pluck('name')->implode(', ') ?: 'Unassigned';
+                                    $staffMachineCodes = $session->staff->filter(fn($s) => isset($activeAttendances[$s->id]) && $activeAttendances[$s->id])->map(fn($s) => $s->name . ': ' . $activeAttendances[$s->id])->join(', ');
+                                @endphp
+                                <span class="inline-edit fw-bold text-dark" onclick="editStaff(this, {{ $session->id }})" data-staff-ids="{{ $session->staff->pluck('id')->implode(',') }}" @if($staffMachineCodes) title="{{ $staffMachineCodes }}" @endif>
+                                    {{ $staffNames }}
                                 </span>
                             </td>
                             <td>
@@ -610,6 +624,7 @@ function getStatusLabel($status) {
         </div>
     </div>
 </div>
+
 @endsection
 
 @push('scripts')
@@ -1204,6 +1219,6 @@ function hideNotesPopover() {
     var existing = document.getElementById('notes-popover');
     if (existing) existing.remove();
 }
-});
+
 </script>
 @endpush

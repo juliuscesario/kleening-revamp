@@ -8,6 +8,7 @@ use App\Models\Service;
 use App\Models\Staff;
 use App\Models\ServiceOrder;
 use App\Models\Invoice;
+use App\Models\MachineAttendance;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -81,8 +82,17 @@ class ServiceOrderController extends Controller
 
         $workPhotos = $serviceOrder->workPhotos->keyBy('type');
 
+        // SO Gate: check if staff has uploaded Mesin Pergi today
+        $hasMesinPergi = true; // default true for non-staff
         if ($isStaff) {
-            return view('pages.service-orders.staff-show', compact('serviceOrder', 'isStaff'));
+            $staff = $user->staff;
+            if ($staff) {
+                $hasMesinPergi = MachineAttendance::hasActiveAttendanceToday($staff->id);
+            }
+        }
+
+        if ($isStaff) {
+            return view('pages.service-orders.staff-show', compact('serviceOrder', 'isStaff', 'hasMesinPergi'));
         } else {
             return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff', 'isStaff', 'workPhotos'));
         }

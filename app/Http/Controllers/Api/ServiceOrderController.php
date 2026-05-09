@@ -7,6 +7,7 @@ use App\Services\ImageCompressor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\ServiceOrder;
+use App\Models\MachineAttendance;
 use App\Http\Resources\ServiceOrderResource;
 use App\Http\Resources\StaffServiceOrderResource;
 use App\Http\Resources\UserResource;
@@ -221,6 +222,18 @@ class ServiceOrderController extends Controller
     {
         $this->authorize('startWork', $serviceOrder);
 
+        // SO Gate: Staff must have Mesin Pergi today before uploading proofs
+        $user = $request->user();
+        if (strtolower(trim($user->role)) === 'staff') {
+            $staff = $user->staff;
+            if ($staff && !MachineAttendance::hasActiveAttendanceToday($staff->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload Mesin Pergi dulu sebelum mulai kerjaan',
+                ], 422);
+            }
+        }
+
         $validated = $request->validate([
             // 128 MB max, allow common image types including HEIC/HEIF
             'photo' => 'required|file|mimes:jpeg,png,jpg,gif,svg,bmp,webp,heic,heif|max:128000',
@@ -271,6 +284,18 @@ class ServiceOrderController extends Controller
     public function uploadWorkProof(Request $request, ServiceOrder $serviceOrder)
     {
         $this->authorize('uploadWorkProof', $serviceOrder);
+
+        // SO Gate: Staff must have Mesin Pergi today before uploading proofs
+        $user = $request->user();
+        if (strtolower(trim($user->role)) === 'staff') {
+            $staff = $user->staff;
+            if ($staff && !MachineAttendance::hasActiveAttendanceToday($staff->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload Mesin Pergi dulu sebelum mulai kerjaan',
+                ], 422);
+            }
+        }
 
         $validated = $request->validate([
             'type' => 'required|string|in:before,after',

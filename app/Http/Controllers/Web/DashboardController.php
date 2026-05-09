@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Area;
+use App\Models\MachineAttendance;
 
 class DashboardController extends Controller
 {
@@ -224,6 +225,24 @@ class DashboardController extends Controller
                 ->where('status', 'done')->whereDate('tanggal', $today)->count();
             $viewData['bookedCount'] = OrderSession::whereHas('staff', $staffQueryBase)
                 ->where('status', 'booked')->whereDate('tanggal', '>=', $today)->count();
+
+            // Machine attendance status for today
+            $machineAttendance = MachineAttendance::where('staff_id', $staffId)
+                ->whereDate('date', $today)
+                ->with('machines.category')
+                ->first();
+
+            $machineAttendanceStatus = 'no_attendance';
+            if ($machineAttendance) {
+                if ($machineAttendance->photo_pergi_at && !$machineAttendance->photo_pulang_at) {
+                    $machineAttendanceStatus = 'active';
+                } elseif ($machineAttendance->photo_pergi_at && $machineAttendance->photo_pulang_at) {
+                    $machineAttendanceStatus = 'completed';
+                }
+            }
+
+            $viewData['machineAttendance'] = $machineAttendance;
+            $viewData['machineAttendanceStatus'] = $machineAttendanceStatus;
         }
 
         // Default empty values for keys not set in every role
@@ -262,6 +281,13 @@ class DashboardController extends Controller
             if (!isset($viewData[$key])) {
                 $viewData[$key] = 0;
             }
+        }
+
+        if (!isset($viewData['machineAttendance'])) {
+            $viewData['machineAttendance'] = null;
+        }
+        if (!isset($viewData['machineAttendanceStatus'])) {
+            $viewData['machineAttendanceStatus'] = null;
         }
 
         return view('dashboard', $viewData);
