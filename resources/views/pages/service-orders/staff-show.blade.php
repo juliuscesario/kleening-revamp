@@ -1046,13 +1046,20 @@
     $soDataForJs = [
         'number'   => $serviceOrder->so_number ?? $serviceOrder->id,
         'customer' => $serviceOrder->customer->name ?? '-',
-        'phone'    => $serviceOrder->customer->phone ?? '-',
+        'phone'    => $serviceOrder->customer->phone_number ?? '-',
         'date'     => optional($serviceOrder->sessions->first())->tanggal?->format('d M Y') ?? '-',
-        'hours'    => ($serviceOrder->work_start && $serviceOrder->work_end)
-                        ? $serviceOrder->work_start . ' – ' . $serviceOrder->work_end
-                        : '-',
+        'hours'    => optional($serviceOrder->sessions->first())->jam ?? '-',
         'address'  => optional($serviceOrder->address)->full_address ?? '-',
-        'items'    => $serviceOrder->items->map(fn($i) => $i->service->name ?? 'Layanan')->values()->toArray(),
+        'items'    => $serviceOrder->items->map(fn($i) => [
+            'name' => $i->service->name ?? 'Layanan',
+            'qty'  => $i->quantity,
+        ])->values()->toArray(),
+        'staff'    => $serviceOrder->sessions
+                        ->flatMap(fn($s) => $s->staff)
+                        ->pluck('name')
+                        ->unique()
+                        ->values()
+                        ->toArray(),
     ];
 @endphp
 
@@ -1061,10 +1068,12 @@
 document.getElementById('btnSalinOrder')?.addEventListener('click', function () {
     const so = @json($soDataForJs);
 
-    let layanan = so.items.map((name, idx) => `${idx + 1}. ${name}`).join('\n');
+    let layanan = so.items.map((item, idx) => `${idx + 1}. ${item.name} x${item.qty}`).join('\n');
+    let staff = so.staff.length ? so.staff.join(', ') : '-';
 
     const text =
 `Order Detail
+Staff  : ${staff}
 ${so.number}
 Kontak : ${so.customer}, ${so.phone}
 Waktu  : ${so.date}, ${so.hours}

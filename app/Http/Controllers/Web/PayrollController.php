@@ -79,9 +79,26 @@ class PayrollController extends Controller
         // Build payroll rows from sessions
         $rows = $this->buildPayrollRows($sessions, $staff);
 
+        // Pre-fetch work photos (before/after) grouped by SO
+        $allSoIds = $sessions->pluck('service_order_id')->unique()->toArray();
+        $workPhotos = WorkPhoto::withoutGlobalScopes()
+            ->whereIn('service_order_id', $allSoIds)
+            ->whereIn('type', ['before', 'after'])
+            ->whereNotNull('file_path')
+            ->where('file_path', '!=', '')
+            ->get()
+            ->groupBy('service_order_id')
+            ->map(fn($photos) => $photos->pluck('type')->unique()->toArray());
+
+        // Pre-fetch machine attendances for this staff in the payroll date range
+        $machineAttendances = \App\Models\MachineAttendance::where('staff_id', $staff->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get()
+            ->keyBy(fn($att) => $att->date->format('Y-m-d'));
+
         // Generate Excel
         $generator = new PayrollExcelGenerator();
-        $spreadsheet = $generator->generate($staff, (int) $year, (int) $month, (int) $period, $rows);
+        $spreadsheet = $generator->generate($staff, (int) $year, (int) $month, (int) $period, $rows, $workPhotos, $machineAttendances);
 
         // Write output
         $writer = new Xlsx($spreadsheet);
@@ -265,6 +282,7 @@ class PayrollController extends Controller
                     'com_rate' => $group['com_rate'],
                     'show_tgl' => true,
                     'is_split_row' => false,
+                    'service_order_id' => $orderId,
                     'work_time' => $workTimeStr,
                     'arrival_time' => $arrivalTimeStr,
                     'late_minutes' => $lateMinutes,
@@ -346,6 +364,7 @@ class PayrollController extends Controller
                         'com_rate' => $group['com_rate'],
                         'show_tgl' => $showTgl,
                         'is_split_row' => !$isFirstGroup,
+                        'service_order_id' => $orderId,
                         'work_time' => $isFirstGroup ? $workTimeStr : null,
                         'arrival_time' => $isFirstGroup ? $arrivalTimeStr : null,
                         'late_minutes' => $isFirstGroup ? $lateMinutes : 0,

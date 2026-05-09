@@ -37,24 +37,37 @@ class PayrollExcelGenerator
         'L' => 'HARIAN',
         'M' => '% COM',
         'N' => 'COM',
-        'O' => 'JAM KERJA',
-        'P' => 'SAMPAI',
-        'Q' => 'TIME',
-        'R' => 'DENDA',
+        'O' => '',
+        'P' => 'JAM KERJA',
+        'Q' => 'ARRIVAL',
+        'R' => 'TIME',
+        'S' => 'DENDA',
+        'T' => 'BEFORE',
+        'U' => 'DENDA',
+        'V' => 'AFTER',
+        'W' => 'DENDA',
+        'X' => 'MESIN PERGI',
+        'Y' => 'DENDA',
+        'Z' => 'MESIN PULANG',
+        'AA' => 'DENDA',
     ];
 
     const COLUMN_WIDTHS = [
-        'B' => 5, 'C' => 22, 'D' => 12, 'E' => 10,
-        'F' => 14, 'G' => 25, 'H' => 6, 'I' => 10,
-        'J' => 10, 'K' => 10, 'L' => 10, 'M' => 8, 'N' => 12,
-        'O' => 10, 'P' => 10, 'Q' => 8, 'R' => 8,
+        'A'  => 13.0,
+        'B'  => 6.33,   'C' => 38.33,   'D' => 8.66,    'E' => 13.0,
+        'F'  => 10.83,  'G' => 30.0,    'H' => 8.66,    'I' => 13.0,
+        'J'  => 13.0,   'K' => 13.0,    'L' => 13.0,    'M' => 13.0,
+        'N'  => 10.83,  'O' => 4.33,    'P' => 11.83,   'Q' => 10.33,
+        'R'  => 8.66,   'S' => 13.0,    'T' => 13.0,    'U' => 13.0,
+        'V'  => 13.0,   'W' => 13.0,    'X' => 13.0,    'Y' => 13.0,
+        'Z'  => 13.0,   'AA' => 13.0,
     ];
 
     const TEMPLATE_ROWS_COUNT = 5;
 
     private int $rowNum = 3;
 
-    public function generate($staff, int $year, int $month, int $period, array $rows): Spreadsheet
+    public function generate($staff, int $year, int $month, int $period, array $rows, $workPhotos = null, $machineAttendances = null): Spreadsheet
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -67,10 +80,11 @@ class PayrollExcelGenerator
 
         $this->writeHeaderInfo($sheet, $staff, $periodLabel, $dateRange);
         $this->writeColumnHeaders($sheet);
-        $this->writeDataRows($sheet, $rows);
+        $this->writeDataRows($sheet, $rows, $workPhotos ?? collect(), $machineAttendances ?? collect());
         $this->writeTemplateRows($sheet);
         $this->writeTotalRows($sheet);
         $this->setColumnWidths($sheet);
+        $this->applyGlobalStyling($sheet);
 
         return $spreadsheet;
     }
@@ -79,7 +93,7 @@ class PayrollExcelGenerator
     {
         // Single cell: "NAMA: {staffName}" with dark navy bg, white bold text
         $sheet->setCellValue('B1', 'NAMA: ' . $staff->name);
-        $sheet->getStyle('B1:R1')->applyFromArray([
+        $sheet->getStyle('B1:AA1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -121,7 +135,7 @@ class PayrollExcelGenerator
         }
 
         // All column headers: blue bg, white bold text, font size 14
-        $sheet->getStyle('B2:R2')->applyFromArray([
+        $sheet->getStyle('B2:AA2')->applyFromArray([
             'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => 'FFFFFF']],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
             'fill' => [
@@ -137,14 +151,22 @@ class PayrollExcelGenerator
                 'startColor' => ['rgb' => self::COLUMN_HEADER_ALT_BG],
             ]);
         }
+
+        // Separator column O: narrow, keep same bg but no text
+        // O is already empty in HEADERS, styled by the B2:AA2 range
     }
 
-    private function writeDataRows($sheet, array $rows): void
+    private function writeDataRows($sheet, array $rows, $workPhotos, $machineAttendances): void
     {
+        // Track first row of each SO and first row of each date for photo/mesin checks
+        $seenSoIds = [];
+        $seenDates = [];
+
         foreach ($rows as $row) {
             $r = $this->rowNum;
             $rowDate = $row['date'];
             $dayNumber = $rowDate instanceof Carbon ? $rowDate->day : Carbon::parse($rowDate)->day;
+            $dateKey = $rowDate instanceof Carbon ? $rowDate->format('Y-m-d') : Carbon::parse($rowDate)->format('Y-m-d');
 
             // TGL — only on first row of split booking
             if ($row['show_tgl'] ?? true) {
@@ -191,41 +213,91 @@ class PayrollExcelGenerator
             $sheet->setCellValue("N{$r}", "=IF(H{$r}>0,ROUND(F{$r}*M{$r}/H{$r},0),0)");
             $sheet->getStyle("N{$r}")->getFont()->getColor()->setRGB(self::BLUE_TEXT);
 
-            // === NEW COLUMNS: JAM KERJA, SAMPAI, TIME, DENDA ===
-            // JAM KERJA (O)
+            // === SHIFTED COLUMNS: JAM KERJA→P, ARRIVAL→Q, TIME→R, DENDA→S ===
+            // JAM KERJA (P)
             if (!empty($row['work_time'])) {
-                $sheet->setCellValue("O{$r}", $row['work_time']);
-            } else {
-                $sheet->setCellValueExplicit("O{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
-            }
-
-            // SAMPAI (P)
-            if (!empty($row['arrival_time'])) {
-                $sheet->setCellValue("P{$r}", $row['arrival_time']);
+                $sheet->setCellValue("P{$r}", $row['work_time']);
             } else {
                 $sheet->setCellValueExplicit("P{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
             }
 
-            // TIME (Q) — lateness in minutes
+            // ARRIVAL (Q)
+            if (!empty($row['arrival_time'])) {
+                $sheet->setCellValue("Q{$r}", $row['arrival_time']);
+            } else {
+                $sheet->setCellValueExplicit("Q{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            }
+
+            // TIME (R) — lateness in minutes
             $lateMinutes = $row['late_minutes'] ?? 0;
             $hasArrival = !empty($row['arrival_time']);
-            $sheet->setCellValueExplicit("Q{$r}", (int) $lateMinutes, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            $sheet->setCellValueExplicit("R{$r}", (int) $lateMinutes, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
 
             // Apply conditional color to TIME cell (saved for re-application after row bg)
             $timeCellColor = $this->getTimeCellColor($lateMinutes, $hasArrival);
 
-            // DENDA (R) — -10 if late > 15 min, else blank
+            // DENDA (S) — -10 if late > 15 min, else blank
             if ($lateMinutes > 15) {
-                $sheet->setCellValueExplicit("R{$r}", -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                $sheet->setCellValueExplicit("S{$r}", -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             } else {
-                $sheet->setCellValueExplicit("R{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+                $sheet->setCellValueExplicit("S{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            }
+
+            // === NEW COLUMNS T–AA ===
+            // Track SO-first-row and date-first-row
+            $soId = $row['service_order_id'] ?? null;
+            $isFirstRowOfSo = ($soId !== null && !isset($seenSoIds[$soId]));
+            if ($soId !== null) {
+                $seenSoIds[$soId] = true;
+            }
+            $isFirstRowOfDay = !isset($seenDates[$dateKey]);
+            if ($isFirstRowOfDay) {
+                $seenDates[$dateKey] = true;
+            }
+
+            // BEFORE check (T/U) — only on first row of each SO
+            if ($isFirstRowOfSo) {
+                $photoTypes = $workPhotos[$soId] ?? [];
+                $hasBefore = in_array('before', $photoTypes);
+                $sheet->setCellValue("T{$r}", $hasBefore ? '✓' : '✗');
+                $sheet->setCellValueExplicit("U{$r}", $hasBefore ? null : -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            } else {
+                $sheet->setCellValueExplicit("T{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+                $sheet->setCellValueExplicit("U{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            }
+
+            // AFTER check (V/W) — only on first row of each SO
+            if ($isFirstRowOfSo) {
+                $photoTypes = $workPhotos[$soId] ?? [];
+                $hasAfter = in_array('after', $photoTypes);
+                $sheet->setCellValue("V{$r}", $hasAfter ? '✓' : '✗');
+                $sheet->setCellValueExplicit("W{$r}", $hasAfter ? null : -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            } else {
+                $sheet->setCellValueExplicit("V{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+                $sheet->setCellValueExplicit("W{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            }
+
+            // MESIN PERGI/PULANG (X/Y/Z/AA) — only on first row of each date
+            if ($isFirstRowOfDay) {
+                $attendance = $machineAttendances[$dateKey] ?? null;
+                $hasPergi = $attendance && !empty($attendance->photo_pergi);
+                $sheet->setCellValue("X{$r}", $hasPergi ? '✓' : '✗');
+                $sheet->setCellValueExplicit("Y{$r}", $hasPergi ? null : -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                $hasPulang = $attendance && !empty($attendance->photo_pulang);
+                $sheet->setCellValue("Z{$r}", $hasPulang ? '✓' : '✗');
+                $sheet->setCellValueExplicit("AA{$r}", $hasPulang ? null : -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            } else {
+                $sheet->setCellValueExplicit("X{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+                $sheet->setCellValueExplicit("Y{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+                $sheet->setCellValueExplicit("Z{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+                $sheet->setCellValueExplicit("AA{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
             }
 
             $this->applyRowFormatting($sheet, $r, $row['is_split_row'] ?? false);
 
             // Re-apply TIME cell color after row background override
             if ($timeCellColor !== null) {
-                $sheet->getStyle("Q{$r}")->getFill()->applyFromArray([
+                $sheet->getStyle("R{$r}")->getFill()->applyFromArray([
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => $timeCellColor],
                 ]);
@@ -258,15 +330,20 @@ class PayrollExcelGenerator
             $sheet->setCellValue("N{$r}", "=IF(F{$r}=\"\",0,ROUND(F{$r}*M{$r}/H{$r},0))");
             $sheet->getStyle("N{$r}")->getFont()->getColor()->setRGB(self::BLUE_TEXT);
 
-            // Template rows: blank for new columns
+            // Template rows: blank for shifted + new columns
             $sheet->setCellValueExplicit("O{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
             $sheet->setCellValueExplicit("P{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
-            $sheet->setCellValueExplicit("Q{$r}", 0, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
-            $sheet->getStyle("Q{$r}")->getFill()->applyFromArray([
+            $sheet->setCellValueExplicit("Q{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            $sheet->setCellValueExplicit("R{$r}", 0, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            $sheet->getStyle("R{$r}")->getFill()->applyFromArray([
                 'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => self::LATE_PINK],
             ]);
-            $sheet->setCellValueExplicit("R{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            $sheet->setCellValueExplicit("S{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            // New columns T–AA: empty for template rows
+            foreach (['T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA'] as $col) {
+                $sheet->setCellValueExplicit("{$col}{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
+            }
 
             $this->applyRowFormatting($sheet, $r, false); // template rows = not split
 
@@ -291,7 +368,7 @@ class PayrollExcelGenerator
         ]);
 
         // Apply blue bg + white text to entire Total row
-        $sheet->getStyle("B{$this->rowNum}:R{$this->rowNum}")->applyFromArray([
+        $sheet->getStyle("B{$this->rowNum}:AA{$this->rowNum}")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -305,14 +382,24 @@ class PayrollExcelGenerator
         $sheet->setCellValue("K{$this->rowNum}", "=SUM(K3:K{$templateEndRow})");
         $sheet->setCellValue("L{$this->rowNum}", "=SUM(L3:L{$templateEndRow})");
         $sheet->setCellValue("N{$this->rowNum}", "=SUM(N3:N{$templateEndRow})");
-        $sheet->setCellValue("R{$this->rowNum}", "=SUM(R3:R{$templateEndRow})");
 
-        $this->applyBorders($sheet, "B{$this->rowNum}:R{$this->rowNum}");
-        foreach (['I', 'J', 'K', 'L', 'N', 'R'] as $col) {
+        // DENDA subtotals
+        $totalRow = $this->rowNum;
+        $sheet->setCellValue("S{$totalRow}", "=SUM(S3:S{$templateEndRow})");   // arrival denda
+        $sheet->setCellValue("U{$totalRow}", "=SUM(U3:U{$templateEndRow})");   // before denda
+        $sheet->setCellValue("W{$totalRow}", "=SUM(W3:W{$templateEndRow})");   // after denda
+        $sheet->setCellValue("Y{$totalRow}", "=SUM(Y3:Y{$templateEndRow})");   // mesin pergi denda
+        $sheet->setCellValue("AA{$totalRow}", "=SUM(AA3:AA{$templateEndRow})"); // mesin pulang denda
+
+        // Total Denda label in P, grand sum in Q
+        $sheet->setCellValue("P{$totalRow}", "Total Denda");
+        $sheet->setCellValue("Q{$totalRow}", "=S{$totalRow}+U{$totalRow}+W{$totalRow}+Y{$totalRow}+AA{$totalRow}");
+
+        $this->applyBorders($sheet, "B{$this->rowNum}:AA{$this->rowNum}");
+        foreach (['I', 'J', 'K', 'L', 'N', 'S', 'U', 'W', 'Y', 'AA', 'Q'] as $col) {
             $sheet->getStyle("{$col}{$this->rowNum}")->getNumberFormat()->setFormatCode('#,##0');
         }
 
-        $totalRow = $this->rowNum;
         $this->rowNum++;
 
         // GRAND TOTAL — label in column G (title case), dark navy bg + white bold, font size 14
@@ -326,7 +413,7 @@ class PayrollExcelGenerator
         ]);
 
         // Apply dark blue bg + white text to entire Grand Total row
-        $sheet->getStyle("B{$this->rowNum}:R{$this->rowNum}")->applyFromArray([
+        $sheet->getStyle("B{$this->rowNum}:AA{$this->rowNum}")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -335,14 +422,14 @@ class PayrollExcelGenerator
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
         ]);
 
-        // Grand Total = JAUH + LEMBUR + PARKIR + HARIAN + COM + DENDA
-        $sheet->setCellValue("I{$this->rowNum}", "=I{$totalRow}+J{$totalRow}+K{$totalRow}+L{$totalRow}+N{$totalRow}+R{$totalRow}");
+        // Grand Total = JAUH + LEMBUR + PARKIR + HARIAN + COM + Total Denda (Q is negative, so adding = subtracting fines)
+        $sheet->setCellValue("I{$this->rowNum}", "=I{$totalRow}+J{$totalRow}+K{$totalRow}+L{$totalRow}+N{$totalRow}+Q{$totalRow}");
         $sheet->getStyle("I{$this->rowNum}")->applyFromArray([
             'font' => ['bold' => true, 'size' => 14],
             'numberFormat' => ['formatCode' => '#,##0'],
         ]);
 
-        $this->applyBorders($sheet, "B{$this->rowNum}:R{$this->rowNum}");
+        $this->applyBorders($sheet, "B{$this->rowNum}:AA{$this->rowNum}");
     }
 
     private function setManualInputCells(int $rowNum, $sheet): void
@@ -379,7 +466,7 @@ class PayrollExcelGenerator
     {
         // Row background: primary = PRIMARY_ROW_BG, split = SPLIT_ROW_BG
         $bgColor = $isSplitRow ? self::SPLIT_ROW_BG : self::PRIMARY_ROW_BG;
-        $sheet->getStyle("B{$rowNum}:R{$rowNum}")->getFill()->applyFromArray([
+        $sheet->getStyle("B{$rowNum}:AA{$rowNum}")->getFill()->applyFromArray([
             'fillType' => Fill::FILL_SOLID,
             'startColor' => ['rgb' => $bgColor],
         ]);
@@ -398,9 +485,9 @@ class PayrollExcelGenerator
             $sheet->getStyle("C{$rowNum}")->getFont()->setBold(true);
         }
 
-        $this->applyBorders($sheet, "B{$rowNum}:R{$rowNum}");
+        $this->applyBorders($sheet, "B{$rowNum}:AA{$rowNum}");
 
-        foreach (['D', 'E', 'F', 'I', 'J', 'K', 'L', 'N', 'R'] as $col) {
+        foreach (['D', 'E', 'F', 'I', 'J', 'K', 'L', 'N', 'S', 'U', 'W', 'Y', 'AA'] as $col) {
             $sheet->getStyle("{$col}{$rowNum}")->getNumberFormat()->setFormatCode('#,##0');
         }
         $sheet->getStyle("M{$rowNum}")->getNumberFormat()->setFormatCode('0%');
@@ -422,6 +509,43 @@ class PayrollExcelGenerator
     {
         foreach (self::COLUMN_WIDTHS as $col => $width) {
             $sheet->getColumnDimension($col)->setWidth($width);
+        }
+    }
+
+    private function applyGlobalStyling($sheet): void
+    {
+        $lastRow = $this->rowNum;
+
+        // Row heights
+        $sheet->getRowDimension(1)->setRowHeight(26);
+        $sheet->getRowDimension(2)->setRowHeight(28);
+        for ($r = 3; $r <= $lastRow; $r++) {
+            $sheet->getRowDimension($r)->setRowHeight(22);
+        }
+
+        // Font: Calibri 14 for all cells (bold overrides already set per-cell)
+        $sheet->getStyle("B1:AA{$lastRow}")->applyFromArray([
+            'font' => [
+                'name' => 'Calibri',
+                'size' => 14,
+            ],
+        ]);
+
+        // Vertical center for all cells
+        $sheet->getStyle("B1:AA{$lastRow}")->applyFromArray([
+            'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        // Horizontal center for data columns (except C=NAMA and G=KRU which stay left-aligned)
+        $centerCols = 'B,D,E,F,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA';
+        foreach (explode(',', $centerCols) as $col) {
+            $sheet->getStyle("{$col}1:{$col}{$lastRow}")->applyFromArray([
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                ],
+            ]);
         }
     }
 }
