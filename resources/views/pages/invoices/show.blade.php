@@ -121,12 +121,18 @@
                                     class="badge {{ $statusBadgeClass }} text-bg-secondary">{{ ucfirst($invoice->status) }}</span>
                             </p>
                             @php
-                                $staffNames = $invoice->serviceOrder->staff->pluck('name');
+                                $workSessions = $invoice->serviceOrder->sessions->where('type', 'kerja');
                             @endphp
-                            @if($staffNames->isNotEmpty())
-                                <p class="text-muted mb-0" style="font-size: 0.875rem;">
-                                    <strong>Staff:</strong> {{ implode(', ', $staffNames->toArray()) }}
-                                </p>
+                            @if($workSessions->isNotEmpty())
+                                <div class="text-end mt-2">
+                                    <p class="mb-1" style="font-size: 0.875rem;"><strong>Staff yang Bertugas:</strong></p>
+                                    @foreach($workSessions as $session)
+                                        <div class="text-muted" style="font-size: 0.8rem;">
+                                            Sesi {{ $session->session_number }} ({{ $session->status_label }}):
+                                            {{ $session->staff->pluck('name')->join(', ') ?: '-' }}
+                                        </div>
+                                    @endforeach
+                                </div>
                             @endif
 
                         </div>

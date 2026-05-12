@@ -20,6 +20,7 @@ use App\Http\Controllers\Web\ServiceOrderController;
 use App\Http\Controllers\Web\FormOrderController;
 use App\Http\Controllers\Web\StaffController;
 use App\Http\Controllers\Web\PlannerController;
+use App\Http\Controllers\Web\PendingController;
 use App\Http\Controllers\Web\OrderSessionController;
 use App\Http\Controllers\Web\PayrollController;
 use App\Http\Controllers\Web\NotificationController;
@@ -49,6 +50,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::middleware(['auth'])->group(function () {
     // Operational Planner
     Route::get('planner', [PlannerController::class, 'index'])->name('web.planner.index');
+
+    // Pending Items Tracker
+    Route::get('operational/pending', [PendingController::class, 'index'])->name('operational.pending.index');
 
     Route::middleware(['role:owner,admin'])->group(function () {
         Route::post('planner/session/{orderSession}/update-field', [PlannerController::class, 'updateField'])->name('web.planner.update-field');
@@ -144,6 +148,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Laporan Kinerja Admin
     Route::get('laporan/kinerja-admin', [\App\Http\Controllers\Web\LaporanKinerjaAdminController::class, 'index'])->name('web.laporan.kinerja-admin');
+
+    // Laporan Machine Tracker
+    Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
+        Route::get('laporan/machine-tracker', [\App\Http\Controllers\Web\MachineTrackerController::class, 'index'])->name('web.laporan.machine-tracker');
+        Route::get('laporan/machine-tracker/lookup', [\App\Http\Controllers\Web\MachineTrackerController::class, 'lookup'])->name('web.laporan.machine-tracker.lookup');
+    });
 
     // Payroll
     Route::prefix('payroll')->name('payroll.')->group(function () {

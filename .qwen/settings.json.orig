@@ -1,7 +1,25 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(php *)",
+      "Bash(rm *)",
+      "Bash(true)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(composer *)",
+      "Bash(psql *)",
+      "Bash(mysql *)",
+      "Bash(python3 *)",
+      "Bash(find *)",
+      "Bash(cp *)",
+      "Bash(xargs *)",
+      "Bash(grep *)",
+      "Bash(sleep *)",
+      "Bash(curl *)",
+      "Bash(pkill *)",
+      "Bash(crontab *)"
     ]
-  }
+  },
+  "$version": 3
 }

@@ -88,7 +88,7 @@ class ServiceOrder extends Model
         $validStatuses = [
             self::STATUS_BOOKED,
             self::STATUS_PROSES,
-            self::STATUS_CANCELLED,
+            'cancel',
             self::STATUS_DONE,
             self::STATUS_INVOICED
         ];
@@ -105,14 +105,14 @@ class ServiceOrder extends Model
         switch ($currentStatus) {
             case self::STATUS_BOOKED:
                 // Booked can go to Proses or Cancelled
-                if ($newStatus === self::STATUS_PROSES || $newStatus === self::STATUS_CANCELLED) {
+                if ($newStatus === self::STATUS_PROSES || $newStatus === 'cancel') {
                     return ['allowed' => true, 'message' => ''];
                 }
                 return ['allowed' => false, 'message' => 'Status "booked" can only transition to "proses" or "cancelled".'];
 
             case self::STATUS_PROSES:
                 // Proses can go to Cancelled or Done
-                if ($newStatus === self::STATUS_CANCELLED) {
+                if ($newStatus === 'cancel') {
                     // Proses to Cancelled requires owner approval
                     if (!$user || $user->role !== 'owner') {
                         return ['allowed' => false, 'message' => 'Only owner can change status from "proses" to "cancelled".'];
@@ -124,7 +124,7 @@ class ServiceOrder extends Model
                 return ['allowed' => false, 'message' => 'Status "proses" can only transition to "cancelled" or "done".'];
 
             case self::STATUS_INVOICED:
-            case self::STATUS_CANCELLED:
+            case 'cancel':
             case self::STATUS_DONE:
                 // Invoiced, Cancelled, and Done are terminal states
                 return ['allowed' => false, 'message' => 'Status "' . $currentStatus . '" cannot be changed.'];
@@ -255,5 +255,13 @@ class ServiceOrder extends Model
     public function getIsMultiSessionAttribute(): bool
     {
         return $this->attributes['is_multi_session'] ?? false;
+    }
+
+    /**
+     * Check if this order is locked due to a paid invoice.
+     */
+    public function isLocked(): bool
+    {
+        return optional($this->invoice)->status === Invoice::STATUS_PAID;
     }
 }

@@ -61,6 +61,16 @@ class OrderSessionController extends Controller
      */
     public function update(Request $request, OrderSession $orderSession)
     {
+        $serviceOrder = $orderSession->serviceOrder;
+        $serviceOrder->load('invoice');
+
+        if ($serviceOrder->isLocked()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sesi tidak dapat diedit karena invoice sudah lunas.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'tanggal' => 'nullable|date',
             'jam' => 'nullable|date_format:H:i',
@@ -89,6 +99,16 @@ class OrderSessionController extends Controller
      */
     public function destroy(OrderSession $orderSession)
     {
+        $serviceOrder = $orderSession->serviceOrder;
+        $serviceOrder->load('invoice');
+
+        if ($serviceOrder->isLocked()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sesi tidak dapat dihapus karena invoice sudah lunas.',
+            ], 403);
+        }
+
         try {
             $action = new DeleteOrderSessionAction();
             $action->execute($orderSession);

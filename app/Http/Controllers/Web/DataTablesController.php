@@ -397,12 +397,12 @@ class DataTablesController extends Controller
                 switch ($so->status) {
                     case \App\Models\ServiceOrder::STATUS_BOOKED:
                         $actions .= '<button class="btn btn-sm btn-primary change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_PROSES . '">Proses</button> ';
-                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_CANCELLED . '">Cancel</button> ';
+                        $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="cancel">Cancel</button> ';
                         break;
                     case \App\Models\ServiceOrder::STATUS_PROSES:
                         $actions .= '<button class="btn btn-sm btn-success change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_DONE . '">Done</button> ';
                         if (auth()->user()->role === 'owner') {
-                            $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="' . \App\Models\ServiceOrder::STATUS_CANCELLED . '">Cancel</button> ';
+                            $actions .= '<button class="btn btn-sm btn-danger change-status-btn" data-id="' . $so->id . '" data-new-status="cancel">Cancel</button> ';
                         }
                         break;
                     // For CANCELLED, DONE, and INVOICED, no further status transitions are allowed from the UI
@@ -859,7 +859,7 @@ class DataTablesController extends Controller
         ], 'grand_total')
             ->withCount([
                 'serviceOrders as total_orders' => function ($q) use ($request) {
-                    $q->where('status', '!=', \App\Models\ServiceOrder::STATUS_CANCELLED);
+                    $q->where('status', '!=', 'cancel');
                     if ($request->filled('start_date') && $request->filled('end_date')) {
                         $q->whereBetween('work_date', [$request->start_date, $request->end_date]);
                     }
@@ -1264,7 +1264,7 @@ class DataTablesController extends Controller
                         return 'bg-primary';
                     case \App\Models\ServiceOrder::STATUS_PROSES:
                         return 'bg-warning';
-                    case \App\Models\ServiceOrder::STATUS_CANCELLED:
+                    case 'cancel':
                         return 'bg-danger';
                     case \App\Models\ServiceOrder::STATUS_DONE:
                         return 'bg-success';

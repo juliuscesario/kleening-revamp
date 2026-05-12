@@ -43,7 +43,7 @@ class AutoCancelOldServiceOrders extends Command
             }
 
             foreach ($ordersToCancel as $order) {
-                $order->status = ServiceOrder::STATUS_CANCELLED;
+                $order->status = 'cancel';
                 $order->save();
                 $count++;
             }

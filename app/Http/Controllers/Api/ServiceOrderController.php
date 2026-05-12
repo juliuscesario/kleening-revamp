@@ -123,7 +123,7 @@ class ServiceOrderController extends Controller
             'address_id' => 'sometimes|required|exists:addresses,id',
             'work_date' => 'sometimes|required|date',
             'work_time' => 'sometimes|required|date_format:H:i',
-            'status' => ['sometimes', 'required', 'string', Rule::in([ServiceOrder::STATUS_BOOKED, ServiceOrder::STATUS_PROSES, ServiceOrder::STATUS_CANCELLED, ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])],
+            'status' => ['sometimes', 'required', 'string', Rule::in([ServiceOrder::STATUS_BOOKED, ServiceOrder::STATUS_PROSES, 'cancel', ServiceOrder::STATUS_DONE, ServiceOrder::STATUS_INVOICED])],
             'work_notes' => 'nullable|string',
             'staff_notes' => 'nullable|string',
             'items' => 'sometimes|array|min:1',
@@ -190,7 +190,7 @@ class ServiceOrderController extends Controller
                     ServiceOrder::STATUS_BOOKED,
                     ServiceOrder::STATUS_PROSES,
                     ServiceOrder::STATUS_DONE,
-                    ServiceOrder::STATUS_CANCELLED,
+                    'cancel',
                     ServiceOrder::STATUS_INVOICED,
                 ])
             ],

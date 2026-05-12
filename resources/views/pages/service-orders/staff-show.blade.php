@@ -89,15 +89,17 @@
                         <h3 class="card-title">Staff yang Bertugas</h3>
                     </div>
                     <div class="card-body">
-                        @if($serviceOrder->staff->isNotEmpty())
-                            <ul class="list-group list-group-flush">
-                                @foreach($serviceOrder->staff as $staff)
-                                    <li class="list-group-item">{{ $staff->name }}</li>
-                                @endforeach
-                            </ul>
-                        @else
+                        @php
+                            $workSessions = $serviceOrder->sessions->where('type', 'kerja');
+                        @endphp
+                        @forelse($workSessions as $session)
+                            <div class="mb-2">
+                                <span class="text-muted">Sesi {{ $session->session_number }} ({{ $session->status_label }}):</span>
+                                {{ $session->staff->pluck('name')->join(', ') ?: '-' }}
+                            </div>
+                        @empty
                             <p class="text-muted">Belum ada staff yang ditugaskan.</p>
-                        @endif
+                        @endforelse
                     </div>
                 </div>
 
@@ -337,15 +339,17 @@
                         <h3 class="card-title">Staff yang Bertugas</h3>
                     </div>
                     <div class="card-body">
-                        @if($serviceOrder->staff->isNotEmpty())
-                            <ul class="list-group list-group-flush">
-                                @foreach($serviceOrder->staff as $staff)
-                                    <li class="list-group-item">{{ $staff->name }}</li>
-                                @endforeach
-                            </ul>
-                        @else
+                        @php
+                            $workSessions = $serviceOrder->sessions->where('type', 'kerja');
+                        @endphp
+                        @forelse($workSessions as $session)
+                            <div class="mb-2">
+                                <span class="text-muted">Sesi {{ $session->session_number }} ({{ $session->status_label }}):</span>
+                                {{ $session->staff->pluck('name')->join(', ') ?: '-' }}
+                            </div>
+                        @empty
                             <p class="text-muted">Belum ada staff yang ditugaskan.</p>
-                        @endif
+                        @endforelse
                     </div>
                 </div>
 
@@ -1083,12 +1087,14 @@
             'name' => $i->service->name ?? 'Layanan',
             'qty'  => $i->quantity,
         ])->values()->toArray(),
-        'staff'    => $serviceOrder->sessions
-                        ->flatMap(fn($s) => $s->staff)
-                        ->pluck('name')
-                        ->unique()
-                        ->values()
-                        ->toArray(),
+        'staff_per_session' => $serviceOrder->sessions
+            ->where('type', 'kerja')
+            ->sortBy('id')
+            ->values()
+            ->map(fn($s, $i) => [
+                'number' => $i + 1,
+                'names' => $s->staff->pluck('name')->join(', ') ?: '-',
+            ])->values()->toArray(),
     ];
 @endphp
 
@@ -1097,17 +1103,15 @@
 document.getElementById('btnSalinOrder')?.addEventListener('click', function () {
     const so = @json($soDataForJs);
 
-    let layanan = so.items.map((item, idx) => `${idx + 1}. ${item.name} x${item.qty}`).join('\n');
-    let staff = so.staff.length ? so.staff.join(', ') : '-';
+    let staffLines = so.staff_per_session.map(s => `Sesi ${s.number}: ${s.names}`);
+    let layanan = so.items.map(item => `- ${item.name} x${item.qty}`).join('\n');
 
     const text =
 `Order Detail
-Staff  : ${staff}
-${so.number}
-Kontak : ${so.customer}, ${so.phone}
-Waktu  : ${so.date}, ${so.hours}
-Alamat : ${so.address}
-Layanan :
+Staff yang bertugas:
+${staffLines.join('\n')}
+${so.customer}
+${so.address}
 
 ${layanan}`;
 

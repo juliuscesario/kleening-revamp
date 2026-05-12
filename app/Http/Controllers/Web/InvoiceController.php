@@ -212,7 +212,7 @@ class InvoiceController extends Controller
     {
         $this->authorize('view', $invoice);
 
-        $invoice->load(['serviceOrder.workPhotos']);
+        $invoice->load(['serviceOrder.workPhotos', 'serviceOrder.sessions.staff']);
 
         $amountDue = max($invoice->grand_total - $invoice->paid_amount, 0);
 
@@ -232,7 +232,7 @@ class InvoiceController extends Controller
     {
         $this->authorize('view', $invoice);
 
-        $invoice->load(['serviceOrder.workPhotos']);
+        $invoice->load(['serviceOrder.workPhotos', 'serviceOrder.sessions.staff']);
 
         $amountDue = max($invoice->grand_total - $invoice->paid_amount, 0);
 
@@ -274,7 +274,7 @@ class InvoiceController extends Controller
         if ($invoice->status === Invoice::STATUS_PAID) {
             return redirect()
                 ->route('web.invoices.show', $invoice->id)
-                ->with('error', 'Invoice yang sudah dibayar tidak bisa dibatalkan.');
+                ->with('error', 'Invoice yang sudah lunas tidak bisa dibatalkan.');
         }
 
         if ($invoice->status === Invoice::STATUS_CANCELLED) {

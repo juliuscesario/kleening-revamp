@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use App\View\Composers\PendingCountComposer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,5 +36,7 @@ class AppServiceProvider extends ServiceProvider
                 $view->with(compact('diskPercent', 'diskUsedGB', 'diskTotalGB'));
             }
         });
+
+        View::composer('layouts.admin', PendingCountComposer::class);
     }
 }

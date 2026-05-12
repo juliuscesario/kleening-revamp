@@ -215,6 +215,27 @@
                   <span class="nav-link-title">Operational Planner</span>
                 </a>
               </li>
+
+              <li class="nav-item {{ request()->is('operational/pending*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('operational.pending.index') }}">
+                  <span class="nav-link-icon d-md-none d-lg-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alert-triangle" width="24"
+                      height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                      <path d="M12 9v4"></path>
+                      <path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"></path>
+                      <path d="M12 16h.01"></path>
+                    </svg>
+                  </span>
+                  <span class="nav-link-title">
+                    Pending
+                    @if(isset($pendingCount) && $pendingCount > 0)
+                      <span class="badge bg-red badge-sm ms-1">{{ $pendingCount }}</span>
+                    @endif
+                  </span>
+                </a>
+              </li>
             @endif
 
             {{-- NEW "MASTER" DROPDOWN MENU --}}
@@ -447,6 +468,10 @@
                       <a class="dropdown-item {{ request()->is('reports/machine-attendance*') ? 'active' : '' }}"
                         href="{{ route('web.reports.machine-attendance') }}">
                         Absensi Mesin
+                      </a>
+                      <a class="dropdown-item {{ request()->routeIs('web.laporan.machine-tracker') ? 'active' : '' }}"
+                        href="{{ route('web.laporan.machine-tracker') }}">
+                        Machine Tracker
                       </a>
                       @endif
                     </div>

@@ -8,10 +8,13 @@
         <div class="row align-items-center">
             <div class="col">
                 <h2 class="page-title">Detail Service Order: {{ $serviceOrder->so_number }}</h2>
+                @if($serviceOrder->isLocked())
+                    <span class="badge bg-success text-bg-success mt-1">Invoice Lunas — Terkunci</span>
+                @endif
             </div>
             <div class="col-auto ms-auto d-print-none">
                 <div class="btn-list">
-                    @if(in_array($serviceOrder->status, ['booked', 'proses']))
+                    @if(in_array($serviceOrder->status, ['booked', 'proses']) && !$serviceOrder->isLocked())
                     <form action="{{ route('web.service-orders.cancel', $serviceOrder) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin membatalkan order ini?')">
                         @csrf
                         <button type="submit" class="btn btn-danger">
@@ -42,13 +45,13 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
                         Confirm Order
                     </button>
-                    @if(auth()->user()->role !== 'staff')
+                    @if(auth()->user()->role !== 'staff' && !$serviceOrder->isLocked())
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editServiceOrderModal">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" /><path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" /><line x1="16" y1="5" x2="19" y2="8" /></svg>
                         Edit Service Order
                     </button>
                     @endif
-                    @if($serviceOrder->status !== 'done' && in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']))
+                    @if($serviceOrder->status !== 'done' && in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']) && !$serviceOrder->isLocked())
                     <form action="{{ route('web.service-orders.mark-complete', $serviceOrder) }}" method="POST" class="d-inline" onsubmit="return confirm('Tandai semua sesi dan SO sebagai selesai?')">
                         @csrf
                         <button type="submit" class="btn btn-success">
@@ -175,7 +178,7 @@
                     <div class="card-header">
                         <h3 class="card-title">Sesi Kerja</h3>
                         <div class="card-actions">
-                            @if(in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']))
+                            @if(in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']) && !$serviceOrder->isLocked())
                             <button class="btn btn-sm btn-primary" id="btn-add-session">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5v14m-7-7h14"/></svg>
                                 Tambah Sesi
@@ -259,7 +262,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if(in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']))
+                                            @if(in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']) && !$serviceOrder->isLocked())
                                             <div class="btn-group">
                                                 <button class="btn btn-sm btn-secondary btn-edit-session"
                                                     data-session-id="{{ $session->id }}"
@@ -274,6 +277,8 @@
                                                     data-session-id="{{ $session->id }}"
                                                     title="Hapus">Hapus</button>
                                             </div>
+                                            @elseif(in_array(auth()->user()->role, ['admin', 'owner', 'co_owner']))
+                                            <span class="badge bg-secondary text-bg-secondary">Locked</span>
                                             @else
                                             <span class="text-muted">—</span>
                                             @endif
@@ -469,21 +474,16 @@
                     </div>
                     <div class="card-body">
                         @php
-                            $assignedStaff = $serviceOrder->allAssignedStaff();
+                            $workSessions = $serviceOrder->sessions->where('type', 'kerja');
                         @endphp
-                        @if($assignedStaff->isNotEmpty())
-                            <ul class="list-group list-group-flush">
-                                @foreach($assignedStaff as $staff)
-                                    <li class="list-group-item">{{ $staff->name }}</li>
-                                @endforeach
-                            </ul>
-                        @else
+                        @forelse($workSessions as $session)
+                            <div class="mb-2">
+                                <span class="text-muted">Sesi {{ $session->session_number }} ({{ $session->status_label }}):</span>
+                                {{ $session->staff->pluck('name')->join(', ') ?: '-' }}
+                            </div>
+                        @empty
                             <p class="text-muted">Belum ada staff yang ditugaskan.</p>
-                        @endif
-                        @if($serviceOrder->sessions->isNotEmpty())
-                            <hr>
-                            <p class="text-muted mt-2 mb-0" style="font-size:.75rem;">Staff per sesi tersedia di tabel Sesi Kerja.</p>
-                        @endif
+                        @endforelse
                     </div>
                 </div>
 

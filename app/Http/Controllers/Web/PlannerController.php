@@ -108,7 +108,7 @@ class PlannerController extends Controller
             ->with(['serviceOrder.customer', 'staff'])
             ->whereDate('tanggal', $date)
             ->whereHas('serviceOrder', function ($q) {
-                $q->withoutGlobalScopes()->where('status', ServiceOrder::STATUS_CANCELLED);
+                $q->withoutGlobalScopes()->where('status', 'cancel');
             })
             ->get();
 
@@ -207,7 +207,7 @@ class PlannerController extends Controller
      */
     private function computeLifecycleStatus(ServiceOrder $so): string
     {
-        if ($so->status === ServiceOrder::STATUS_CANCELLED) {
+        if ($so->status === 'cancel') {
             return 'cancelled';
         }
         if ($so->status === ServiceOrder::STATUS_BOOKED) {
@@ -240,6 +240,16 @@ class PlannerController extends Controller
      */
     public function updateField(Request $request, OrderSession $orderSession)
     {
+        $serviceOrder = $orderSession->serviceOrder;
+        $serviceOrder->load('invoice');
+
+        if ($serviceOrder->isLocked()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat mengedit sesi karena invoice sudah lunas.',
+            ], 403);
+        }
+
         $field = $request->input('field');
         $value = $request->input('value');
 
@@ -287,6 +297,16 @@ class PlannerController extends Controller
      */
     public function updateStaff(Request $request, OrderSession $orderSession)
     {
+        $serviceOrder = $orderSession->serviceOrder;
+        $serviceOrder->load('invoice');
+
+        if ($serviceOrder->isLocked()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat mengubah staff karena invoice sudah lunas.',
+            ], 403);
+        }
+
         $request->validate([
             'staff' => 'required|array',
             'staff.*' => 'exists:staff,id',
