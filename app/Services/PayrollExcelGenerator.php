@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AppSetting;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -69,6 +70,14 @@ class PayrollExcelGenerator
 
     public function generate($staff, int $year, int $month, int $period, array $rows, $workPhotos = null, $machineAttendances = null): Spreadsheet
     {
+        // Load denda settings from app_settings (fallback to defaults)
+        $dendaTelat = (int) AppSetting::get('denda_telat_amount', 10);
+        $dendaThreshold = (int) AppSetting::get('denda_telat_threshold', 15);
+        $dendaBefore = (int) AppSetting::get('denda_before_photo_amount', 10);
+        $dendaAfter = (int) AppSetting::get('denda_after_photo_amount', 10);
+        $dendaMesinPergi = (int) AppSetting::get('denda_mesin_pergi_amount', 10);
+        $dendaMesinPulang = (int) AppSetting::get('denda_mesin_pulang_amount', 10);
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Payroll');
@@ -80,7 +89,7 @@ class PayrollExcelGenerator
 
         $this->writeHeaderInfo($sheet, $staff, $periodLabel, $dateRange);
         $this->writeColumnHeaders($sheet);
-        $this->writeDataRows($sheet, $rows, $workPhotos ?? collect(), $machineAttendances ?? collect());
+        $this->writeDataRows($sheet, $rows, $workPhotos ?? collect(), $machineAttendances ?? collect(), $dendaTelat, $dendaThreshold, $dendaBefore, $dendaAfter, $dendaMesinPergi, $dendaMesinPulang);
         $this->writeTemplateRows($sheet);
         $this->writeTotalRows($sheet);
         $this->setColumnWidths($sheet);
@@ -156,7 +165,7 @@ class PayrollExcelGenerator
         // O is already empty in HEADERS, styled by the B2:AA2 range
     }
 
-    private function writeDataRows($sheet, array $rows, $workPhotos, $machineAttendances): void
+    private function writeDataRows($sheet, array $rows, $workPhotos, $machineAttendances, int $dendaTelat, int $dendaThreshold, int $dendaBefore, int $dendaAfter, int $dendaMesinPergi, int $dendaMesinPulang): void
     {
         // Track first row of each SO and first row of each date for photo/mesin checks
         $seenSoIds = [];
@@ -236,9 +245,9 @@ class PayrollExcelGenerator
             // Apply conditional color to TIME cell (saved for re-application after row bg)
             $timeCellColor = $this->getTimeCellColor($lateMinutes, $hasArrival);
 
-            // DENDA (S) — -10 if late > 15 min, else blank
-            if ($lateMinutes > 15) {
-                $sheet->setCellValueExplicit("S{$r}", -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+            // DENDA (S) — -dendaTelat if late > $dendaThreshold min, else blank
+            if ($lateMinutes > $dendaThreshold) {
+                $sheet->setCellValueExplicit("S{$r}", -$dendaTelat, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             } else {
                 $sheet->setCellValueExplicit("S{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
             }
@@ -260,7 +269,7 @@ class PayrollExcelGenerator
                 $photoTypes = $workPhotos[$soId] ?? [];
                 $hasBefore = in_array('before', $photoTypes);
                 $sheet->setCellValue("T{$r}", $hasBefore ? '✓' : '✗');
-                $sheet->setCellValueExplicit("U{$r}", $hasBefore ? null : -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                $sheet->setCellValueExplicit("U{$r}", $hasBefore ? null : -$dendaBefore, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             } else {
                 $sheet->setCellValueExplicit("T{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
                 $sheet->setCellValueExplicit("U{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
@@ -271,7 +280,7 @@ class PayrollExcelGenerator
                 $photoTypes = $workPhotos[$soId] ?? [];
                 $hasAfter = in_array('after', $photoTypes);
                 $sheet->setCellValue("V{$r}", $hasAfter ? '✓' : '✗');
-                $sheet->setCellValueExplicit("W{$r}", $hasAfter ? null : -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                $sheet->setCellValueExplicit("W{$r}", $hasAfter ? null : -$dendaAfter, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             } else {
                 $sheet->setCellValueExplicit("V{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
                 $sheet->setCellValueExplicit("W{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
@@ -282,10 +291,10 @@ class PayrollExcelGenerator
                 $attendance = $machineAttendances[$dateKey] ?? null;
                 $hasPergi = $attendance && !empty($attendance->photo_pergi);
                 $sheet->setCellValue("X{$r}", $hasPergi ? '✓' : '✗');
-                $sheet->setCellValueExplicit("Y{$r}", $hasPergi ? null : -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                $sheet->setCellValueExplicit("Y{$r}", $hasPergi ? null : -$dendaMesinPergi, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
                 $hasPulang = $attendance && !empty($attendance->photo_pulang);
                 $sheet->setCellValue("Z{$r}", $hasPulang ? '✓' : '✗');
-                $sheet->setCellValueExplicit("AA{$r}", $hasPulang ? null : -10, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                $sheet->setCellValueExplicit("AA{$r}", $hasPulang ? null : -$dendaMesinPulang, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             } else {
                 $sheet->setCellValueExplicit("X{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);
                 $sheet->setCellValueExplicit("Y{$r}", null, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NULL);

@@ -109,9 +109,6 @@ $(function () {
     if (document.getElementById('invoice-show-page')) {
         import('./pages/invoices-show.js');
     }
-    if (document.getElementById('chart-daily-revenue')) {
-        import('./pages/dashboard-owner.js');
-    }
     if (document.getElementById('revenue-report-table')) {
         import('./pages/report-revenue.js');
     }

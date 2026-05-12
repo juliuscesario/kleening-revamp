@@ -24,6 +24,7 @@ if (form) {
     const addressesUrlTemplate = form.dataset.addressesUrlTemplate;
     const staffByAreaUrlTemplate = form.dataset.staffByAreaUrlTemplate;
     const pendingCheckUrlTemplate = form.dataset.pendingCheckUrlTemplate;
+    const checkActiveUrl = form.dataset.checkActiveUrl;
 
     // --- State ---
     let allServices = [];
@@ -137,6 +138,9 @@ if (form) {
             customerIdInput.value = customerId;
             customerResultsContainer.classList.remove('is-active');
 
+            // Check for active SO on this customer's phone number
+            checkActiveSO(customerId);
+
             // Trigger address loading
             loadAddresses(customerId);
         }
@@ -178,6 +182,42 @@ if (form) {
             addressSelect.value = addresses[0].id;
             // Trigger change event to load staff for the area
             addressSelect.dispatchEvent(new Event('change'));
+        }
+    };
+
+    // --- Active SO Check by Phone ---
+    const checkActiveSO = async (customerId) => {
+        if (!checkActiveUrl || !customerId) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${checkActiveUrl}?customer_id=${customerId}`, {
+                headers: { 'Accept': 'application/json' },
+            });
+            const data = await response.json();
+
+            // Remove existing warning
+            const existingWarning = document.getElementById('so-duplicate-warning');
+            if (existingWarning) {
+                existingWarning.remove();
+            }
+
+            if (data.has_active) {
+                const wrapper = document.createElement('div');
+                wrapper.id = 'so-duplicate-warning';
+                wrapper.className = 'alert alert-warning mt-2 mb-0';
+                wrapper.innerHTML = '⚠️ Nomor telepon pelanggan ini sudah punya SO aktif: <strong>' +
+                    escapeHtml(data.so_number) + '</strong> (' + escapeHtml(data.status) + ') atas nama "' +
+                    escapeHtml(data.customer_name) + '". Pastikan ini bukan duplikat.';
+
+                const wrapperEl = customerSearchInput.closest('.custom-search-wrapper');
+                if (wrapperEl) {
+                    wrapperEl.appendChild(wrapper);
+                }
+            }
+        } catch (error) {
+            console.error('Active SO check failed:', error);
         }
     };
 
@@ -438,6 +478,13 @@ if (form) {
             showWarning('Gagal memvalidasi status Service Order customer. Silakan coba lagi.');
         }
     });
+
+    // --- Utility ---
+    const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
 
     // --- Initial Data Fetch ---
     fetchServices();

@@ -115,6 +115,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('customers', CustomerController::class)->names('web.customers');
     Route::resource('addresses', AddressController::class)->names('web.addresses');
     Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');
+    Route::get('service-orders/check-active', [ServiceOrderController::class, 'checkActive'])->name('web.service-orders.check-active');
     Route::resource('service-orders', ServiceOrderController::class)->names('web.service-orders');
     Route::post('service-orders/{serviceOrder}/mark-complete', [ServiceOrderController::class, 'markComplete'])->name('web.service-orders.mark-complete');
     Route::post('service-orders/{serviceOrder}/cancel', [ServiceOrderController::class, 'cancel'])->name('web.service-orders.cancel');
@@ -193,6 +194,9 @@ Route::middleware(['auth', 'role:owner,co_owner'])->group(function () {
     Route::post('scheduler-logs/delete-photos/preview', [SchedulerLogController::class, 'previewDeletePhotos'])->name('scheduler-logs.delete-photos.preview');
     Route::get('scheduler-logs/delete-photos/download', [SchedulerLogController::class, 'downloadPhotoBackup'])->name('scheduler-logs.delete-photos.download');
     Route::post('scheduler-logs/delete-photos/confirm', [SchedulerLogController::class, 'confirmDeletePhotos'])->name('scheduler-logs.delete-photos.confirm');
+
+    Route::get('system/denda-setting', [\App\Http\Controllers\DendaSettingController::class, 'index'])->name('system.denda-setting.index');
+    Route::post('system/denda-setting', [\App\Http\Controllers\DendaSettingController::class, 'update'])->name('system.denda-setting.update');
 });
 
 Route::middleware(['auth', 'role:owner'])->group(function () {

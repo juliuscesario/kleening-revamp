@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Area;
 use App\Models\MachineAttendance;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -67,13 +68,120 @@ class DashboardController extends Controller
             $viewData['funnelInvoiced'] = (clone $serviceOrderQuery)->where('status', ServiceOrder::STATUS_INVOICED)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
             $viewData['funnelDone'] = (clone $serviceOrderQuery)->where('status', ServiceOrder::STATUS_DONE)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
 
-            // Monthly Revenue Chart (Daily)
-            $viewData['dailyRevenue'] = (clone $invoiceQuery)->selectRaw('DATE(updated_at) as date, SUM(grand_total) as total')
+            // Monthly Activity Counts
+            $viewData['soStats'] = [
+                'created' => (clone $serviceOrderQuery)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count(),
+                'done'    => (clone $serviceOrderQuery)->where('status', ServiceOrder::STATUS_DONE)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count(),
+                'cancel'  => (clone $serviceOrderQuery)->where('status', ServiceOrder::STATUS_CANCELLED)->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count(),
+            ];
+
+            // Last month SO stats
+            $lastMonthStart = now()->subMonth()->startOfMonth();
+            $lastMonthEnd = now()->subMonth()->endOfMonth();
+            $serviceOrderQueryLastMonth = ServiceOrder::query();
+            if ($role === 'co-owner') {
+                $serviceOrderQueryLastMonth->whereHas('address', fn($q) => $q->where('area_id', $user->area_id));
+            }
+            $viewData['soStatsLastMonth'] = [
+                'created' => (clone $serviceOrderQueryLastMonth)->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])->count(),
+                'done'    => (clone $serviceOrderQueryLastMonth)->where('status', ServiceOrder::STATUS_DONE)->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])->count(),
+                'cancel'  => (clone $serviceOrderQueryLastMonth)->where('status', ServiceOrder::STATUS_CANCELLED)->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])->count(),
+            ];
+
+            $invoiceQueryOwner = Invoice::withoutGlobalScopes()->whereBetween('invoices.created_at', [$startOfMonth, $endOfMonth]);
+            if ($role === 'owner') {
+                // owner sees all areas
+            } else {
+                $invoiceQueryOwner->whereHas('serviceOrder.address', fn($q) => $q->where('area_id', $user->area_id));
+            }
+            $viewData['invoiceStats'] = [
+                'created' => (clone $invoiceQueryOwner)->count(),
+                'sent'    => (clone $invoiceQueryOwner)->where('status', Invoice::STATUS_SENT)->count(),
+                'paid'    => (clone $invoiceQueryOwner)->where('status', Invoice::STATUS_PAID)->count(),
+                'cancel'  => (clone $invoiceQueryOwner)->where('status', Invoice::STATUS_CANCELLED)->count(),
+                'overdue' => (clone $invoiceQueryOwner)->where('status', Invoice::STATUS_OVERDUE)->count(),
+            ];
+
+            // Last month invoice stats
+            $invoiceQueryLastMonth = Invoice::withoutGlobalScopes()->whereBetween('invoices.created_at', [$lastMonthStart, $lastMonthEnd]);
+            if ($role === 'co-owner') {
+                $invoiceQueryLastMonth->whereHas('serviceOrder.address', fn($q) => $q->where('area_id', $user->area_id));
+            }
+            $viewData['invoiceStatsLastMonth'] = [
+                'created' => (clone $invoiceQueryLastMonth)->count(),
+                'sent'    => (clone $invoiceQueryLastMonth)->where('status', Invoice::STATUS_SENT)->count(),
+                'paid'    => (clone $invoiceQueryLastMonth)->where('status', Invoice::STATUS_PAID)->count(),
+                'cancel'  => (clone $invoiceQueryLastMonth)->where('status', Invoice::STATUS_CANCELLED)->count(),
+                'overdue' => (clone $invoiceQueryLastMonth)->where('status', Invoice::STATUS_OVERDUE)->count(),
+            ];
+
+            // Card 5 — SO Tanpa Invoice
+            $viewData['soWithoutInvoice'] = (clone $serviceOrderQuery)
+                ->where('status', ServiceOrder::STATUS_DONE)
+                ->doesntHave('invoice')
+                ->count();
+
+            // Card 6 — Rata-rata Umur Invoice (PostgreSQL)
+            $avgInvoiceAge = Invoice::withoutGlobalScopes()
                 ->where('status', Invoice::STATUS_PAID)
-                ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
-                ->groupBy('date')
-                ->orderBy('date', 'asc')
-                ->get();
+                ->whereMonth('updated_at', now()->month)
+                ->whereYear('updated_at', now()->year)
+                ->selectRaw("AVG(DATE_PART('day', updated_at - created_at)) as avg_days")
+                ->value('avg_days');
+            $viewData['avgInvoiceAge'] = round($avgInvoiceAge ?? 0);
+
+            // Revenue Trend (6 months)
+            $rawTrend = Invoice::withoutGlobalScopes()
+                ->where('status', Invoice::STATUS_PAID)
+                ->where('updated_at', '>=', now()->subMonths(5)->startOfMonth())
+                ->selectRaw("TO_CHAR(updated_at, 'YYYY-MM') as month, SUM(grand_total) as total")
+                ->groupBy('month')
+                ->orderBy('month')
+                ->pluck('total', 'month')
+                ->toArray();
+
+            // Fill missing months with 0
+            $revenueTrend = collect();
+            for ($i = 5; $i >= 0; $i--) {
+                $key = now()->subMonths($i)->format('Y-m');
+                $revenueTrend->put($key, $rawTrend[$key] ?? 0);
+            }
+            $viewData['revenueTrend'] = $revenueTrend;
+
+            // Revenue by Category (this month)
+            $viewData['revenueByCategory'] = Invoice::withoutGlobalScopes()
+                ->where('invoices.status', Invoice::STATUS_PAID)
+                ->whereMonth('invoices.updated_at', now()->month)
+                ->whereYear('invoices.updated_at', now()->year)
+                ->join('service_orders', 'service_orders.id', '=', 'invoices.service_order_id')
+                ->join('service_order_items', 'service_order_items.service_order_id', '=', 'service_orders.id')
+                ->join('services', 'services.id', '=', 'service_order_items.service_id')
+                ->join('service_categories', 'service_categories.id', '=', 'services.category_id')
+                ->selectRaw('service_categories.name as category, SUM(invoices.grand_total) as total')
+                ->groupBy('service_categories.name')
+                ->pluck('total', 'category');
+
+            // Invoice Aging
+            $now = now();
+            $unpaidStatuses = [Invoice::STATUS_NEW, Invoice::STATUS_SENT, Invoice::STATUS_OVERDUE];
+            $viewData['invoiceAging'] = [
+                '0-7 hari' => Invoice::withoutGlobalScopes()
+                    ->whereIn('status', $unpaidStatuses)
+                    ->where('created_at', '>=', $now->copy()->subDays(7))
+                    ->sum('grand_total'),
+                '8-14 hari' => Invoice::withoutGlobalScopes()
+                    ->whereIn('status', $unpaidStatuses)
+                    ->whereBetween('created_at', [$now->copy()->subDays(14), $now->copy()->subDays(7)])
+                    ->sum('grand_total'),
+                '15-30 hari' => Invoice::withoutGlobalScopes()
+                    ->whereIn('status', $unpaidStatuses)
+                    ->whereBetween('created_at', [$now->copy()->subDays(30), $now->copy()->subDays(14)])
+                    ->sum('grand_total'),
+                '30+ hari' => Invoice::withoutGlobalScopes()
+                    ->whereIn('status', $unpaidStatuses)
+                    ->where('created_at', '<', $now->copy()->subDays(30))
+                    ->sum('grand_total'),
+            ];
 
             // Area Performance (Owner only)
             if ($user->role === 'owner') {
@@ -101,6 +209,215 @@ class DashboardController extends Controller
                     return $area;
                 });
             }
+
+            // Admin Scorecard (for owner/coowner — admin performance)
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            $viewData['adminScorecard'] = $admins->map(function ($admin) {
+                $invoicesCount = \App\Models\Invoice::whereMonth('invoices.created_at', now()->month)
+                    ->whereYear('invoices.created_at', now()->year)
+                    ->join('service_orders', 'service_orders.id', '=', 'invoices.service_order_id')
+                    ->where('service_orders.created_by', $admin->id)
+                    ->count('invoices.id');
+
+                $avgTurnaround = \App\Models\Invoice::whereMonth('invoices.created_at', now()->month)
+                    ->whereYear('invoices.created_at', now()->year)
+                    ->join('service_orders', 'service_orders.id', '=', 'invoices.service_order_id')
+                    ->where('service_orders.created_by', $admin->id)
+                    ->where('service_orders.status', ServiceOrder::STATUS_DONE)
+                    ->selectRaw("AVG(DATE_PART('day', invoices.created_at - service_orders.updated_at)) as avg_days")
+                    ->value('avg_days');
+
+                return [
+                    'name' => $admin->name,
+                    'invoices_count' => $invoicesCount,
+                    'avg_turnaround' => round($avgTurnaround ?? 0, 1),
+                ];
+            });
+
+            // Bottleneck Alerts
+            $bottlenecks = collect();
+
+            // SOs stuck in proses > 2 days
+            $stuckProses = ServiceOrder::where('status', ServiceOrder::STATUS_PROSES)
+                ->where('updated_at', '<', now()->subDays(2))
+                ->with('customer:id,name')
+                ->orderBy('updated_at', 'asc')
+                ->limit(3)
+                ->get()
+                ->map(fn($so) => [
+                    'type' => 'so_stuck',
+                    'label' => "SO #{$so->so_number} — {$so->customer->name}",
+                    'detail' => 'Proses > ' . round(now()->diffInDays($so->updated_at)) . ' hari',
+                    'url' => route('web.service-orders.show', $so->id),
+                    'severity' => 'warning',
+                ]);
+
+            // SOs done without invoice > 1 day
+            $doneNoInvoice = ServiceOrder::where('status', ServiceOrder::STATUS_DONE)
+                ->doesntHave('invoice')
+                ->where('updated_at', '<', now()->subDay())
+                ->with('customer:id,name')
+                ->orderBy('updated_at', 'asc')
+                ->limit(3)
+                ->get()
+                ->map(fn($so) => [
+                    'type' => 'no_invoice',
+                    'label' => "SO #{$so->so_number} — {$so->customer->name}",
+                    'detail' => 'Done ' . round(now()->diffInDays($so->updated_at)) . ' hari, belum ada invoice',
+                    'url' => route('web.service-orders.show', $so->id),
+                    'severity' => 'danger',
+                ]);
+
+            // Invoices unpaid > 14 days
+            $overdueInvoices = Invoice::where('status', '!=', Invoice::STATUS_PAID)
+                ->where('created_at', '<', now()->subDays(14))
+                ->with('serviceOrder.customer:id,name')
+                ->orderBy('created_at', 'asc')
+                ->limit(3)
+                ->get()
+                ->map(fn($inv) => [
+                    'type' => 'overdue_invoice',
+                    'label' => "Invoice #{$inv->invoice_number} — Rp " . number_format($inv->grand_total, 0, ',', '.'),
+                    'detail' => 'Unpaid ' . round(now()->diffInDays($inv->created_at)) . ' hari',
+                    'url' => route('web.invoices.show', $inv->id),
+                    'severity' => 'danger',
+                ]);
+
+            $viewData['bottlenecks'] = $stuckProses->concat($doneNoInvoice)->concat($overdueInvoices)
+                ->sortBy(function ($item) {
+                    return $item['severity'] === 'danger' ? 0 : 1;
+                })
+                ->take(5)
+                ->values();
+
+            // Staff Leaderboard — only users with role=staff, grouped by area
+            $monthStart = now()->startOfMonth();
+            $monthEnd = now()->endOfMonth();
+
+            $activeStaff = \App\Models\Staff::where('is_active', true)
+                ->whereHas('user', function ($q) {
+                    $q->where('role', 'staff');
+                })
+                ->with('area')
+                ->get();
+
+            // Precompute sessions per staff via raw join for speed
+            $sessionCounts = DB::table('order_session_staff')
+                ->join('order_sessions', 'order_sessions.id', '=', 'order_session_staff.order_session_id')
+                ->where('order_sessions.type', 'kerja')
+                ->whereBetween('order_sessions.tanggal', [$monthStart, $monthEnd])
+                ->selectRaw('staff_id, count(*) as sessions')
+                ->groupBy('staff_id')
+                ->pluck('sessions', 'staff_id');
+
+            // Precompute photo compliance: count SOs with both before+after photos per staff this month
+            $staffSOs = DB::table('order_session_staff')
+                ->join('order_sessions', 'order_sessions.id', '=', 'order_session_staff.order_session_id')
+                ->where('order_sessions.type', 'kerja')
+                ->whereBetween('order_sessions.tanggal', [$monthStart, $monthEnd])
+                ->select('staff_id', 'order_sessions.service_order_id')
+                ->get();
+
+            // Group SOs by staff_id
+            $staffSOGrouped = $staffSOs->groupBy('staff_id')->map(function ($group) {
+                return $group->pluck('service_order_id')->unique();
+            });
+
+            // Bulk check work_photos: get all photos for relevant SOs
+            $allSOIds = $staffSOGrouped->flatten()->unique();
+            $photoTypes = DB::table('work_photos')
+                ->whereIn('service_order_id', $allSOIds)
+                ->whereIn('type', ['before', 'after'])
+                ->get()
+                ->groupBy('service_order_id');
+
+            $photoComplianceMap = [];
+            foreach ($staffSOGrouped as $staffId => $soIds) {
+                $total = $soIds->count();
+                if ($total === 0) {
+                    $photoComplianceMap[$staffId] = 100;
+                    continue;
+                }
+                $withBoth = 0;
+                foreach ($soIds as $soId) {
+                    $photos = $photoTypes[$soId] ?? collect();
+                    if ($photos->contains('type', 'before') && $photos->contains('type', 'after')) {
+                        $withBoth++;
+                    }
+                }
+                $photoComplianceMap[$staffId] = round(($withBoth / $total) * 100);
+            }
+
+            $viewData['staffLeaderboard'] = $activeStaff->map(function ($staff) use ($sessionCounts, $photoComplianceMap) {
+                return [
+                    'name' => $staff->name,
+                    'area' => optional($staff->area)->name ?? '-',
+                    'sessions' => $sessionCounts[$staff->id] ?? 0,
+                    'photo_compliance' => $photoComplianceMap[$staff->id] ?? 100,
+                ];
+            })->sortByDesc('sessions')->take(10)->values();
+
+            // ── Customer Insights (Owner/Co-owner only) ──
+            $now = now();
+            $monthStart = $now->copy()->startOfMonth();
+
+            // Total unique customers with SOs this month
+            $totalCustomersThisMonth = ServiceOrder::withoutGlobalScopes()
+                ->whereMonth('created_at', $now->month)
+                ->whereYear('created_at', $now->year)
+                ->distinct('customer_id')
+                ->count('customer_id');
+
+            // New customers created this month
+            $newCustomers = Customer::withoutGlobalScopes()
+                ->whereMonth('created_at', $now->month)
+                ->whereYear('created_at', $now->year)
+                ->count();
+
+            // Repeat customers: had SOs before this month AND have SOs this month
+            $repeatCustomers = DB::table('service_orders as so1')
+                ->whereMonth('so1.created_at', $now->month)
+                ->whereYear('so1.created_at', $now->year)
+                ->whereExists(function ($q) use ($monthStart) {
+                    $q->select(DB::raw(1))
+                        ->from('service_orders as so2')
+                        ->whereColumn('so2.customer_id', 'so1.customer_id')
+                        ->where('so2.created_at', '<', $monthStart);
+                })
+                ->distinct('so1.customer_id')
+                ->count('so1.customer_id');
+
+            $repeatRate = $totalCustomersThisMonth > 0
+                ? round(($repeatCustomers / $totalCustomersThisMonth) * 100)
+                : 0;
+
+            $viewData['customerOverview'] = [
+                'total' => $totalCustomersThisMonth,
+                'new' => $newCustomers,
+                'repeat' => $repeatCustomers,
+                'repeat_rate' => $repeatRate,
+            ];
+
+            // Top 5 customers by revenue
+            $topCustomerData = DB::table('customers')
+                ->select(
+                    'customers.name',
+                    DB::raw('COUNT(DISTINCT service_orders.id) as total_orders'),
+                    DB::raw("COALESCE(SUM(CASE WHEN invoices.id IS NOT NULL THEN invoices.grand_total ELSE 0 END), 0) as total_revenue"),
+                    DB::raw('MAX(service_orders.created_at) as last_order_at')
+                )
+                ->join('service_orders', 'service_orders.customer_id', '=', 'customers.id')
+                ->leftJoin('invoices', 'invoices.service_order_id', '=', 'service_orders.id')
+                ->groupBy('customers.id', 'customers.name')
+                ->orderByDesc('total_revenue')
+                ->limit(5)
+                ->get()
+                ->map(function ($c) {
+                    $c->days_since_last = $c->last_order_at ? round(now()->diffInDays($c->last_order_at)) : null;
+                    return $c;
+                });
+
+            $viewData['topCustomers'] = $topCustomerData;
 
         } elseif ($role === 'admin') {
             // Admin Widgets
@@ -247,8 +564,9 @@ class DashboardController extends Controller
 
         // Default empty values for keys not set in every role
         $collectionKeys = [
-            'dailyRevenue',
             'areaPerformance',
+            'revenueTrend',
+            'revenueByCategory',
             'todaySchedule',
             'unassignedJobs',
             'tomorrowSchedule',
@@ -256,7 +574,15 @@ class DashboardController extends Controller
             'tomorrowSessions',
             'pastSessions',
             'cancelledSessions',
-            'doneSessions'
+            'doneSessions',
+            'adminScorecard',
+            'bottlenecks',
+            'staffLeaderboard',
+            'customerOverview',
+            'topCustomers',
+        ];
+        $arrayKeys = [
+            'invoiceAging',
         ];
         $numericKeys = [
             'monthlyRevenue',
@@ -267,14 +593,25 @@ class DashboardController extends Controller
             'funnelBooked',
             'funnelProses',
             'funnelInvoiced',
+            'soWithoutInvoice',
+            'avgInvoiceAge',
             'totalDoneCount',
             'todayDoneCount',
-            'bookedCount'
+            'bookedCount',
+            'soStats',
+            'invoiceStats',
+            'soStatsLastMonth',
+            'invoiceStatsLastMonth',
         ];
 
         foreach ($collectionKeys as $key) {
             if (!isset($viewData[$key])) {
                 $viewData[$key] = collect();
+            }
+        }
+        foreach ($arrayKeys as $key) {
+            if (!isset($viewData[$key])) {
+                $viewData[$key] = [];
             }
         }
         foreach ($numericKeys as $key) {

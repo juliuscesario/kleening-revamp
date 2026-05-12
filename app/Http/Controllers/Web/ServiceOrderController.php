@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Address; // Add this line
+use App\Models\Customer;
 use Carbon\Carbon;
 use App\Actions\CreateServiceOrderAction;
 use App\Actions\UpdateServiceOrderAction;
@@ -28,6 +29,53 @@ class ServiceOrderController extends Controller
     public function create(Request $request)
     {
         return view('pages.service-orders.create');
+    }
+
+    /**
+     * AJAX endpoint — check if a customer's phone number has an active SO.
+     */
+    public function checkActive(Request $request)
+    {
+        $customer = Customer::find($request->customer_id);
+        if (!$customer) {
+            return response()->json(['has_active' => false]);
+        }
+
+        $activeStatuses = [
+            self::STATUS_BOOKED,
+            self::STATUS_PROSES,
+        ];
+
+        if (empty($customer->phone_number)) {
+            return response()->json(['has_active' => false]);
+        }
+
+        $searchVariants = [
+            $customer->phone_number,
+            '+' . $customer->phone_number,
+            '0' . substr($customer->phone_number, 2),
+            substr($customer->phone_number, 2),
+        ];
+
+        $activeSO = ServiceOrder::withoutGlobalScopes()
+            ->whereHas('customer', function ($q) use ($searchVariants) {
+                $q->withoutGlobalScopes()->whereIn('phone_number', $searchVariants);
+            })
+            ->where('customer_id', '!=', $customer->id)
+            ->whereIn('status', $activeStatuses)
+            ->with('customer')
+            ->first();
+
+        if ($activeSO) {
+            return response()->json([
+                'has_active' => true,
+                'so_number'  => $activeSO->so_number,
+                'status'     => $activeSO->status,
+                'customer_name' => $activeSO->customer->name ?? '-',
+            ]);
+        }
+
+        return response()->json(['has_active' => false]);
     }
 
     public function show(ServiceOrder $serviceOrder)
@@ -130,6 +178,39 @@ class ServiceOrderController extends Controller
         $address = Address::findOrFail($request->address_id);
         if ($user->role === 'co_owner' && $user->area_id !== $address->area_id) {
             abort(403, 'Anda tidak diizinkan membuat pesanan untuk area ini.');
+        }
+
+        // --- Duplicate Active SO Guard (phone-based) ---
+        $customer = Customer::findOrFail($request->customer_id);
+        $activeStatuses = [
+            ServiceOrder::STATUS_BOOKED,
+            ServiceOrder::STATUS_PROSES,
+        ];
+
+        if (!empty($customer->phone_number)) {
+            $searchVariants = [
+                $customer->phone_number,
+                '+' . $customer->phone_number,
+                '0' . substr($customer->phone_number, 2),
+                substr($customer->phone_number, 2),
+            ];
+
+            $existingActiveSO = ServiceOrder::withoutGlobalScopes()
+                ->whereHas('customer', function ($q) use ($searchVariants) {
+                    $q->withoutGlobalScopes()->whereIn('phone_number', $searchVariants);
+                })
+                ->where('customer_id', '!=', $request->customer_id)
+                ->whereIn('status', $activeStatuses)
+                ->with('customer')
+                ->first();
+
+            if ($existingActiveSO) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'customer_id' => 'Nomor telepon pelanggan ini sudah memiliki SO aktif (#' . $existingActiveSO->so_number . ') atas nama "' . ($existingActiveSO->customer->name ?? '-') . '". Selesaikan atau batalkan SO tersebut terlebih dahulu.',
+                    ]);
+            }
         }
 
         $hasPendingServiceOrder = ServiceOrder::where('customer_id', $request->customer_id)

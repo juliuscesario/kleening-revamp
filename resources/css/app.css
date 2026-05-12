@@ -209,6 +209,27 @@ header.navbar .navbar-brand-image {
     background-color: var(--bg-canvas) !important;
 }
 
+/* Text Selection — visible in both light and dark */
+::selection {
+    background-color: rgba(33, 150, 243, 0.35);
+    color: inherit;
+}
+
+::-moz-selection {
+    background-color: rgba(33, 150, 243, 0.35);
+    color: inherit;
+}
+
+[data-bs-theme="dark"] ::selection {
+    background-color: rgba(33, 150, 243, 0.5);
+    color: #FAF9F6;
+}
+
+[data-bs-theme="dark"] ::-moz-selection {
+    background-color: rgba(33, 150, 243, 0.5);
+    color: #FAF9F6;
+}
+
 /* Select2 Dark Mode Overrides */
 [data-bs-theme="dark"] .select2-container--default .select2-selection--single,
 [data-bs-theme="dark"] .select2-container--default .select2-selection--multiple {

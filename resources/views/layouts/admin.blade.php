@@ -509,10 +509,10 @@
 
             {{-- SYSTEM DROPDOWN --}}
             @if(in_array(strtolower(trim(Auth::user()->role)), ['owner', 'co_owner']))
-              <li class="nav-item dropdown {{ request()->is('scheduler-logs*') ? 'active' : '' }}">
+              <li class="nav-item dropdown {{ request()->is('scheduler-logs*', 'system/denda-setting*') ? 'active' : '' }}">
                 <a class="nav-link dropdown-toggle" href="#navbar-system" data-bs-toggle="dropdown"
                   data-bs-auto-close="false" role="button"
-                  aria-expanded="{{ request()->is('scheduler-logs*') ? 'true' : 'false' }}">
+                  aria-expanded="{{ request()->is('scheduler-logs*', 'system/denda-setting*') ? 'true' : 'false' }}">
                   <span class="nav-link-icon d-md-none d-lg-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-settings" width="24"
                       height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -526,19 +526,30 @@
                   </span>
                   <span class="nav-link-title">System</span>
                 </a>
-                <div class="dropdown-menu {{ request()->is('scheduler-logs*') ? 'show' : '' }}">
+                <div class="dropdown-menu {{ request()->is('scheduler-logs*', 'system/denda-setting*') ? 'show' : '' }}">
                   <div class="dropdown-menu-columns">
                     <div class="dropdown-menu-column">
-                      <a class="dropdown-item {{ request()->is('scheduler-logs*') ? 'active' : '' }}"
-                        href="{{ route('scheduler-logs.index') }}">
-                        Scheduler Logs
-                      </a>
                       @if(Auth::user()->role === 'owner')
                         <a class="dropdown-item {{ request()->is('settings*') ? 'active' : '' }}"
                           href="{{ route('web.settings.index') }}">
                           App Settings
                         </a>
                       @endif
+                      <a class="dropdown-item {{ request()->is('system/denda-setting*') ? 'active' : '' }}"
+                        href="{{ route('system.denda-setting.index') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-cash-off me-1" width="18"
+                          height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                          <path d="M16 5h2.5l2 2.5l.5 -2.5v-1h-5v4m.5 4l-1 5m-3 -1h-5l-2 -2.5l-.5 2.5v1h5v-4m-.5 -4l1 -5"></path>
+                          <path d="M3 3l18 18"></path>
+                        </svg>
+                        Denda Setting
+                      </a>
+                      <a class="dropdown-item {{ request()->is('scheduler-logs*') ? 'active' : '' }}"
+                        href="{{ route('scheduler-logs.index') }}">
+                        Scheduler Logs
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -655,6 +666,7 @@
     </div>
   </div>
   @vite(['resources/js/app.js'])
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   @stack('scripts')
 </body>
 

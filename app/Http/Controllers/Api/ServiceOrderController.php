@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Services\ImageCompressor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Spatie\Image\Image;
 use App\Models\ServiceOrder;
 use App\Models\MachineAttendance;
 use App\Http\Resources\ServiceOrderResource;
@@ -398,10 +400,32 @@ class ServiceOrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Gambar tanda tangan tidak valid.'], 400);
         }
 
-        // Save to storage using public disk (same as ImageCompressor)
-        $fileName = 'signature_' . time() . '_' . uniqid() . '.' . $extension;
+        // Compress signature image before storing
+        $fileName = 'signature_' . time() . '_' . uniqid() . '.jpg';
         $path = 'work_photos/' . $fileName;
-        \Illuminate\Support\Facades\Storage::disk('public')->put($path, $imageData);
+
+        try {
+            // Write raw data to temp file, then compress with spatie/image
+            $tempPath = sys_get_temp_dir() . '/' . uniqid('sig_') . '.' . $extension;
+            file_put_contents($tempPath, $imageData);
+
+            $fullPath = Storage::disk('public')->path($path);
+            $outputDir = dirname($fullPath);
+            if (!is_dir($outputDir)) {
+                mkdir($outputDir, 0755, true);
+            }
+
+            Image::load($tempPath)
+                ->width(600)
+                ->format('jpg')
+                ->quality(75)
+                ->save($fullPath);
+
+            @unlink($tempPath);
+        } catch (\Throwable $e) {
+            // Fallback: store raw data
+            Storage::disk('public')->put($path, $imageData);
+        }
 
         // Create WorkPhoto record with type='signature'
         $serviceOrder->workPhotos()->create([

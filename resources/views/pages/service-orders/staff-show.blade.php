@@ -88,18 +88,58 @@
                     <div class="card-header">
                         <h3 class="card-title">Staff yang Bertugas</h3>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         @php
-                            $workSessions = $serviceOrder->sessions->where('type', 'kerja');
+                            $workSessions = $serviceOrder->sessions
+                                ->where('type', 'kerja')
+                                ->sortBy('tanggal')
+                                ->values();
                         @endphp
-                        @forelse($workSessions as $session)
-                            <div class="mb-2">
-                                <span class="text-muted">Sesi {{ $session->session_number }} ({{ $session->status_label }}):</span>
-                                {{ $session->staff->pluck('name')->join(', ') ?: '-' }}
-                            </div>
-                        @empty
-                            <p class="text-muted">Belum ada staff yang ditugaskan.</p>
-                        @endforelse
+                        @if($workSessions->isEmpty())
+                            <div class="p-3 text-muted">Belum ada sesi kerja.</div>
+                        @else
+                            <ul class="list-group list-group-flush">
+                                @foreach($workSessions as $i => $session)
+                                    <li class="list-group-item">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <span class="fw-bold">Sesi {{ $i + 1 }}</span>
+                                            @php
+                                                $statusLabel = match($session->status ?? '') {
+                                                    'done'   => 'Selesai',
+                                                    'proses' => 'Sedang Dikerjakan',
+                                                    'cancel' => 'Dibatalkan',
+                                                    default  => 'Dipesan',
+                                                };
+                                                $badgeClass = match($session->status ?? '') {
+                                                    'done'   => 'bg-success',
+                                                    'proses' => 'bg-warning',
+                                                    'cancel' => 'bg-danger',
+                                                    default  => 'bg-secondary',
+                                                };
+                                            @endphp
+                                            <span class="badge text-white {{ $badgeClass }}">
+                                                {{ $statusLabel }}
+                                            </span>
+                                        </div>
+                                        <div class="text-muted small mb-1">
+                                            {{ $session->tanggal ? \Carbon\Carbon::parse($session->tanggal)->format('d M Y') : '-' }}
+                                        </div>
+                                        @if($session->staff->isEmpty())
+                                            <div class="text-muted small">— Belum ada staff</div>
+                                        @else
+                                            @foreach($session->staff as $staffMember)
+                                                <div class="d-flex align-items-center gap-2 mt-1">
+                                                    <span class="avatar avatar-xs rounded-circle bg-blue-lt">
+                                                        {{ strtoupper(substr($staffMember->name, 0, 1)) }}
+                                                    </span>
+                                                    <span>{{ $staffMember->name }}</span>
+                                                </div>
+                                            @endforeach
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
                     </div>
                 </div>
 
@@ -179,9 +219,9 @@
                     </div>
                     <div class="card-body">
                         <h5>Catatan Invoice</h5>
-                        <p class="text-muted">{{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
+                        <p style="font-size: 1rem;">{{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
                         <h5 class="mt-3">Catatan Internal (untuk Staff)</h5>
-                        <p class="text-muted">{{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>
+                        <p style="font-size: 1rem;">{{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>
                     </div>
                 </div>
 
@@ -338,18 +378,58 @@
                     <div class="card-header">
                         <h3 class="card-title">Staff yang Bertugas</h3>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         @php
-                            $workSessions = $serviceOrder->sessions->where('type', 'kerja');
+                            $workSessions = $serviceOrder->sessions
+                                ->where('type', 'kerja')
+                                ->sortBy('tanggal')
+                                ->values();
                         @endphp
-                        @forelse($workSessions as $session)
-                            <div class="mb-2">
-                                <span class="text-muted">Sesi {{ $session->session_number }} ({{ $session->status_label }}):</span>
-                                {{ $session->staff->pluck('name')->join(', ') ?: '-' }}
-                            </div>
-                        @empty
-                            <p class="text-muted">Belum ada staff yang ditugaskan.</p>
-                        @endforelse
+                        @if($workSessions->isEmpty())
+                            <div class="p-3 text-muted">Belum ada sesi kerja.</div>
+                        @else
+                            <ul class="list-group list-group-flush">
+                                @foreach($workSessions as $i => $session)
+                                    <li class="list-group-item">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <span class="fw-bold">Sesi {{ $i + 1 }}</span>
+                                            @php
+                                                $statusLabel = match($session->status ?? '') {
+                                                    'done'   => 'Selesai',
+                                                    'proses' => 'Sedang Dikerjakan',
+                                                    'cancel' => 'Dibatalkan',
+                                                    default  => 'Dipesan',
+                                                };
+                                                $badgeClass = match($session->status ?? '') {
+                                                    'done'   => 'bg-success',
+                                                    'proses' => 'bg-warning',
+                                                    'cancel' => 'bg-danger',
+                                                    default  => 'bg-secondary',
+                                                };
+                                            @endphp
+                                            <span class="badge text-white {{ $badgeClass }}">
+                                                {{ $statusLabel }}
+                                            </span>
+                                        </div>
+                                        <div class="text-muted small mb-1">
+                                            {{ $session->tanggal ? \Carbon\Carbon::parse($session->tanggal)->format('d M Y') : '-' }}
+                                        </div>
+                                        @if($session->staff->isEmpty())
+                                            <div class="text-muted small">— Belum ada staff</div>
+                                        @else
+                                            @foreach($session->staff as $staffMember)
+                                                <div class="d-flex align-items-center gap-2 mt-1">
+                                                    <span class="avatar avatar-xs rounded-circle bg-blue-lt">
+                                                        {{ strtoupper(substr($staffMember->name, 0, 1)) }}
+                                                    </span>
+                                                    <span>{{ $staffMember->name }}</span>
+                                                </div>
+                                            @endforeach
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
                     </div>
                 </div>
 
@@ -359,9 +439,9 @@
                     </div>
                     <div class="card-body">
                         <h5>Catatan Invoice</h5>
-                        <p class="text-muted">{{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
+                        <p style="font-size: 1rem;">{{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
                         <h5 class="mt-3">Catatan Internal (untuk Staff)</h5>
-                        <p class="text-muted">{{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>
+                        <p style="font-size: 1rem;">{{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>
                     </div>
                 </div>
             </div>

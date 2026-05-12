@@ -175,6 +175,7 @@
                 data-services-url="{{ route('data.services') }}"
                 data-staff-by-area-url-template="{{ route('data.staff.by-area', ['area' => '__AREA_ID__']) }}"
                 data-pending-check-url-template="{{ route('data.customers.pending-service-orders', ['customer' => '__CUSTOMER_ID__']) }}"
+                data-check-active-url="{{ route('web.service-orders.check-active') }}"
             >
                 @csrf
                 <div class="card-body">
@@ -182,9 +183,12 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Customer</label>
                             <div class="custom-search-wrapper">
-                                <input type="text" id="customer-search" class="form-control" placeholder="Cari nama customer..." autocomplete="off">
+                                <input type="text" id="customer-search" class="form-control {{ $errors->has('customer_id') ? 'is-invalid' : '' }}" placeholder="Cari nama customer..." autocomplete="off">
                                 <input type="hidden" name="customer_id" id="customer_id" required>
                                 <div id="customer-results" class="custom-search-results"></div>
+                                @error('customer_id')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">

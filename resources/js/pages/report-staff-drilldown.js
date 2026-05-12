@@ -88,8 +88,9 @@ $(function () {
             }
         },
         columns: [
-            { data: 'so_number', name: 'so_number' },
+            { data: 'tanggal', name: 'order_sessions.tanggal' },
             { data: 'customer_name', name: 'customer.name' },
+            { data: 'invoice_total', name: 'invoice.grand_total' },
             {
                 data: 'customer_address',
                 name: 'address.full_address',
@@ -100,8 +101,16 @@ $(function () {
                     return data;
                 }
             },
-            { data: 'tanggal', name: 'order_sessions.tanggal' },
-            { data: 'invoice_total', name: 'invoice.grand_total' },
+            {
+                data: 'so_id',
+                name: 'so_id',
+                orderable: false,
+                render: function (data, type, row) {
+                    if (type !== 'display') return data;
+                    const url = `/service-orders/${data}`;
+                    return `<a href="${url}" class="btn btn-sm btn-primary" target="_blank">Service Order</a>`;
+                }
+            },
             {
                 data: 'status',
                 name: 'status',
@@ -131,6 +140,6 @@ $(function () {
             });
         },
         pageLength: 25,
-        order: [[3, 'asc']]
+        order: [[0, 'asc']]
     });
 });
