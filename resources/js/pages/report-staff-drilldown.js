@@ -100,7 +100,7 @@ $(function () {
                     return data;
                 }
             },
-            { data: 'work_date', name: 'work_date' },
+            { data: 'tanggal', name: 'order_sessions.tanggal' },
             { data: 'invoice_total', name: 'invoice.grand_total' },
             {
                 data: 'status',

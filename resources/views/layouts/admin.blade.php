@@ -267,10 +267,6 @@
                           href="{{ route('web.machines.index') }}">
                           Manajemen Mesin
                         </a>
-                        <a class="dropdown-item {{ request()->is('master-data/machine-attendances*') ? 'active' : '' }}"
-                          href="{{ route('web.machine-attendances.index') }}">
-                          Absensi Mesin
-                        </a>
                       @endif
                     </div>
                   </div>

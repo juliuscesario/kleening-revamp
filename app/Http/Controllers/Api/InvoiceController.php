@@ -52,7 +52,7 @@ class InvoiceController extends Controller
 
             // 4. Buat Invoice baru
             $newInvoice = $serviceOrder->invoice()->create([
-                'invoice_number' => 'INV/' . Carbon::now()->format('Y/m/') . $serviceOrder->id,
+                'invoice_number' => Invoice::generateNumber(),
                 'issue_date' => Carbon::now(),
                 'due_date' => Carbon::now()->addDays(7),
                 'subtotal' => $subtotal,

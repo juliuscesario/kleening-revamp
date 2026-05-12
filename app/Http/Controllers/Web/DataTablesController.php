@@ -781,7 +781,7 @@ class DataTablesController extends Controller
             ->addColumn('jobs_completed', function ($staff) use ($request) {
                 $jobsQuery = \App\Models\Invoice::where('status', \App\Models\Invoice::STATUS_PAID)
                     ->whereHas('serviceOrder', function ($soQuery) use ($staff) {
-                        $soQuery->whereHas('staff', function ($staffQuery) use ($staff) {
+                        $soQuery->whereHas('sessions.staff', function ($staffQuery) use ($staff) {
                             $staffQuery->where('staff.id', $staff->id);
                         });
                     });
@@ -803,7 +803,7 @@ class DataTablesController extends Controller
                 $revenueQuery = \App\Models\Invoice::where('status', \App\Models\Invoice::STATUS_PAID)
                     ->whereHas('serviceOrder', function ($soQuery) use ($staff) {
                         $soQuery->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
-                            ->whereHas('staff', function ($staffQuery) use ($staff) {
+                            ->whereHas('sessions.staff', function ($staffQuery) use ($staff) {
                                 $staffQuery->where('staff.id', $staff->id);
                             });
                     });
@@ -1107,12 +1107,11 @@ class DataTablesController extends Controller
 
         $query = \App\Models\ServiceOrder::query()
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
-            ->distinct('service_orders.id')
             ->join('order_sessions', 'order_sessions.service_order_id', '=', 'service_orders.id')
             ->join('order_session_staff', 'order_session_staff.order_session_id', '=', 'order_sessions.id')
             ->where('order_session_staff.staff_id', $staff->id)
-            ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
-            ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+            ->whereIn('service_orders.status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
+            ->whereBetween('order_sessions.tanggal', [$request->start_date, $request->end_date]);
 
         if ($request->filled('area_id') && $request->area_id !== 'all') {
             $query->whereHas('address', function ($q) use ($request) {
@@ -1121,8 +1120,8 @@ class DataTablesController extends Controller
         }
 
         $workload = $query->select(
-            DB::raw('DATE_TRUNC(\'week\', work_date) as week_start'),
-            DB::raw('COUNT(service_orders.id) as jobs_count')
+            DB::raw('DATE_TRUNC(\'week\', order_sessions.tanggal) as week_start'),
+            DB::raw('COUNT(DISTINCT service_orders.id) as jobs_count')
         )
             ->groupBy('week_start')
             ->orderBy('week_start', 'asc')
@@ -1150,7 +1149,7 @@ class DataTablesController extends Controller
         $specialization = \App\Models\ServiceOrderItem::query()
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
             ->whereHas('serviceOrder', function ($q) use ($staff, $request) {
-                $q->whereHas('staff', function ($sq) use ($staff) {
+                $q->whereHas('sessions.staff', function ($sq) use ($staff) {
                     $sq->where('staff.id', $staff->id);
                 })
                     ->whereIn('status', [\App\Models\ServiceOrder::STATUS_DONE, \App\Models\ServiceOrder::STATUS_INVOICED])
@@ -1186,12 +1185,16 @@ class DataTablesController extends Controller
             ]);
         }
 
-        $query = $staff->serviceOrders()
-            ->select('service_orders.*')
+        $query = \App\Models\ServiceOrder::query()
+            ->select('service_orders.*', 'order_sessions.tanggal')
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
+            ->join('order_sessions', 'order_sessions.service_order_id', '=', 'service_orders.id')
+            ->join('order_session_staff', 'order_session_staff.order_session_id', '=', 'order_sessions.id')
+            ->where('order_session_staff.staff_id', $staff->id)
             ->with(['customer', 'invoice', 'address'])
-            ->where('status', \App\Models\ServiceOrder::STATUS_INVOICED)
-            ->whereBetween('work_date', [$request->start_date, $request->end_date]);
+            ->where('service_orders.status', \App\Models\ServiceOrder::STATUS_INVOICED)
+            ->whereBetween('order_sessions.tanggal', [$request->start_date, $request->end_date])
+            ->orderBy('order_sessions.tanggal', 'asc');
 
         if ($request->filled('area_id') && $request->area_id !== 'all') {
             $query->whereHas('address', function ($q) use ($request) {
@@ -1271,8 +1274,11 @@ class DataTablesController extends Controller
                         return 'bg-secondary';
                 }
             })
-            ->editColumn('work_date', function ($so) {
-                return Carbon::parse($so->work_date)->format('d M Y');
+            ->editColumn('tanggal', function ($so) {
+                return Carbon::parse($so->tanggal)->format('d M Y');
+            })
+            ->orderColumn('tanggal', function ($query, $order) {
+                $query->orderBy('order_sessions.tanggal', $order);
             })
             ->editColumn('status', function ($so) {
                 return ucfirst($so->status);
@@ -1552,97 +1558,6 @@ class DataTablesController extends Controller
             ->make(true);
     }
 
-    public function machineAttendances(Request $request)
-    {
-        $this->authorize('viewAny', \App\Models\MachineAttendance::class);
-
-        $query = \App\Models\MachineAttendance::with(['staff', 'machines'])
-            ->select('machine_attendances.*');
-
-        // Support filter parameters
-        if ($request->filled('date_from')) {
-            $query->whereDate('date', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('date', '<=', $request->date_to);
-        }
-        if ($request->filled('staff_id')) {
-            $query->where('staff_id', $request->staff_id);
-        }
-        if ($request->filled('area_id')) {
-            $query->whereHas('staff', function ($q) use ($request) {
-                $q->where('area_id', $request->area_id);
-            });
-        }
-        if ($request->filled('status')) {
-            if ($request->status === 'open') {
-                $query->whereNull('photo_pulang_at');
-            } elseif ($request->status === 'closed') {
-                $query->whereNotNull('photo_pulang_at');
-            }
-        }
-
-        return DataTables::of($query)
-            ->editColumn('date', function ($attendance) {
-                return $attendance->date instanceof Carbon
-                    ? $attendance->date->format('d/m/Y')
-                    : Carbon::parse($attendance->date)->format('d/m/Y');
-            })
-            ->addColumn('staff_name', function ($attendance) {
-                return $attendance->staff ? $attendance->staff->name : 'N/A';
-            })
-            ->addColumn('machines', function ($attendance) {
-                return $attendance->machines->pluck('code')->join(', ') ?: '—';
-            })
-            ->editColumn('photo_pergi_at', function ($attendance) {
-                return $attendance->photo_pergi_at
-                    ? $attendance->photo_pergi_at->format('H:i')
-                    : '—';
-            })
-            ->editColumn('photo_pulang_at', function ($attendance) {
-                if ($attendance->photo_pulang_at) {
-                    return $attendance->photo_pulang_at->format('H:i');
-                }
-                return '<span class="badge bg-red-lt">OPEN</span>';
-            })
-            ->addColumn('catatan', function ($attendance) {
-                if ($attendance->catatan) {
-                    $truncated = strlen($attendance->catatan) > 40
-                        ? substr($attendance->catatan, 0, 40) . '...'
-                        : $attendance->catatan;
-                    return '<span title="' . e($attendance->catatan) . '">' . e($truncated) . '</span>';
-                }
-                return '—';
-            })
-            ->addColumn('status', function ($attendance) {
-                if ($attendance->photo_pulang_at) {
-                    return '<span class="badge bg-green-lt">Closed</span>';
-                }
-                return '<span class="badge bg-red-lt">Open</span>';
-            })
-            ->addColumn('action', function ($attendance) {
-                $id = $attendance->id;
-                $actions = '<button class="btn btn-sm btn-info viewAttendance" data-id="' . $id . '"><i class="ti ti-eye"></i> View</button> ';
-                $actions .= '<button class="btn btn-sm btn-warning editAttendance" data-id="' . $id . '"><i class="ti ti-edit"></i> Edit</button> ';
-
-                // Force Close only if open
-                if (!$attendance->photo_pulang_at) {
-                    $actions .= '<button class="btn btn-sm btn-danger forceCloseAttendance" data-id="' . $id . '"><i class="ti ti-lock"></i> Force</button> ';
-                }
-
-                $actions .= '<button class="btn btn-sm btn-danger deleteAttendance" data-id="' . $id . '"><i class="ti ti-trash"></i> Hapus</button>';
-
-                return $actions;
-            })
-            ->rawColumns(['action', 'photo_pulang_at', 'status', 'catatan'])
-            ->order(function ($query) {
-                $query->orderBy('date', 'desc')
-                    ->join('staff', 'staff.id', '=', 'machine_attendances.staff_id')
-                    ->orderBy('staff.name', 'asc');
-            })
-            ->make(true);
-    }
-
     public function reportMachineAttendances(Request $request)
     {
         $this->authorize('viewAny', \App\Models\MachineAttendance::class);
@@ -1799,7 +1714,21 @@ class DataTablesController extends Controller
                     . (count($warnings) > 1 ? ' +' . (count($warnings) - 1) : '')
                     . '</span>';
             })
-            ->rawColumns(['jam_pergi', 'jam_pulang', 'status', 'catatan', 'warning'])
+            ->addColumn('action', function ($att) {
+                $id = $att->id;
+                $actions = '<button class="btn btn-sm btn-info viewAttendance" data-id="' . $id . '"><i class="ti ti-eye"></i> View</button> ';
+                $actions .= '<button class="btn btn-sm btn-warning editAttendance" data-id="' . $id . '"><i class="ti ti-edit"></i> Edit</button> ';
+
+                // Force Close only if open
+                if (!$att->photo_pulang_at) {
+                    $actions .= '<button class="btn btn-sm btn-danger forceCloseAttendance" data-id="' . $id . '"><i class="ti ti-lock"></i> Force</button> ';
+                }
+
+                $actions .= '<button class="btn btn-sm btn-danger deleteAttendance" data-id="' . $id . '"><i class="ti ti-trash"></i> Hapus</button>';
+
+                return $actions;
+            })
+            ->rawColumns(['jam_pergi', 'jam_pulang', 'status', 'catatan', 'warning', 'action'])
             ->order(function ($query) {
                 $query->orderBy('date', 'desc');
             })

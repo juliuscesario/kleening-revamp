@@ -84,6 +84,23 @@
     <div class="page-body">
         <div class="row g-4">
             <div class="col-lg-8">
+                <div class="card d-lg-none">
+                    <div class="card-header">
+                        <h3 class="card-title">Staff yang Bertugas</h3>
+                    </div>
+                    <div class="card-body">
+                        @if($serviceOrder->staff->isNotEmpty())
+                            <ul class="list-group list-group-flush">
+                                @foreach($serviceOrder->staff as $staff)
+                                    <li class="list-group-item">{{ $staff->name }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-muted">Belum ada staff yang ditugaskan.</p>
+                        @endif
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Detail Pesanan</h3>
@@ -151,6 +168,18 @@
                             <span class="badge {{ $statusBadgeClass }} text-bg-secondary">{{ ucfirst($serviceOrder->status) }}</span>
                         </p>
                         <p><strong>Ditugaskan Oleh:</strong> {{ $serviceOrder->creator->name ?? 'N/A' }}</p>
+                    </div>
+                </div>
+
+                <div class="card mt-4 d-lg-none">
+                    <div class="card-header">
+                        <h3 class="card-title">Catatan</h3>
+                    </div>
+                    <div class="card-body">
+                        <h5>Catatan Invoice</h5>
+                        <p class="text-muted">{{ $serviceOrder->work_notes ?? 'Tidak ada catatan.' }}</p>
+                        <h5 class="mt-3">Catatan Internal (untuk Staff)</h5>
+                        <p class="text-muted">{{ $serviceOrder->staff_notes ?? 'Tidak ada catatan.' }}</p>
                     </div>
                 </div>
 
@@ -302,7 +331,7 @@
                 @endif
 
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-4 d-none d-lg-block">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Staff yang Bertugas</h3>
@@ -320,7 +349,7 @@
                     </div>
                 </div>
 
-                <div class="card mt-4">
+                <div class="card mt-4 catatan-card">
                     <div class="card-header">
                         <h3 class="card-title">Catatan</h3>
                     </div>

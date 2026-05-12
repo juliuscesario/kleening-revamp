@@ -68,16 +68,7 @@ class InvoiceController extends Controller
 
         // Always generate a fresh invoice number for the form
         // Don't reuse the cancelled invoice's number
-        $suggestedInvoiceNumber = 'INV-' . date('Ymd') . '-' . $serviceOrder->id;
-
-        // If that number is also taken (non-cancelled), append a suffix
-        $suffix = 1;
-        $candidate = $suggestedInvoiceNumber;
-        while (Invoice::where('invoice_number', $candidate)->where('status', '!=', Invoice::STATUS_CANCELLED)->exists()) {
-            $candidate = $suggestedInvoiceNumber . '-' . $suffix;
-            $suffix++;
-        }
-        $suggestedInvoiceNumber = $candidate;
+        $suggestedInvoiceNumber = Invoice::generateNumber();
 
         return view('pages.invoices.create', compact('serviceOrder', 'invoice', 'suggestedInvoiceNumber'));
     }
@@ -373,16 +364,7 @@ class InvoiceController extends Controller
         }
 
         // Generate new invoice number
-        // Use date-based format similar to existing: INV/YYYY/MM/DD
-        $newInvoiceNumber = 'INV/' . now()->format('Y/m/d') . '/' . $invoice->service_order_id . '-' . now()->format('His');
-
-        // Ensure uniqueness
-        $baseNumber = $newInvoiceNumber;
-        $suffix = 1;
-        while (Invoice::where('invoice_number', $newInvoiceNumber)->exists()) {
-            $newInvoiceNumber = $baseNumber . '-' . $suffix;
-            $suffix++;
-        }
+        $newInvoiceNumber = Invoice::generateNumber();
 
         DB::beginTransaction();
         try {

@@ -58,11 +58,16 @@
             @endif
         </div>
         @if($so->staff_notes)
-            <div class="notes-text inline-edit" data-value="{{ e($so->staff_notes) }}" data-full="{{ e($so->staff_notes) }}">
-                {{ Str::limit($so->staff_notes, 40, '…') }}
+            <div class="notes-text-container" style="position: relative; display: inline-block;">
+                <div class="notes-text" data-bs-toggle="popover" data-bs-trigger="click" data-bs-content="{{ e($so->staff_notes) }}" style="cursor: pointer;">
+                    {{ Str::limit($so->staff_notes, 40, '…') }}
+                </div>
+                <span class="notes-edit-btn" onclick="editNotes(this, {{ $session->id }})" data-value="{{ e($so->staff_notes) }}" data-full="{{ e($so->staff_notes) }}" title="Edit catatan">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                </span>
             </div>
         @else
-            <div class="notes-text inline-edit" data-value="" style="color:#cbd5e1">+ catatan</div>
+            <div class="notes-text inline-edit" data-value="" data-full="" onclick="editNotes(this, {{ $session->id }})" style="color:#cbd5e1">+ catatan</div>
         @endif
     </div>
     <div class="job-cats">

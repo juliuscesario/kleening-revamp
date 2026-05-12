@@ -83,11 +83,11 @@
         <div class="mb-3">
             <label class="form-label">Assigned Staff</label>
             <div id="staff-container">
-                @foreach($serviceOrder->staff as $staffMember)
-                    <div class="input-group mb-2 staff-member" data-staff-id="{{ $staffMember->id }}">
+                @foreach($selectedStaffIds as $staffId)
+                    <div class="input-group mb-2 staff-member" data-staff-id="{{ $staffId }}">
                         <select name="staff[]" class="form-select staff-select">
                             @foreach($allStaff as $staff)
-                                <option value="{{ $staff->id }}" {{ $staffMember->id == $staff->id ? 'selected' : '' }}>
+                                <option value="{{ $staff->id }}" {{ $staffId == $staff->id ? 'selected' : '' }}>
                                     {{ $staff->name }}
                                 </option>
                             @endforeach
@@ -216,7 +216,7 @@
         const addStaffMemberButton = document.getElementById('add-staff-member');
         if (addStaffMemberButton) {
             // Staff Members
-            let staffMemberCount = {{ count($serviceOrder->staff) }};
+            let staffMemberCount = {{ count($selectedStaffIds) }};
             addStaffMemberButton.addEventListener('click', function () {
                 staffMemberCount++;
                 const container = document.getElementById('staff-container');

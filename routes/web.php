@@ -69,7 +69,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('data/service-categories', [DataTablesController::class, 'serviceCategories'])->name('data.service-categories');
     Route::get('data/machine-categories', [DataTablesController::class, 'machineCategories'])->name('data.machine-categories');
     Route::get('data/machines', [DataTablesController::class, 'machines'])->name('data.machines');
-    Route::get('data/machine-attendances', [DataTablesController::class, 'machineAttendances'])->name('data.machine-attendances');
     Route::get('data/staff', [DataTablesController::class, 'staff'])->name('data.staff');
     Route::get('data/services', [DataTablesController::class, 'services'])->name('data.services');
     Route::get('data/customers', [DataTablesController::class, 'customers'])->name('data.customers');
@@ -107,7 +106,6 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('service-categories', ServiceCategoriesController::class)->names('web.service-categories');
     Route::resource('machine-categories', \App\Http\Controllers\Web\MachineCategoryController::class)->middleware('role:owner')->names('web.machine-categories');
     Route::resource('machines', \App\Http\Controllers\Web\MachineController::class)->middleware('role:owner')->names('web.machines');
-    Route::get('master-data/machine-attendances', [\App\Http\Controllers\Web\MachineAttendanceManageController::class, 'index'])->middleware('role:owner')->name('web.machine-attendances.index');
     Route::resource('staff', StaffController::class)->middleware('role:owner,admin')->names('web.staff');
     Route::resource('services', ServiceController::class)->names('web.services');
     Route::resource('customers', CustomerController::class)->names('web.customers');

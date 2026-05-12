@@ -121,6 +121,7 @@
                                 <th>Catatan</th>
                                 <th>Status</th>
                                 <th>Warning</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -140,6 +141,104 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- View Detail Modal --}}
+<div class="modal modal-blur fade" id="modal-view-attendance" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Absensi Mesin</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <span class="text-muted">Staff:</span>
+                        <div id="view-staff-name" class="fw-bold"></div>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted">Tanggal:</span>
+                        <div id="view-date" class="fw-bold"></div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <span class="text-muted">Mesin:</span>
+                        <div id="view-machines" class="fw-bold"></div>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted">Status:</span>
+                        <div id="view-status"></div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <span class="text-muted d-block mb-1">Foto Pergi:</span>
+                        <div id="view-photo-pergi" class="text-center"></div>
+                        <div class="text-center mt-1">
+                            <span class="text-muted">Jam:</span> <span id="view-photo-pergi-at"></span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted d-block mb-1">Foto Pulang:</span>
+                        <div id="view-photo-pulang" class="text-center"></div>
+                        <div class="text-center mt-1">
+                            <span class="text-muted">Jam:</span> <span id="view-photo-pulang-at"></span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div>
+                    <span class="text-muted">Catatan:</span>
+                    <div id="view-catatan" class="mt-1"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger forceCloseAttendance d-none" id="btn-force-close" data-id="">Force Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Edit Catatan Modal --}}
+<div class="modal modal-blur fade" id="modal-edit-catatan" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Catatan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-attendance-id">
+                <div class="mb-3">
+                    <label class="form-label">Catatan</label>
+                    <textarea class="form-control" id="edit-catatan" rows="3" placeholder="Tambahkan catatan..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnsave-catatan">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Photo Full View Modal (for detail view) --}}
+<div class="modal modal-blur fade" id="modal-photo-full" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Foto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="photo-full-image" src="" alt="Foto" style="max-width: 100%; max-height: 80vh; object-fit: contain;">
             </div>
         </div>
     </div>

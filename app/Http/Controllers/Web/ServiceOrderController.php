@@ -82,6 +82,16 @@ class ServiceOrderController extends Controller
             $q->where('role', 'staff');
         })->get();
 
+        // Get assigned staff from session 1 of this order (source of truth)
+        $session1 = $serviceOrder->sessions()
+            ->orderBy('id', 'asc')
+            ->with('staff')
+            ->first();
+
+        $selectedStaffIds = $session1
+            ? $session1->staff->pluck('id')->toArray()
+            : [];
+
         $workPhotos = $serviceOrder->workPhotos->keyBy('type');
 
         // SO Gate: check if staff has uploaded Mesin Pergi today
@@ -96,7 +106,7 @@ class ServiceOrderController extends Controller
         if ($isStaff) {
             return view('pages.service-orders.staff-show', compact('serviceOrder', 'isStaff', 'hasMesinPergi'));
         } else {
-            return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff', 'isStaff', 'workPhotos'));
+            return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff', 'isStaff', 'workPhotos', 'selectedStaffIds'));
         }
     }
 

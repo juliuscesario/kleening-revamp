@@ -144,8 +144,4 @@ $(function () {
     if (document.getElementById('machine-attendance-report-page')) {
         import('./pages/report-machine-attendance.js');
     }
-
-    if (document.getElementById('machine-attendances-table')) {
-        import('./pages/machine-attendances.js');
-    }
 });

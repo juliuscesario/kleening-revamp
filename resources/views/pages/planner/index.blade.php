@@ -53,6 +53,10 @@ function getStatusLabel($status) {
     .btn-nav-arrow { border: 1px solid var(--border-color); background: var(--bg-surface); padding: .25rem .5rem; border-radius: 4px; color: var(--text-secondary); }
     .btn-nav-arrow:hover { background: var(--bg-canvas); }
 
+    #planner-date-heading { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 4px; transition: opacity 0.15s; }
+    #planner-date-heading:hover,
+    #planner-date-heading:active { opacity: 0.75; }
+
     .btn-refresh { border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--brand-primary); padding: .35rem .75rem; border-radius: 4px; font-weight: 500; font-size: .875rem; display: flex; align-items: center; gap: .5rem; }
     .btn-refresh:hover { background: var(--bg-canvas); }
 
@@ -102,6 +106,12 @@ function getStatusLabel($status) {
     
     .lokasi-text { color: var(--text-secondary); font-size: .875rem; }
     .notes-text { color: var(--text-secondary); font-size: .8125rem; font-style: italic; }
+    .notes-edit-btn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); opacity: 0; transition: opacity 0.2s; margin-left: 4px; vertical-align: middle; }
+    .notes-text-container:hover .notes-edit-btn { opacity: 1; }
+    .notes-edit-btn:hover { color: var(--brand-primary); }
+    @media (max-width: 768px) {
+        .notes-edit-btn { opacity: 1 !important; }
+    }
 
     /* Lokasi Badge */
     .lokasi-badge { display: inline-block; font-size: .75rem; font-weight: 500; padding: .2rem .5rem; border-radius: 4px; min-height: 32px; line-height: 1.5; cursor: pointer; }
@@ -316,10 +326,17 @@ function getStatusLabel($status) {
         <div class="planner-nav-container mb-4">
             <div class="planner-date-nav">
                 <a href="{{ route('web.planner.index', ['date' => $prevDate, 'area_id' => $areaId, 'view' => $viewMode]) }}" class="btn-nav-arrow">&lsaquo;</a>
-                <div class="planner-date-label">
+                <span id="planner-date-heading" class="planner-date-label" title="Pilih tanggal">
+                    <i class="ti ti-calendar me-1" style="font-size:0.8em; vertical-align:middle;"></i>
                     {{ $carbonDate->translatedFormat('j F Y') }}
-                </div>
+                </span>
                 <a href="{{ route('web.planner.index', ['date' => $nextDate, 'area_id' => $areaId, 'view' => $viewMode]) }}" class="btn-nav-arrow">&rsaquo;</a>
+
+                {{-- Hidden native date picker --}}
+                <input type="date"
+                       id="planner-date-picker"
+                       value="{{ $carbonDate->format('Y-m-d') }}"
+                       style="position:absolute; opacity:0; width:0; height:0; pointer-events:none;">
                 
                 <button onclick="location.reload()" class="btn-refresh ms-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -370,7 +387,7 @@ function getStatusLabel($status) {
                             $suffix = "($jobCount)";
                         }
                     @endphp
-                    <div class="staff-chip {{ $chipClass }}" onclick="toggleStaffOffDirectly({{ $s->id }}, '{{ $date }}')">
+                    <div class="staff-chip {{ $chipClass }}" data-staff-id="{{ $s->id }}" onclick="toggleStaffOffDirectly({{ $s->id }}, '{{ $date }}')">
                         @if($isOff)
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-danger"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                         @else
@@ -552,14 +569,17 @@ function getStatusLabel($status) {
                                 @endif
                             </td>
                             <td>
-                                @if($session->notes)
-                                    <span class="inline-edit notes-text"
-                                          data-value="{{ e($session->notes) }}"
-                                          data-full="{{ e($session->notes) }}">
-                                        {{ Str::limit($session->notes, 40, '…') }}
+                                @if($so->staff_notes)
+                                    <span class="notes-text-container" style="position: relative; display: inline-block;">
+                                        <span class="notes-text" data-bs-toggle="popover" data-bs-trigger="click" data-bs-content="{{ e($so->staff_notes) }}" style="cursor: pointer;">
+                                            {{ Str::limit($so->staff_notes, 40, '…') }}
+                                        </span>
+                                        <span class="notes-edit-btn" onclick="editNotes(this, {{ $session->id }})" data-value="{{ e($so->staff_notes) }}" data-full="{{ e($so->staff_notes) }}" title="Edit catatan">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                        </span>
                                     </span>
                                 @else
-                                    <span class="inline-edit notes-text text-muted" data-value="" data-full="" title="">—</span>
+                                    <span class="inline-edit notes-text text-muted" data-value="" data-full="" onclick="editNotes(this, {{ $session->id }})">+ catatan</span>
                                 @endif
                             </td>
                             <td>
@@ -770,6 +790,10 @@ function editTime(el, soId) {
 // Inline edit: notes
 function editNotes(el, sessionId) {
     const current = el.dataset.value || '';
+    
+    // Determine if we're clicking the edit button or the notes text itself
+    const isEditButton = el.classList.contains('notes-edit-btn');
+    let notesElement = isEditButton ? el.parentElement.querySelector('.notes-text') : el;
 
     if (isMobile) {
         Swal.fire({
@@ -789,31 +813,17 @@ function editNotes(el, sessionId) {
                 const val = result.value || '';
                 fetchJson(`/planner/session/${sessionId}/update-field`, {
                     method: 'POST',
-                    body: JSON.stringify({ field: 'notes', value: val }),
+                    body: JSON.stringify({ field: 'staff_notes', value: val }),
                 }).then(data => {
                     if (data.success) {
-                        if (val) {
-                            el.textContent = val.length > 40 ? val.substring(0, 40) + '…' : val;
-                            el.dataset.value = val;
-                            el.dataset.full = val;
-                            el.className = 'inline-edit notes-text';
-                            el.style.color = '';
-                        } else {
-                            el.textContent = '—';
-                            el.dataset.value = '';
-                            el.dataset.full = '';
-                            el.className = 'inline-edit notes-text text-muted';
-                            el.style.color = '';
-                        }
+                        updateNotesDisplay(notesElement, val, sessionId);
                         Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
                     } else {
                         Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
                     }
                 }).catch(err => {
                     console.error(err);
-                    el.textContent = current ? (current.length > 40 ? current.substring(0, 40) + '…' : current) : '—';
-                    el.dataset.value = current;
-                    el.dataset.full = current;
+                    updateNotesDisplay(notesElement, current, sessionId);
                     Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
                 });
             }
@@ -824,50 +834,74 @@ function editNotes(el, sessionId) {
         input.className = 'inline-edit-input';
         input.value = current;
         input.placeholder = 'Tambah catatan...';
-        el.replaceWith(input);
+        
+        // For edit button, hide the notes element temporarily
+        if (isEditButton) {
+            notesElement.style.display = 'none';
+            input.style.marginLeft = '4px';
+            el.parentElement.insertBefore(input, el);
+        } else {
+            el.replaceWith(input);
+        }
         input.focus();
 
         function save() {
             const val = input.value;
             fetchJson(`/planner/session/${sessionId}/update-field`, {
                 method: 'POST',
-                body: JSON.stringify({ field: 'notes', value: val }),
+                body: JSON.stringify({ field: 'staff_notes', value: val }),
             }).then(data => {
                 if (data.success) {
-                    const span = document.createElement('span');
-                    if (val) {
-                        span.className = 'inline-edit notes-text';
-                        span.setAttribute('onclick', `editNotes(this, ${sessionId})`);
-                        span.dataset.value = val;
-                        span.dataset.full = val;
-                        span.textContent = val.length > 40 ? val.substring(0, 40) + '…' : val;
-                    } else {
-                        span.className = 'inline-edit notes-text text-muted';
-                        span.setAttribute('onclick', `editNotes(this, ${sessionId})`);
-                        span.dataset.value = '';
-                        span.dataset.full = '';
-                        span.textContent = '—';
-                    }
-                    input.replaceWith(span);
+                    updateNotesDisplay(notesElement, val, sessionId);
+                    input.remove();
                     Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' });
                 } else {
                     Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal menyimpan', timer: 3000, showConfirmButton: false });
                 }
             }).catch(err => {
                 console.error(err);
-                const span = document.createElement('span');
-                span.className = 'inline-edit notes-text';
-                span.setAttribute('onclick', `editNotes(this, ${sessionId})`);
-                span.dataset.value = current;
-                span.dataset.full = current;
-                span.textContent = current ? (current.length > 40 ? current.substring(0, 40) + '…' : current) : '—';
-                input.replaceWith(span);
+                updateNotesDisplay(notesElement, current, sessionId);
+                input.remove();
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan jaringan. Coba lagi.', timer: 3000, showConfirmButton: false });
             });
         }
 
         input.addEventListener('blur', save);
         input.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
+    }
+}
+
+// Helper function to update notes display
+function updateNotesDisplay(el, val, sessionId) {
+    if (!el) return;
+    
+    if (val) {
+        el.textContent = val.length > 40 ? val.substring(0, 40) + '…' : val;
+        el.setAttribute('data-bs-content', val);
+        el.style.display = '';
+        el.style.color = '';
+        
+        // Reinitialize popover if Bootstrap is available
+        if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+            const existingPopover = bootstrap.Popover.getInstance(el);
+            if (existingPopover) existingPopover.dispose();
+            new bootstrap.Popover(el, { html: true, trigger: 'click', placement: 'right' });
+        }
+    } else {
+        // Replace with empty notes + edit button
+        const container = el.parentElement;
+        if (container && container.classList.contains('notes-text-container')) {
+            container.outerHTML = `<div class="notes-text inline-edit" data-value="" data-full="" onclick="editNotes(this, ${sessionId})" style="color:#cbd5e1">+ catatan</div>`;
+            return;
+        }
+        el.textContent = '—';
+        el.style.color = 'var(--text-secondary)';
+    }
+    
+    // Update data attributes if element still exists
+    if (el.dataset) {
+        el.dataset.value = val;
+        el.dataset.full = val;
     }
 }
 
@@ -1075,8 +1109,8 @@ function toggleStaffOffDirectly(staffId, date) {
             // Find the chip for this staff and update it
             const chips = document.querySelectorAll('.staff-chip');
             chips.forEach(chip => {
-                const onclickAttr = chip.getAttribute('onclick') || '';
-                if (onclickAttr.includes(`'${staffId}'`) || onclickAttr.includes(`${staffId}`)) {
+                const chipStaffId = chip.dataset.staffId;
+                if (chipStaffId == staffId) {
                     chip.classList.toggle('is-off', data.is_off);
 
                     const dot = chip.querySelector('.staff-chip-status-dot');
@@ -1121,54 +1155,62 @@ function toggleStaffOffDirectly(staffId, date) {
 
 // Initialize Bootstrap popovers for pekerjaan badges
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
-        new bootstrap.Popover(el, { html: true, trigger: 'click', placement: 'right' });
-    });
+    // Defer to next macrotask so Vite module script (app.js) finishes first.
+    // <script type="module"> is deferred and runs AFTER DOMContentLoaded, so
+    // window.bootstrap / window.Swal / window.$ are NOT available yet in the
+    // DOMContentLoaded handler. setTimeout pushes this to the next macrotask,
+    // after the module script has executed.
+    setTimeout(function() {
+        document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+            new bootstrap.Popover(el, { html: true, trigger: 'click', placement: 'right' });
+        });
 
-    // Close popover when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('[data-bs-toggle="popover"]') && !e.target.closest('.popover')) {
-            document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
-                const bsPopover = bootstrap.Popover.getInstance(el);
-                if (bsPopover) bsPopover.hide();
-            });
-        }
-    });
+        // Close popover when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('[data-bs-toggle="popover"]') && !e.target.closest('.popover')) {
+                document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+                    const bsPopover = bootstrap.Popover.getInstance(el);
+                    if (bsPopover) bsPopover.hide();
+                });
+            }
+        });
 
-    // Tap to copy phone number
-    $(document).on('click', '.copy-phone', function () {
-        const phone = $(this).data('phone');
-        if (!phone) return;
+        // Tap to copy phone number
+        $(document).on('click', '.copy-phone', function () {
+            const phone = $(this).data('phone');
+            if (!phone) return;
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(phone).then(() => {
-                showPhoneCopyFeedback($(this));
-            }).catch(() => {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(phone).then(() => {
+                    showPhoneCopyFeedback($(this));
+                }).catch(() => {
+                    fallbackPhoneCopy(phone, $(this));
+                });
+            } else {
                 fallbackPhoneCopy(phone, $(this));
-            });
-        } else {
-            fallbackPhoneCopy(phone, $(this));
+            }
+        });
+
+        function showPhoneCopyFeedback($el) {
+            const original = $el.text();
+            $el.text('Copied!').css('color', 'var(--tblr-success)');
+            setTimeout(() => {
+                $el.text(original).css('color', '#3b82f6');
+            }, 1500);
         }
-    });
 
-    function showPhoneCopyFeedback($el) {
-        const original = $el.text();
-        $el.text('Copied!').css('color', 'var(--tblr-success)');
-        setTimeout(() => {
-            $el.text(original).css('color', '#3b82f6');
-        }, 1500);
-    }
-
-    function fallbackPhoneCopy(text, $el) {
-        const $temp = $('<input>');
-        $('body').append($temp);
-        $temp.val(text).select();
-        try {
-            document.execCommand('copy');
-            showPhoneCopyFeedback($el);
-        } catch (e) {}
-        $temp.remove();
-    }
+        function fallbackPhoneCopy(text, $el) {
+            const $temp = $('<input>');
+            $('body').append($temp);
+            $temp.val(text).select();
+            try {
+                document.execCommand('copy');
+                showPhoneCopyFeedback($el);
+            } catch (e) {}
+            $temp.remove();
+        }
+    }, 0);
+});
 
 // Notes: single tap = popover (delayed), double tap = edit
 var _notesClickTimer = null;
@@ -1219,6 +1261,34 @@ function hideNotesPopover() {
     var existing = document.getElementById('notes-popover');
     if (existing) existing.remove();
 }
+
+// Date picker — tap date heading to open native date picker
+(function() {
+    var dateHeading = document.getElementById('planner-date-heading');
+    var dateInput = document.getElementById('planner-date-picker');
+    if (!dateHeading || !dateInput) return;
+
+    dateHeading.addEventListener('click', function() {
+        // showPicker() works in Chrome 125+, Safari 17.4+, Firefox 126+
+        if (typeof dateInput.showPicker === 'function') {
+            dateInput.showPicker();
+        } else {
+            // Fallback for older browsers
+            dateInput.focus();
+            dateInput.click();
+        }
+    });
+
+    dateInput.addEventListener('change', function() {
+        var selectedDate = this.value; // YYYY-MM-DD
+        if (!selectedDate) return;
+
+        // Build URL matching the existing < > arrow pattern
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('date', selectedDate);
+        window.location.href = currentUrl.toString();
+    });
+})();
 
 </script>
 @endpush
