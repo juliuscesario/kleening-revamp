@@ -23,7 +23,7 @@ return new class extends Migration
                 ->references('id')
                 ->on('staff')
                 ->onDelete('cascade');
-            $table->string('signature_image')->nullable();
+            $table->text('signature_image')->nullable();
             $table->timestamps();
 
             $table->unique(['order_session_id', 'staff_id']);

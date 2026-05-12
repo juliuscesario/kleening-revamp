@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -10,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 0. Ensure signature_image is text (fixes previous migration error in production)
+        // 1. Fix for PostgreSQL where varchar(255) is too small for signatures
         if (config('database.default') === 'pgsql') {
             DB::statement('ALTER TABLE order_session_staff ALTER COLUMN signature_image TYPE TEXT');
         } else {
@@ -19,30 +21,7 @@ return new class extends Migration
             });
         }
 
-        // 1. Insert sessions if they don't exist
-        $sessionCount = DB::table('order_sessions')->count();
-        if ($sessionCount === 0) {
-            DB::statement("
-                INSERT INTO order_sessions (service_order_id, session_number, tanggal, jam, type, status, notes, created_at, updated_at)
-                SELECT
-                    id,
-                    1,
-                    work_date,
-                    work_time,
-                    'kerja',
-                    CASE
-                        WHEN status IN ('booked', 'proses', 'done') THEN status
-                        ELSE 'done'
-                    END,
-                    work_notes,
-                    NOW(),
-                    NOW()
-                FROM service_orders
-            ");
-        }
-
-        // 2. Copy staff assignments if not already copied
-        // Only insert if the session exists and the staff isn't already assigned to that session
+        // 2. Re-run backfill for staff if it was missed
         DB::statement("
             INSERT INTO order_session_staff (order_session_id, staff_id, signature_image, created_at, updated_at)
             SELECT
@@ -65,7 +44,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('TRUNCATE order_session_staff');
-        DB::statement('TRUNCATE order_sessions');
+        if (config('database.default') === 'pgsql') {
+            DB::statement('ALTER TABLE order_session_staff ALTER COLUMN signature_image TYPE VARCHAR(255)');
+        } else {
+            Schema::table('order_session_staff', function (Blueprint $table) {
+                $table->string('signature_image', 255)->nullable()->change();
+            });
+        }
     }
 };
