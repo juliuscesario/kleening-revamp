@@ -325,6 +325,10 @@
                         href="{{ route('web.addresses.index') }}">
                         Manajemen Alamat
                       </a>
+                      <a class="dropdown-item {{ request()->routeIs('customers.follow-up.*') ? 'active' : '' }}"
+                        href="{{ route('customers.follow-up.index') }}">
+                        Follow Up
+                      </a>
                     </div>
                   </div>
                 </div>

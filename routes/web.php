@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 // Web Controllers
 use App\Http\Controllers\Web\AddressController;
 use App\Http\Controllers\Web\AreaController;
+use App\Http\Controllers\Web\CustomerFollowUpController;
 use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DataTablesController;
@@ -112,6 +113,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('machines', \App\Http\Controllers\Web\MachineController::class)->middleware('role:owner')->names('web.machines');
     Route::resource('staff', StaffController::class)->middleware('role:owner,admin')->names('web.staff');
     Route::resource('services', ServiceController::class)->names('web.services');
+    Route::get('customers/follow-up', [CustomerFollowUpController::class, 'index'])->name('customers.follow-up.index');
     Route::resource('customers', CustomerController::class)->names('web.customers');
     Route::resource('addresses', AddressController::class)->names('web.addresses');
     Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');
