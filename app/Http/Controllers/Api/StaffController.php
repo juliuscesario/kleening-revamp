@@ -32,6 +32,7 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:15|unique:users,phone_number',
+            'hadirr_nik' => 'nullable|string|max:50',
             'base_harian' => 'nullable|integer',
             'harian_tambahan' => 'nullable|integer|min:0',
             'area_id' => 'required|integer|exists:areas,id',
@@ -52,6 +53,7 @@ class StaffController extends Controller
             $staff = Staff::create([
                 'name' => $validated['name'],
                 'phone_number' => $validated['phone_number'],
+                'hadirr_nik' => $validated['hadirr_nik'] ?? null,
                 'base_harian' => $validated['base_harian'] ?? 80,
                 'harian_tambahan' => $validated['harian_tambahan'] ?? null,
                 'area_id' => $validated['area_id'],
@@ -84,6 +86,7 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'phone_number' => ['sometimes', 'required', 'string', 'max:15', Rule::unique('users', 'phone_number')->ignore($staff->user_id)],
+            'hadirr_nik' => 'sometimes|nullable|string|max:50',
             'base_harian' => 'sometimes|nullable|integer',
             'harian_tambahan' => 'sometimes|nullable|integer|min:0',
             'area_id' => 'sometimes|required|integer|exists:areas,id',
@@ -96,6 +99,7 @@ class StaffController extends Controller
             $staff->update([
                 'name' => $validated['name'] ?? $staff->name,
                 'phone_number' => $validated['phone_number'] ?? $staff->phone_number,
+                'hadirr_nik' => $validated['hadirr_nik'] ?? $staff->hadirr_nik,
                 'base_harian' => $validated['base_harian'] ?? $staff->base_harian,
                 'harian_tambahan' => $validated['harian_tambahan'] ?? $staff->harian_tambahan,
                 'area_id' => $validated['area_id'] ?? $staff->area_id,

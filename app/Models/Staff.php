@@ -38,6 +38,7 @@ class Staff extends Model
         'area_id',
         'name',
         'phone_number',
+        'hadirr_nik',
         'base_harian',
         'harian_tambahan',
         'is_active',

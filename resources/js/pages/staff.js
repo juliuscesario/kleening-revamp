@@ -61,6 +61,7 @@ $(function () {
         let formData = {
             name: $('#staff-name').val(),
             phone_number: $('#staff-phone_number').val(),
+            hadirr_nik: $('#staff-hadirr_nik').val() || null,
             base_harian: $('#staff-base_harian').val(),
             harian_tambahan: $('#staff-harian_tambahan').val() || null,
             area_id: $('#staff-area_id').val(),
@@ -119,6 +120,7 @@ $(function () {
             $('#staff-id').val(data.data.id);
             $('#staff-name').val(data.data.name);
             $('#staff-phone_number').val(data.data.phone_number);
+            $('#staff-hadirr_nik').val(data.data.hadirr_nik || '');
             $('#staff-base_harian').val(data.data.base_harian || '');
             $('#staff-harian_tambahan').val(data.data.harian_tambahan || '');
             $('#staff-area_id').val(data.data.area.id);

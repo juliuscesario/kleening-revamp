@@ -212,6 +212,10 @@ Route::middleware(['auth', 'role:owner'])->group(function () {
     Route::get('expenses/categories', [\App\Http\Controllers\Web\ExpenseController::class, 'categories'])->name('web.expenses.categories');
     Route::post('expenses/categories', [\App\Http\Controllers\Web\ExpenseController::class, 'storeCategory'])->name('web.expenses.categories.store');
     Route::delete('expenses/categories/{category}', [\App\Http\Controllers\Web\ExpenseController::class, 'destroyCategory'])->name('web.expenses.categories.destroy');
+
+    // Laporan Absen Staff (Owner Only)
+    Route::get('laporan/absen-staff', [\App\Http\Controllers\Web\StaffAttendanceReportController::class, 'index'])->name('web.laporan.absen-staff');
+    Route::post('laporan/absen-staff/sync', [\App\Http\Controllers\Web\StaffAttendanceReportController::class, 'sync'])->name('web.laporan.absen-staff.sync');
 });
 
 require __DIR__ . '/auth.php';

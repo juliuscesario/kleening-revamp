@@ -452,6 +452,12 @@
                         href="{{ route('web.reports.staff-performance') }}">
                         Laporan Kinerja Staff
                       </a>
+                      @if(strtolower(trim(Auth::user()->role)) === 'owner')
+                      <a class="dropdown-item {{ request()->routeIs('web.laporan.absen-staff') ? 'active' : '' }}"
+                        href="{{ route('web.laporan.absen-staff') }}">
+                        Laporan Absen Staff
+                      </a>
+                      @endif
                       <a class="dropdown-item {{ request()->routeIs('web.laporan.kinerja-admin') ? 'active' : '' }}"
                         href="{{ route('web.laporan.kinerja-admin') }}">
                         Laporan Kinerja Admin

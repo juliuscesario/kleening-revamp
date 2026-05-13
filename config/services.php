@@ -39,4 +39,10 @@ return [
         'geocoding_key' => env('GOOGLE_GEOCODING_API_KEY'),
     ],
 
+    'hadirr' => [
+        'base_url' => env('HADIRR_BASE_URL', 'https://developer.hadirr.com/v0'),
+        'access_key' => env('HADIRR_ACCESS_KEY'),
+        'secret_key' => env('HADIRR_SECRET_KEY'),
+    ],
+
 ];

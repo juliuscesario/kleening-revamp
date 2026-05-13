@@ -84,6 +84,11 @@
                         <div class="invalid-feedback" id="phone_number-error"></div>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Hadirr NIK</label>
+                        <input type="text" class="form-control" name="hadirr_nik" id="staff-hadirr_nik" placeholder="Contoh: F2101">
+                        <small class="form-hint">NIK dari aplikasi Hadirr. Kosongkan jika belum terdaftar.</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Harian Harian (ribu)</label>
                         <input type="number" class="form-control" name="base_harian" id="staff-base_harian" placeholder="Contoh: 80">
                         <small class="form-hint">Base harian per hari dalam ribuan (80 = Rp 80.000).</small>
