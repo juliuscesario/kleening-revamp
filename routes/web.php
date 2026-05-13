@@ -114,6 +114,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('staff', StaffController::class)->middleware('role:owner,admin')->names('web.staff');
     Route::resource('services', ServiceController::class)->names('web.services');
     Route::get('customers/follow-up', [CustomerFollowUpController::class, 'index'])->name('customers.follow-up.index');
+    Route::get('customers/work-photos', [\App\Http\Controllers\Web\WorkPhotoController::class, 'index'])->name('customers.work-photos.index');
+    Route::post('customers/work-photos/download', [\App\Http\Controllers\Web\WorkPhotoController::class, 'download'])->name('customers.work-photos.download');
+    Route::post('customers/work-photos/download/{serviceOrder}', [\App\Http\Controllers\Web\WorkPhotoController::class, 'downloadSingle'])->name('customers.work-photos.download-single');
     Route::resource('customers', CustomerController::class)->names('web.customers');
     Route::resource('addresses', AddressController::class)->names('web.addresses');
     Route::get('service-orders/unassigned', [ServiceOrderController::class, 'unassigned'])->name('web.service-orders.unassigned');

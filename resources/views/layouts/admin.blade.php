@@ -329,6 +329,10 @@
                         href="{{ route('customers.follow-up.index') }}">
                         Follow Up
                       </a>
+                      <a class="dropdown-item {{ request()->routeIs('customers.work-photos.*') ? 'active' : '' }}"
+                        href="{{ route('customers.work-photos.index') }}">
+                        Work Photos
+                      </a>
                     </div>
                   </div>
                 </div>
