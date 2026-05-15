@@ -150,7 +150,7 @@ class ServiceOrder extends Model
     }
 
     /**
-     * @deprecated Use hasStaffAssigned() or allAssignedStaff() instead.
+     * @deprecated Use sessions()->with('staff') instead.
      * This reads from service_order_staff which is deprecated.
      */
     public function staff(): BelongsToMany

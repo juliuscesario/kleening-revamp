@@ -131,8 +131,6 @@ class ServiceOrderController extends Controller
             'items' => 'sometimes|array|min:1',
             'items.*.service_id' => 'sometimes|required|exists:services,id',
             'items.*.quantity' => 'sometimes|required|integer|min:1',
-            'staff_ids' => 'sometimes|required|array|min:1',
-            'staff_ids.*' => 'required|exists:staff,id',
             'owner_password' => 'nullable|string',
         ];
 
@@ -166,11 +164,7 @@ class ServiceOrderController extends Controller
         if (isset($validated['work_date'])) $soData['work_date'] = $validated['work_date'];
         if (isset($validated['work_time'])) $soData['work_time'] = $validated['work_time'];
 
-        $updatedServiceOrder = app(\App\Actions\UpdateServiceOrderAction::class)->execute(
-            $serviceOrder,
-            $soData,
-            $validated['staff_ids'] ?? null
-        );
+        $updatedServiceOrder = app(\App\Actions\UpdateServiceOrderAction::class)->execute($serviceOrder, $soData);
 
         $updatedServiceOrder->load(['customer', 'address', 'items.service', 'sessions.staff']);
         $updatedServiceOrder->setRelation('staff', $updatedServiceOrder->allAssignedStaff());

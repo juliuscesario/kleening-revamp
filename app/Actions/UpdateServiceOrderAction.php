@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateServiceOrderAction
 {
-    public function execute(ServiceOrder $serviceOrder, array $soData, ?array $staffIds = null): ServiceOrder
+    public function execute(ServiceOrder $serviceOrder, array $soData): ServiceOrder
     {
-        return DB::transaction(function () use ($serviceOrder, $soData, $staffIds) {
+        return DB::transaction(function () use ($serviceOrder, $soData) {
             // Build update payload — only include fields that are present
             $updateData = [];
 
@@ -108,11 +108,6 @@ class UpdateServiceOrderAction
                     }
                     if (!empty($sessionUpdate)) {
                         $session->update($sessionUpdate);
-                    }
-
-                    // Sync staff to Session 1
-                    if ($staffIds !== null) {
-                        $session->staff()->sync($staffIds);
                     }
                 }
             }

@@ -130,16 +130,6 @@ class ServiceOrderController extends Controller
             $q->where('role', 'staff');
         })->get();
 
-        // Get assigned staff from session 1 of this order (source of truth)
-        $session1 = $serviceOrder->sessions()
-            ->orderBy('id', 'asc')
-            ->with('staff')
-            ->first();
-
-        $selectedStaffIds = $session1
-            ? $session1->staff->pluck('id')->toArray()
-            : [];
-
         $workPhotos = $serviceOrder->workPhotos->keyBy('type');
 
         // SO Gate: check if staff has uploaded Mesin Pergi today
@@ -154,7 +144,7 @@ class ServiceOrderController extends Controller
         if ($isStaff) {
             return view('pages.service-orders.staff-show', compact('serviceOrder', 'isStaff', 'hasMesinPergi'));
         } else {
-            return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff', 'isStaff', 'workPhotos', 'selectedStaffIds'));
+            return view('pages.service-orders.show', compact('serviceOrder', 'allServices', 'allStaff', 'isStaff', 'workPhotos'));
         }
     }
 
@@ -302,8 +292,6 @@ class ServiceOrderController extends Controller
             'services' => 'sometimes|array|min:1',
             'services.*.service_id' => 'sometimes|exists:services,id',
             'services.*.quantity' => 'sometimes|numeric|min:0.1',
-            'staff' => 'nullable|array',
-            'staff.*' => 'exists:staff,id',
         ];
 
         $request->validate($rules);
@@ -349,11 +337,7 @@ class ServiceOrderController extends Controller
             $soData['services'] = $request->input('services');
         }
 
-        $action->execute(
-            $serviceOrder,
-            $soData,
-            $request->has('staff') ? $request->input('staff') : null
-        );
+        $action->execute($serviceOrder, $soData);
 
         return response()->json(['success' => true, 'message' => 'Service Order updated successfully.']);
     }

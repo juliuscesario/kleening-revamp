@@ -80,25 +80,6 @@
             <button type="button" class="btn btn-success mt-2 w-100" id="add-service-item">Add Service</button>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Assigned Staff</label>
-            <div id="staff-container">
-                @foreach($selectedStaffIds as $staffId)
-                    <div class="input-group mb-2 staff-member" data-staff-id="{{ $staffId }}">
-                        <select name="staff[]" class="form-select staff-select">
-                            @foreach($allStaff as $staff)
-                                <option value="{{ $staff->id }}" {{ $staffId == $staff->id ? 'selected' : '' }}>
-                                    {{ $staff->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <button type="button" class="btn btn-danger remove-staff-member">Remove</button>
-                    </div>
-                @endforeach
-            </div>
-            <button type="button" class="btn btn-success mt-2 w-100" id="add-staff-member">Add Staff</button>
-        </div>
-
         <div class="modal-footer">
             <button type="button" class="btn me-auto" data-bs-dismiss="modal">Close</button>
             <button type="submit" class="btn btn-primary">Save changes</button>
@@ -209,36 +190,6 @@
                         destroyServiceSelect(item.querySelector('.service-select'));
                         item.remove();
                     }
-                }
-            });
-        }
-
-        const addStaffMemberButton = document.getElementById('add-staff-member');
-        if (addStaffMemberButton) {
-            // Staff Members
-            let staffMemberCount = {{ count($selectedStaffIds) }};
-            addStaffMemberButton.addEventListener('click', function () {
-                staffMemberCount++;
-                const container = document.getElementById('staff-container');
-                const newItem = document.createElement('div');
-                newItem.classList.add('input-group', 'mb-2', 'staff-member');
-                newItem.innerHTML = `
-                    <select name="staff[]" class="form-select staff-select">
-                        @foreach($allStaff as $staff)
-                            <option value="{{ $staff->id }}">{{ $staff->name }}</option>
-                        @endforeach
-                    </select>
-                    <button type="button" class="btn btn-danger remove-staff-member">Remove</button>
-                `;
-                container.appendChild(newItem);
-            });
-        }
-
-        const staffContainer = document.getElementById('staff-container');
-        if (staffContainer) {
-            staffContainer.addEventListener('click', function (e) {
-                if (e.target.classList.contains('remove-staff-member')) {
-                    e.target.closest('.staff-member').remove();
                 }
             });
         }
