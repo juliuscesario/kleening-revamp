@@ -1185,8 +1185,31 @@ class DataTablesController extends Controller
             ]);
         }
 
+        // Pre-load all machine attendances for this staff in the date range.
+        $machineAttendances = \App\Models\MachineAttendance::where('staff_id', $staff->id)
+            ->whereBetween('date', [$request->start_date, $request->end_date])
+            ->with('machines:id,code')
+            ->get()
+            ->keyBy(fn($ma) => \Carbon\Carbon::parse($ma->date)->format('Y-m-d'));
+
+        // Pre-load staff attendances for this staff in the date range.
+        $hadirrNik = $staff->hadirr_nik;
+        $staffAttendances = $hadirrNik
+            ? \App\Models\StaffAttendance::where('nik', $hadirrNik)
+                ->whereBetween('tanggal', [$request->start_date, $request->end_date])
+                ->get()
+                ->keyBy(fn($sa) => \Carbon\Carbon::parse($sa->tanggal)->format('Y-m-d'))
+            : collect();
+
         $query = \App\Models\ServiceOrder::query()
-            ->select('service_orders.*', 'order_sessions.tanggal')
+            ->select(
+                'service_orders.*',
+                'order_sessions.tanggal',
+                'order_sessions.started_at',
+                'order_sessions.completed_at',
+                'order_sessions.notes as session_notes',
+                'order_sessions.id as session_id'
+            )
             ->withoutGlobalScope(\App\Models\Scopes\AreaScope::class)
             ->join('order_sessions', 'order_sessions.service_order_id', '=', 'service_orders.id')
             ->join('order_session_staff', 'order_session_staff.order_session_id', '=', 'order_sessions.id')
@@ -1202,88 +1225,188 @@ class DataTablesController extends Controller
             });
         }
 
+        // Pre-load proofs keyed by service_order_id
+        $soIds = (clone $query)->pluck('service_orders.id');
+        $proofsMap = \App\Models\WorkPhoto::whereIn('service_order_id', $soIds)
+            ->get()
+            ->groupBy('service_order_id');
+
         return DataTables::of($query)
-            ->addColumn('so_id', function ($so) {
-                return $so->id;
-            })
-            ->addColumn('so_number', function ($so) {
-                return $so->so_number;
-            })
-            ->addColumn('customer_name', function ($so) {
-                return $so->customer->name ?? 'N/A';
-            })
-            ->addColumn('customer_address', function ($so) {
-                return $so->address->full_address ?? 'N/A';
-            })
-            ->addColumn('invoice_id', function ($so) {
-                return $so->invoice->id ?? 'N/A';
-            })
-            ->addColumn('invoice_number', function ($so) {
-                return $so->invoice->invoice_number ?? 'N/A';
+            ->addColumn('so_id', fn($so) => $so->id)
+            ->addColumn('so_number', fn($so) => $so->so_number)
+            ->addColumn('customer_name', fn($so) => $so->customer->name ?? 'N/A')
+            ->addColumn('invoice_id', fn($so) => $so->invoice->id ?? null)
+            ->addColumn('invoice_number', fn($so) => $so->invoice->invoice_number ?? 'N/A')
+            ->addColumn('invoice_show_url', fn($so) => $so->invoice ? route('web.invoices.show', $so->invoice) : null)
+            ->addColumn('invoice_status_plain', function ($so) {
+                return $so->invoice->status ?? null;
             })
             ->addColumn('invoice_status', function ($so) {
-                if ($so->invoice) {
-                    $statusBadgeClass = '';
-                    switch ($so->invoice->status) {
-                        case 'new':
-                            $statusBadgeClass = 'bg-primary';
-                            break;
-                        case 'sent':
-                            $statusBadgeClass = 'bg-info';
-                            break;
-                        case 'overdue':
-                            $statusBadgeClass = 'bg-warning';
-                            break;
-                        case 'paid':
-                            $statusBadgeClass = 'bg-success';
-                            break;
-                        default:
-                            $statusBadgeClass = 'bg-secondary';
-                            break;
-                    }
-                    return '<span class="badge ' . $statusBadgeClass . ' text-bg-secondary">' . ucfirst($so->invoice->status) . '</span>';
-                }
-                return 'N/A';
+                $status = $so->invoice->status ?? null;
+                if (!$status) return '—';
+                $map = [
+                    'paid'      => ['bg-success-lt',  'Paid'],
+                    'sent'      => ['bg-info-lt',     'Sent'],
+                    'overdue'   => ['bg-warning-lt',  'Overdue'],
+                    'new'       => ['bg-primary-lt',  'New'],
+                    'cancelled' => ['bg-secondary-lt','Cancelled'],
+                ];
+                [$cls, $label] = $map[$status] ?? ['bg-secondary-lt', ucfirst($status)];
+                return '<span class="badge ' . $cls . '">' . $label . '</span>';
             })
             ->addColumn('invoice_total', function ($so) {
-                if ($so->invoice) {
-                    $total = 'Rp ' . number_format($so->invoice->grand_total, 0, ',', '.');
-                    if ($so->invoice->status !== 'paid') {
-                        $total .= ' (' . ucfirst($so->invoice->status) . ')';
+                if (!$so->invoice) return '—';
+                return 'Rp ' . number_format($so->invoice->grand_total, 0, ',', '.');
+            })
+
+            // ── Alamat + Maps link ──
+            ->addColumn('alamat_maps', function ($so) {
+                $address = $so->address;
+                if (!$address) return '—';
+
+                $fullAddress     = $address->full_address ?? 'N/A';
+                $fullAddressEsc  = e($fullAddress);
+                $shortAddress    = e(\Illuminate\Support\Str::limit($fullAddress, 50));
+
+                $mapsUrl = !empty($address->google_maps_link)
+                    ? e($address->google_maps_link)
+                    : 'https://maps.google.com/?q=' . urlencode($address->full_address ?? '');
+
+                return '<div style="font-size:11px;line-height:1.4;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%" '
+                     . 'data-bs-toggle="popover" data-bs-trigger="click" data-bs-placement="bottom" '
+                     . 'data-bs-content="' . $fullAddressEsc . '" data-full-address="' . $fullAddressEsc . '" '
+                     . 'title="' . $fullAddressEsc . '">'
+                     . $shortAddress . '</div>'
+                     . '<a href="' . $mapsUrl . '" target="_blank" rel="noopener" '
+                     . 'style="font-size:11px;color:#185FA5;display:inline-flex;align-items:center;gap:3px;margin-top:3px">'
+                     . '<i class="ti ti-map-pin" style="font-size:12px"></i> Buka Maps</a>';
+            })
+
+            // ── Staff attendance (clock in / clock out stacked) ──
+            ->addColumn('staff_attendance', function ($so) use ($staffAttendances) {
+                $date = \Carbon\Carbon::parse($so->tanggal)->format('Y-m-d');
+                $sa   = $staffAttendances->get($date);
+
+                $clockIn  = $sa && $sa->clock_in
+                    ? '<span style="font-size:11px;font-weight:500;color:#2F855A">' . \Carbon\Carbon::parse($sa->clock_in)->format('H:i') . '</span>'
+                    : '<span style="font-size:11px;color:#a0aec0">—</span>';
+
+                $clockOut = $sa && $sa->clock_out
+                    ? '<span style="font-size:11px;font-weight:500;color:#C53030">' . \Carbon\Carbon::parse($sa->clock_out)->format('H:i') . '</span>'
+                    : '<span style="font-size:11px;color:#a0aec0">—</span>';
+
+                return '<div style="line-height:1.5;font-size:11px">'
+                     . '<div>IN&nbsp; ' . $clockIn . '</div>'
+                     . '<div>OUT ' . $clockOut . '</div>'
+                     . '</div>';
+            })
+
+            // ── Mesin (stacked: code/status, pergi, pulang, notes) ──
+            ->addColumn('mesin', function ($so) use ($machineAttendances) {
+                $date = \Carbon\Carbon::parse($so->tanggal)->format('Y-m-d');
+                $ma   = $machineAttendances->get($date);
+
+                if (!$ma || $ma->machines->isEmpty()) {
+                    return '<span style="color:var(--tblr-secondary);font-style:italic;font-size:11px">—</span>';
+                }
+
+                $html = '<div style="line-height:1.5;font-size:11px;min-width:120px">';
+
+                // Machine codes / status
+                $badges = $ma->machines
+                    ->map(fn($m) => '<span class="badge bg-secondary-lt me-1 mb-1" style="font-size:10px">'
+                        . e($m->code) . '</span>')
+                    ->implode('');
+                $html .= '<div style="margin-bottom:3px">' . $badges . '</div>';
+
+                // Pergi / Pulang times stacked
+                $pergiTime = $ma->photo_pergi_at
+                    ? \Carbon\Carbon::parse($ma->photo_pergi_at)->format('H:i')
+                    : '—';
+                $pulangTime = $ma->photo_pulang_at
+                    ? \Carbon\Carbon::parse($ma->photo_pulang_at)->format('H:i')
+                    : null;
+
+                $html .= '<div style="display:flex;gap:8px">';
+                $html .= '<div style="flex:1">';
+                $html .= '<div style="color:#a0aec0;font-size:9px;text-transform:uppercase">Pergi</div>';
+                $html .= '<span style="font-size:12px;font-weight:500">' . $pergiTime . '</span>';
+                $html .= '</div>';
+                $html .= '<div style="flex:1">';
+                $html .= '<div style="color:#a0aec0;font-size:9px;text-transform:uppercase">Pulang</div>';
+                if ($pulangTime) {
+                    $html .= '<span style="font-size:12px;font-weight:500">' . $pulangTime . '</span>';
+                } else {
+                    $html .= '<span style="color:#BA7517;font-size:10px"><i class="ti ti-alert-triangle" style="font-size:10px"></i> Blm pulang</span>';
+                }
+                $html .= '</div>';
+                $html .= '</div>';
+
+                // Machine notes stacked
+                if ($ma->catatan || $ma->catatan_pulang) {
+                    $html .= '<div style="border-top:1px solid #e9ecef;margin-top:4px;padding-top:3px">';
+                    if ($ma->catatan) {
+                        $truncated = \Illuminate\Support\Str::limit($ma->catatan, 40);
+                        $html .= '<div style="color:#a0aec0;font-size:9px;text-transform:uppercase">Notes Pergi</div>';
+                        $html .= '<div style="font-size:10px;line-height:1.3" title="' . e($ma->catatan) . '">' . e($truncated) . '</div>';
                     }
-                    return $total;
+                    if ($ma->catatan_pulang) {
+                        $truncated = \Illuminate\Support\Str::limit($ma->catatan_pulang, 40);
+                        $html .= '<div style="color:#a0aec0;font-size:9px;text-transform:uppercase;margin-top:2px">Notes Pulang</div>';
+                        $html .= '<div style="font-size:10px;line-height:1.3" title="' . e($ma->catatan_pulang) . '">' . e($truncated) . '</div>';
+                    }
+                    $html .= '</div>';
                 }
-                return 'Rp 0';
+
+                $html .= '</div>';
+                return $html;
             })
-            ->addColumn('invoice_show_url', function ($so) {
-                return $so->invoice ? route('web.invoices.show', $so->invoice) : null;
-            })
-            ->addColumn('status_badge_class', function ($so) {
-                switch ($so->status) {
-                    case \App\Models\ServiceOrder::STATUS_BOOKED:
-                        return 'bg-primary';
-                    case \App\Models\ServiceOrder::STATUS_PROSES:
-                        return 'bg-warning';
-                    case 'cancel':
-                        return 'bg-danger';
-                    case \App\Models\ServiceOrder::STATUS_DONE:
-                        return 'bg-success';
-                    case \App\Models\ServiceOrder::STATUS_INVOICED:
-                        return 'bg-success';
-                    default:
-                        return 'bg-secondary';
+
+            // ── Foto thumbnails ──
+            ->addColumn('foto', function ($so) use ($proofsMap) {
+                $proofs = $proofsMap->get($so->id, collect());
+                if ($proofs->isEmpty()) {
+                    return '<div style="width:32px;height:32px;border-radius:4px;border:0.5px dashed #adb5bd;'
+                         . 'display:flex;align-items:center;justify-content:center">'
+                         . '<i class="ti ti-camera-off" style="font-size:13px;color:#adb5bd"></i></div>'
+                         . '<div style="font-size:10px;color:#adb5bd;margin-top:2px">Belum ada</div>';
                 }
+                $typeColors = [
+                    'arrival'   => ['bg' => '#EEEDFE', 'border' => '#AFA9EC', 'color' => '#3C3489', 'label' => 'ARR'],
+                    'before'    => ['bg' => '#C0DD97', 'border' => '#97C459', 'color' => '#3B6D11', 'label' => 'BFR'],
+                    'after'     => ['bg' => '#9FE1CB', 'border' => '#5DCAA5', 'color' => '#085041', 'label' => 'AFT'],
+                    'signature' => ['bg' => '#B5D4F4', 'border' => '#85B7EB', 'color' => '#0C447C', 'label' => 'SIG'],
+                ];
+                $html = '<div style="display:flex;gap:3px;flex-wrap:wrap">';
+                foreach ($proofs as $proof) {
+                    $url   = asset('storage/' . $proof->file_path);
+                    $style = $typeColors[$proof->type] ?? ['bg' => '#e9ecef', 'border' => '#ced4da', 'color' => '#495057', 'label' => strtoupper(substr($proof->type, 0, 3))];
+                    $html .= '<a href="' . $url . '" target="_blank" title="' . e($proof->type) . '">'
+                           . '<img src="' . $url . '" '
+                           . 'style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:0.5px solid ' . $style['border'] . ';display:block" '
+                           . 'onerror="this.outerHTML=\'<div style=&quot;width:32px;height:32px;border-radius:4px;background:' . $style['bg'] . ';border:0.5px solid ' . $style['border'] . ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:' . $style['color'] . '&quot;>' . $style['label'] . '</div>\'">'
+                           . '</a>';
+                }
+                $html .= '</div>';
+                $html .= '<div style="font-size:10px;color:#6c757d;margin-top:2px">' . $proofs->count() . ' foto</div>';
+                return $html;
             })
-            ->editColumn('tanggal', function ($so) {
-                return Carbon::parse($so->tanggal)->format('d M Y');
+
+            // ── Staff notes ──
+            ->addColumn('staff_notes', function ($so) {
+                if (empty($so->staff_notes)) {
+                    return '<span style="color:var(--tblr-secondary);font-style:italic;font-size:11px">—</span>';
+                }
+                return '<div style="font-size:11px;line-height:1.4;max-width:140px" title="' . e($so->staff_notes) . '">'
+                     . e(\Illuminate\Support\Str::limit($so->staff_notes, 60))
+                     . '</div>';
             })
-            ->orderColumn('tanggal', function ($query, $order) {
-                $query->orderBy('order_sessions.tanggal', $order);
-            })
-            ->editColumn('status', function ($so) {
-                return ucfirst($so->status);
-            })
-            ->rawColumns(['invoice_status'])
+
+            ->editColumn('tanggal', fn($so) => \Carbon\Carbon::parse($so->tanggal)->format('d M Y'))
+            ->editColumn('status',  fn($so) => ucfirst($so->status))
+            ->orderColumn('tanggal', fn($q, $order) => $q->orderBy('order_sessions.tanggal', $order))
+            ->rawColumns(['invoice_status', 'invoice_total', 'alamat_maps', 'staff_attendance',
+                          'mesin', 'foto', 'staff_notes'])
             ->make(true);
     }
 
@@ -1666,6 +1789,15 @@ class DataTablesController extends Controller
                 }
                 return '—';
             })
+            ->addColumn('catatan_pulang', function ($att) {
+                if ($att->catatan_pulang) {
+                    $truncated = strlen($att->catatan_pulang) > 40
+                        ? substr($att->catatan_pulang, 0, 40) . '...'
+                        : $att->catatan_pulang;
+                    return '<span title="' . e($att->catatan_pulang) . '">' . e($truncated) . '</span>';
+                }
+                return '—';
+            })
             ->addColumn('status', function ($att) {
                 if ($att->photo_pulang_at && $att->photo_pulang) {
                     return '<span class="badge bg-green-lt">Closed</span>';
@@ -1728,7 +1860,7 @@ class DataTablesController extends Controller
 
                 return $actions;
             })
-            ->rawColumns(['jam_pergi', 'jam_pulang', 'status', 'catatan', 'warning', 'action'])
+            ->rawColumns(['jam_pergi', 'jam_pulang', 'status', 'catatan', 'catatan_pulang', 'warning', 'action'])
             ->order(function ($query) {
                 $query->orderBy('date', 'desc');
             })

@@ -47,6 +47,53 @@ $(function () {
         order: [[0, 'asc']] // Default order by name
     });
 
+    // ── Periode shortcut buttons ─────────────────────────────────────────
+    const periodeDescriptions = {
+        1: 'Tgl kerja: 1–10 | Submit: tgl 11 | Bayar: tgl 12',
+        2: 'Tgl kerja: 11–20 | Submit: tgl 21 | Bayar: tgl 22',
+        3: 'Tgl kerja: 21–akhir bulan | Submit: tgl 1 bulan depan | Bayar: tgl 2 bulan depan',
+    };
+
+    // Pre-select current month and year
+    $('#shortcut-month').val(new Date().getMonth());
+    $('#shortcut-year').val(new Date().getFullYear());
+
+    function getPeriodeDates(periode) {
+        const month   = parseInt($('#shortcut-month').val()); // 0-indexed
+        const year    = parseInt($('#shortcut-year').val());
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        const pad     = (n) => String(n).padStart(2, '0');
+        const fmt     = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+
+        if (periode === 1) {
+            return { start: fmt(year, month, 1),  end: fmt(year, month, 10) };
+        } else if (periode === 2) {
+            return { start: fmt(year, month, 11), end: fmt(year, month, 20) };
+        } else {
+            return { start: fmt(year, month, 21), end: fmt(year, month, lastDay) };
+        }
+    }
+
+    $(document).on('click', '.periode-btn', function () {
+        const periode = parseInt($(this).data('periode'));
+        const dates   = getPeriodeDates(periode);
+
+        $('#filter-start-date').val(dates.start);
+        $('#filter-end-date').val(dates.end);
+        $('#periode-desc').text(periodeDescriptions[periode]);
+
+        $('.periode-btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('btn-primary');
+
+        $('#apply-filters').trigger('click');
+    });
+
+    $('#filter-start-date, #filter-end-date').on('change', function () {
+        $('.periode-btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+        $('#periode-desc').text('');
+    });
+    // ── End periode shortcuts ────────────────────────────────────────────
+
     $('#apply-filters').on('click', function () {
         dataTable.ajax.reload();
     });

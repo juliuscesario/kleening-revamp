@@ -12,6 +12,10 @@ $(function () {
     const specializationUrl = page.data('specialization-url');
     const tableUrl = page.data('table-url');
 
+    function capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
     // 1. Get filters from URL
     const urlParams = new URLSearchParams(window.location.search);
     const startDate = urlParams.get('start_date');
@@ -87,56 +91,41 @@ $(function () {
                 d.area_id = areaId;
             }
         },
+        scrollX: true,
         columns: [
-            { data: 'tanggal', name: 'order_sessions.tanggal' },
-            { data: 'customer_name', name: 'customer.name' },
-            { data: 'invoice_total', name: 'invoice.grand_total' },
+            { data: 'tanggal',         name: 'order_sessions.tanggal', width: '80px' },
+            { data: 'customer_name',   name: 'customer_name',   orderable: false, width: '120px' },
+            { data: 'alamat_maps',     name: 'alamat_maps',     orderable: false, width: '160px' },
+            { data: 'invoice_total',   name: 'invoice_total',   orderable: false, width: '110px' },
+            { data: 'staff_notes',     name: 'staff_notes',     orderable: false, width: '110px' },
+            { data: 'staff_attendance',name: 'staff_attendance',orderable: false, width: '75px' },
+            { data: 'mesin',           name: 'mesin',           orderable: false, width: '150px' },
+            { data: 'foto',            name: 'foto',            orderable: false, width: '80px' },
             {
-                data: 'customer_address',
-                name: 'address.full_address',
-                render: function (data, type, row) {
-                    if (type === 'display' && data && data.length > 40) {
-                        return `<span title="${data}" data-bs-toggle="tooltip" style="cursor: pointer;">${data.substring(0, 40)}...</span>`;
-                    }
-                    return data;
+                data: null, orderable: false, width: '60px',
+                render: function(data) {
+                    return data.so_id
+                        ? '<a href="/service-orders/' + data.so_id + '" target="_blank" class="btn btn-sm btn-outline-primary">SO</a>'
+                        : '—';
                 }
             },
             {
-                data: 'so_id',
-                name: 'so_id',
-                orderable: false,
-                render: function (data, type, row) {
-                    if (type !== 'display') return data;
-                    const url = `/service-orders/${data}`;
-                    return `<a href="${url}" class="btn btn-sm btn-primary" target="_blank">Service Order</a>`;
-                }
-            },
-            {
-                data: 'status',
-                name: 'status',
-                orderable: false,
-                render: function (data, type, row) {
-                    const label = data || '-';
-
-                    if (type !== 'display') {
-                        return label;
-                    }
-
-                    const badgeClass = row.status_badge_class || 'bg-secondary';
-                    const baseClass = `badge ${badgeClass} text-bg-secondary`;
-
-                    if (row.invoice_show_url && (row.status || '').toLowerCase() === 'invoiced') {
-                        return `<a href="${row.invoice_show_url}" class="${baseClass}" target="_blank" rel="noopener">${label}</a>`;
-                    }
-
-                    return `<span class="${baseClass}">${label}</span>`;
+                data: null, orderable: false, width: '140px',
+                render: function(data) {
+                    if (!data.invoice_id) return '—';
+                    const statusLabel = (data.invoice_status_plain || '').toLowerCase();
+                    return '<a href="' + data.invoice_show_url + '" target="_blank" class="btn btn-sm btn-outline-secondary">Invoice [' + capitalizeFirst(statusLabel || '—') + ']</a>';
                 }
             },
         ],
         drawCallback: function () {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new window.bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            popoverTriggerList.map(function (popoverTriggerEl) {
+                return new window.bootstrap.Popover(popoverTriggerEl);
             });
         },
         pageLength: 25,

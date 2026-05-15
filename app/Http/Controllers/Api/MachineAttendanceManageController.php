@@ -79,6 +79,7 @@ class MachineAttendanceManageController extends Controller
             'photo_pulang' => $attendance->photo_pulang ? Storage::url($attendance->photo_pulang) : null,
             'photo_pulang_at' => $attendance->photo_pulang_at?->format('H:i'),
             'catatan' => $attendance->catatan,
+            'catatan_pulang' => $attendance->catatan_pulang,
             'machines' => $attendance->machines->map(fn($m) => $m->code)->join(', '),
             'status' => $attendance->photo_pulang_at ? 'closed' : 'open',
         ]);

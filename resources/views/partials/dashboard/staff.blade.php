@@ -510,7 +510,7 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Catatan</label>
+                    <label class="form-label">Notes Mesin Pergi</label>
                     <textarea id="pergi-catatan" class="form-control" rows="2"
                               placeholder="Contoh: hv3 selang bocor"></textarea>
                 </div>
@@ -545,6 +545,15 @@
                     <div id="pulang-photo-preview" class="mt-2" style="display:none;">
                         <img id="pulang-preview-img" class="rounded" style="max-width:100%; max-height:200px;">
                     </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes Mesin Pulang</label>
+                    <textarea
+                        id="pulang-catatan"
+                        class="form-control"
+                        rows="3"
+                        placeholder="Kondisi mesin saat kembali... (isi jika ada kerusakan atau catatan)"
+                    ></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -812,6 +821,7 @@
     document.getElementById('btn-mesin-pulang')?.addEventListener('click', function() {
         document.getElementById('pulang-photo-input').value = '';
         document.getElementById('pulang-photo-preview').style.display = 'none';
+        document.getElementById('pulang-catatan').value = '';
 
         const machines = [];
         document.querySelectorAll('#machine-attendance-panel .badge.bg-secondary-lt').forEach(badge => {
@@ -837,6 +847,8 @@
             const compressed = await compressImage(file);
             const formData = new FormData();
             formData.append('photo', compressed, 'mesin_pulang.jpg');
+            const catatanPulang = document.getElementById('pulang-catatan').value;
+            if (catatanPulang) formData.append('catatan_pulang', catatanPulang);
 
             const res = await fetch(`/machine-attendance/${attendanceId}/pulang`, {
                 method: 'POST',

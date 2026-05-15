@@ -255,12 +255,13 @@ class MachineAttendanceController extends Controller
 
     /**
      * POST /api/machine-attendance/{id}/pulang
-     * Submit Mesin Pulang. Accepts: photo (file).
+     * Submit Mesin Pulang. Accepts: photo (file) + catatan_pulang (optional string).
      */
     public function pulang(Request $request, $id)
     {
         $request->validate([
             'photo' => 'required|image|max:5120',
+            'catatan_pulang' => 'nullable|string|max:500',
         ]);
 
         $staff = $request->user()->staff;
@@ -298,6 +299,7 @@ class MachineAttendanceController extends Controller
         $attendance->update([
             'photo_pulang' => $path,
             'photo_pulang_at' => $now,
+            'catatan_pulang' => $request->catatan_pulang,
             'updated_by' => auth()->id(),
         ]);
 

@@ -62,12 +62,16 @@
                             <table id="staff-drilldown-table" class="table card-table table-vcenter text-nowrap datatable">
                                 <thead>
                                     <tr>
-                                        <th>Tgl. Kerja</th>
-                                        <th>Customer</th>
-                                        <th>Total Invoice</th>
-                                        <th>Alamat Customer</th>
-                                        <th>Service Order</th>
-                                        <th>Status</th>
+                                        <th>TGL. KERJA</th>
+                                        <th>CUSTOMER</th>
+                                        <th>ALAMAT</th>
+                                        <th>TOTAL INVOICE</th>
+                                        <th>NOTES</th>
+                                        <th>ABSEN</th>
+                                        <th>MESIN</th>
+                                        <th>FOTO</th>
+                                        <th>SO</th>
+                                        <th>INV</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>

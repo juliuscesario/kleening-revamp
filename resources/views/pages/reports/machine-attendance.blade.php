@@ -118,7 +118,8 @@
                                 <th>Jam Pergi</th>
                                 <th>Jam Pulang</th>
                                 <th>Durasi</th>
-                                <th>Catatan</th>
+                                <th>Notes Pergi</th>
+                                <th>Notes Pulang</th>
                                 <th>Status</th>
                                 <th>Warning</th>
                                 <th>Aksi</th>
@@ -194,8 +195,12 @@
                 </div>
                 <hr>
                 <div>
-                    <span class="text-muted">Catatan:</span>
+                    <span class="text-muted">Notes Mesin Pergi:</span>
                     <div id="view-catatan" class="mt-1"></div>
+                </div>
+                <div>
+                    <span class="text-muted">Notes Mesin Pulang:</span>
+                    <div id="view-catatan-pulang" class="mt-1"></div>
                 </div>
             </div>
             <div class="modal-footer">

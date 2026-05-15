@@ -66,6 +66,7 @@ $(function() {
             { data: 'jam_pulang', name: 'photo_pulang_at', orderable: false },
             { data: 'durasi', name: 'photo_pulang_at', orderable: false },
             { data: 'catatan', name: 'catatan', orderable: false },
+            { data: 'catatan_pulang', name: 'catatan_pulang', orderable: false },
             { data: 'status', name: 'photo_pulang_at' },
             { data: 'warning', orderable: false },
             { data: 'action', name: 'action', orderable: false, searchable: false }
@@ -134,6 +135,7 @@ $(function() {
 
             // Catatan
             $('#view-catatan').text(data.catatan || '—');
+            $('#view-catatan-pulang').text(data.catatan_pulang || '—');
 
             // Force close button: only show when status is open (photo_pulang_at is null)
             if (!data.photo_pulang_at) {

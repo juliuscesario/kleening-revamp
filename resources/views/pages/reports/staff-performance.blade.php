@@ -13,6 +13,38 @@
     </div>
 
     <div class="page-body">
+        {{-- Periode Shortcuts --}}
+        <div class="card mb-2">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <select id="shortcut-month" class="form-select form-select-sm" style="width:120px">
+                        <option value="0">Januari</option>
+                        <option value="1">Februari</option>
+                        <option value="2">Maret</option>
+                        <option value="3">April</option>
+                        <option value="4">Mei</option>
+                        <option value="5">Juni</option>
+                        <option value="6">Juli</option>
+                        <option value="7">Agustus</option>
+                        <option value="8">September</option>
+                        <option value="9">Oktober</option>
+                        <option value="10">November</option>
+                        <option value="11">Desember</option>
+                    </select>
+                    <select id="shortcut-year" class="form-select form-select-sm" style="width:90px">
+                        @for($y = 2024; $y <= date('Y') + 1; $y++)
+                            <option value="{{ $y }}">{{ $y }}</option>
+                        @endfor
+                    </select>
+                    <span class="text-muted mx-1" style="font-size:13px">|</span>
+                    <button type="button" class="btn btn-sm periode-btn" data-periode="1">Periode 1</button>
+                    <button type="button" class="btn btn-sm periode-btn" data-periode="2">Periode 2</button>
+                    <button type="button" class="btn btn-sm periode-btn" data-periode="3">Periode 3</button>
+                    <span id="periode-desc" class="text-muted ms-2" style="font-size:12px"></span>
+                </div>
+            </div>
+        </div>
+
         {{-- Filter Section --}}
         <div class="card mb-3">
             <div class="card-body">

@@ -17,6 +17,7 @@ class MachineAttendance extends Model
         'photo_pulang',
         'photo_pulang_at',
         'catatan',
+        'catatan_pulang',
         'created_by',
         'updated_by',
     ];
