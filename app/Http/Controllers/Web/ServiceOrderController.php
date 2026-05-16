@@ -206,7 +206,8 @@ class ServiceOrderController extends Controller
         $hasPendingServiceOrder = ServiceOrder::where('customer_id', $request->customer_id)
             ->whereNotIn('status', [
                 ServiceOrder::STATUS_DONE,
-                'cancel',
+                ServiceOrder::STATUS_CANCELLED,  // 'cancelled' (model constant)
+                'cancel',                         // legacy DB value
                 ServiceOrder::STATUS_INVOICED,
             ])
             ->exists();

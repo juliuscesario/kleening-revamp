@@ -64,10 +64,10 @@ class FormOrderController extends Controller
                 ];
             });
 
-            // Check for open Service Orders
+            // Check for open Service Orders (only truly active statuses)
             $openSOs = ServiceOrder::withoutGlobalScopes()
                 ->where('customer_id', $customer->id)
-                ->whereIn('status', ['booked', 'proses', 'done'])
+                ->whereIn('status', [ServiceOrder::STATUS_BOOKED, ServiceOrder::STATUS_PROSES])
                 ->with('items.service')
                 ->orderBy('work_date', 'asc')
                 ->get()
