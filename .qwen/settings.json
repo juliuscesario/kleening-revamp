@@ -18,7 +18,16 @@
       "Bash(sleep *)",
       "Bash(curl *)",
       "Bash(pkill *)",
-      "Bash(crontab *)"
+      "Bash(crontab *)",
+      "Read(//Users/iwantanuwijaya/Downloads/**)",
+      "Bash(do *)",
+      "Bash(then *)",
+      "Bash(else *)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(echo *)",
+      "Bash(head *)",
+      "Bash(sed *)"
     ]
   },
   "$version": 4
