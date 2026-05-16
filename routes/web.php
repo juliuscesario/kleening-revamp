@@ -161,8 +161,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('laporan/machine-tracker/lookup', [\App\Http\Controllers\Web\MachineTrackerController::class, 'lookup'])->name('web.laporan.machine-tracker.lookup');
     });
 
-    // Payroll
-    Route::prefix('payroll')->name('payroll.')->group(function () {
+    // Payroll — owner only
+    Route::middleware(['auth', 'role:owner'])->prefix('payroll')->name('payroll.')->group(function () {
         Route::get('/', [PayrollController::class, 'index'])->name('index');
         Route::get('/download/{staff}/{year}/{month}/{period}', [PayrollController::class, 'download'])->name('download');
     });
