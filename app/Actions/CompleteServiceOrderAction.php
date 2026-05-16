@@ -18,8 +18,8 @@ class CompleteServiceOrderAction
                     'completed_at' => now(),
                 ]);
 
-            // Set SO status directly to done
-            $serviceOrder->update(['status' => 'done']);
+            // Derive SO status from session statuses (canonical path)
+            (new \App\Actions\SyncServiceOrderStatusAction())->execute($serviceOrder);
 
             return $serviceOrder->fresh();
         });
