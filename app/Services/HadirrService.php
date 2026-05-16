@@ -16,7 +16,7 @@ class HadirrService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.hadirr.base_url');
+        $this->baseUrl = config('services.hadirr.base_url') ?: '';
         $this->accessKey = config('services.hadirr.access_key') ?: '';
         $this->secretKey = config('services.hadirr.secret_key') ?: '';
     }
