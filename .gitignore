@@ -24,3 +24,17 @@ Homestead.yaml
 Thumbs.db
 composer.lock
 package-lock.json
+
+.env.local
+.env.development
+.env.save
+node_modules/
+vendor/
+target/
+venv/
+.venv/
+__pycache__/
+dist/
+build/
+.next/
+.nuxt/
